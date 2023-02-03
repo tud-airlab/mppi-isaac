@@ -13,10 +13,13 @@ readme = "README.md"
 [tool.poetry.dependencies]
 python = "^3.8,<3.9"
 isaacgym = {path = "thirdparty/isaacgym/python"}
-black = "^23.1.0"
-pylint = "^2.16.1"
-urdfenvs = "^0.5.1"
+pytest = "^7.2.1"
 
+
+[tool.poetry.group.dev.dependencies]
+pylint = "^2.16.1"
+black = "^23.1.0"
+urdfenvs = "^0.5.1"
 
 [build-system]
 requires = ["poetry-core"]

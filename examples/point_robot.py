@@ -2,8 +2,11 @@ import gym
 import numpy as np
 from urdfenvs.robots.generic_urdf import GenericUrdfReacher
 from mppiisaac.planner.mppi import MPPIPlanner
+import os
 
 # MPPI to navigate a simple robot to a goal position
+
+urdf_file = os.path.dirname(os.path.abspath(__file__)) + "/../assets/point_robot.urdf"
 
 def initalize_environment(render):
     """
@@ -18,7 +21,7 @@ def initalize_environment(render):
         Boolean toggle to set rendering on (True) or off (False).
     """
     robots = [
-        GenericUrdfReacher(urdf="../assets/point_robot.urdf", mode="vel"),
+        GenericUrdfReacher(urdf=urdf_file, mode="vel"),
     ]
     env: UrdfEnv  = gym.make(
         "urdf-env-v0",
@@ -44,7 +47,7 @@ def set_planner(goal_position: np.ndarray):
     return planner
 
 
-def run_point_robot_urdf(n_steps=10000, render=True):
+def run_point_robot(n_steps=10000, render=True):
     """
     Set the gym environment, the planner and run point robot example.
     The initial zero action step is needed to initialize the sensor in the
@@ -75,4 +78,4 @@ def run_point_robot_urdf(n_steps=10000, render=True):
     return {}
 
 if __name__ == "__main__":
-    res = run_point_robot_urdf(n_steps=10000, render=True)
+    res = run_point_robot(n_steps=10000, render=True)

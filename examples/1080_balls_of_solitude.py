@@ -21,6 +21,7 @@ Modes can be set via command line arguments:
 Press 'R' to reset the  simulation
 """
 
+import os
 import numpy as np
 from isaacgym import gymutil
 from isaacgym import gymapi
@@ -34,6 +35,7 @@ args = gymutil.parse_arguments(
     description="Collision Filtering: Demonstrates filtering of collisions within and between environments",
     custom_parameters=[
         {"name": "--num_envs", "type": int, "default": 36, "help": "Number of environments to create"},
+        {"name": "--num_steps", "type": int, "default": 10000000, "help": "Number of time steps to simulate"},
         {"name": "--all_collisions", "action": "store_true", "help": "Simulate all collisions"},
         {"name": "--no_collisions", "action": "store_true", "help": "Ignore all collisions"}])
 
@@ -71,7 +73,7 @@ if viewer is None:
     quit()
 
 # load ball asset
-asset_root = "../assets"
+asset_root = os.path.dirname(os.path.abspath(__file__)) + "/../assets"
 asset_file = "urdf/ball.urdf"
 asset = gym.load_asset(sim, asset_root, asset_file, gymapi.AssetOptions())
 
@@ -149,8 +151,10 @@ gym.viewer_camera_look_at(viewer, None, gymapi.Vec3(20, 5, 20), gymapi.Vec3(0, 1
 # create a local copy of initial state, which we can send back for reset
 initial_state = np.copy(gym.get_sim_rigid_body_states(sim, gymapi.STATE_ALL))
 
+n_steps = args.num_steps
 
-while not gym.query_viewer_has_closed(viewer):
+# while not gym.query_viewer_has_closed(viewer):
+for _ in range(n_steps):
 
     # Get input actions from the viewer and handle them appropriately
     for evt in gym.query_viewer_action_events(viewer):
