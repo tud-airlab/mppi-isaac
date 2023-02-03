@@ -21,7 +21,16 @@ pip install .
 
 # Developers
 
+## Installation
+
 You can install useful developer software using.
 ```bash
 poetry install --with dev
+```
+
+## Testing
+
+Test changes using pytest
+```bash
+poetry run pytest examples
 ```
