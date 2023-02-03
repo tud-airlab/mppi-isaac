@@ -1,12 +1,12 @@
 import gym
 import numpy as np
 from urdfenvs.robots.generic_urdf import GenericUrdfReacher
-from mppiisaac.planner.mppi import MPPIPlanner
+from mppiisaac.planner.mppi_isaac import MPPIisaacPlanner
 import os
 
 # MPPI to navigate a simple robot to a goal position
 
-urdf_file = os.path.dirname(os.path.abspath(__file__)) + "/../assets/point_robot.urdf"
+urdf_file = os.path.dirname(os.path.abspath(__file__)) + "/../assets/urdf/point_robot.urdf"
 
 def initalize_environment(render):
     """
@@ -41,9 +41,9 @@ def set_planner(goal_position: np.ndarray):
     goal_position: np.ndarray
         The goal to the motion planning problem.
     """
-    urdf = "../assets/point_robot.urdf"
-    planner = None
-    # planner = MPPIPlanner(config=config)
+    #urdf = "../assets/point_robot.urdf"
+    planner = MPPIisaacPlanner(goal_position)
+
     return planner
 
 
@@ -61,7 +61,7 @@ def run_point_robot(n_steps=10000, render=True):
         Boolean toggle to set rendering on (True) or off (False).
     """
     env = initalize_environment(render)
-    goal_position = np.array([2.0, 3.0])
+    goal_position = np.array([-2.0, 3.0])
     planner = set_planner(goal_position)
 
     action = np.array([0.0, 0.0, 0.0])
@@ -70,10 +70,10 @@ def run_point_robot(n_steps=10000, render=True):
     for _ in range(n_steps):
         # Calculate action with the fabric planner, slice the states to drop Z-axis [3] information.
         ob_robot = ob['robot_0']
-        #action[0:2] = planner.compute_action(
-        #    q=ob_robot["joint_state"]["position"][0:2],
-        #    qdot=ob_robot["joint_state"]["velocity"][0:2],
-        #)
+        action[0:2] = planner.compute_action(
+            q=ob_robot["joint_state"]["position"][0:2],
+            qdot=ob_robot["joint_state"]["velocity"][0:2],
+        )
         ob, *_, = env.step(action)
     return {}
 
