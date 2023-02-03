@@ -11,13 +11,12 @@ authors = [
 readme = "README.md"
 
 [tool.poetry.dependencies]
-python = "^3.6.2,<3.9"
+python = "^3.8,<3.9"
 isaacgym = {path = "thirdparty/isaacgym/python"}
+black = "^23.1.0"
+pylint = "^2.16.1"
+urdfenvs = "^0.5.1"
 
-
-[tool.poetry.group.dev.dependencies]
-black = "<23.1.0"
-pylint = "<2.16"
 
 [build-system]
 requires = ["poetry-core"]

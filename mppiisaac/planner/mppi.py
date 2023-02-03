@@ -1,0 +1,2 @@
+class MPPIPlanner(object):
+    pass
