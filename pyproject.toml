@@ -1,0 +1,20 @@
+[tool.poetry]
+name = "mppiisaac"
+version = "0.1.0"
+description = ""
+authors = [
+  "Corrado Pezzato <c.pezzato@tudelft.nl>",
+  "Chadi Salmi <c.salmi@tudelft.nl",
+  "Elia Trevisan <e.trevisan@tudelft.nl>",
+  "Max Spahn <m.spahn@tudelft.nl>",
+]
+readme = "README.md"
+
+[tool.poetry.dependencies]
+python = "^3.6.2,<3.9"
+isaacgym = {path = "thirdparty/isaacgym/python"}
+
+
+[build-system]
+requires = ["poetry-core"]
+build-backend = "poetry.core.masonry.api"
