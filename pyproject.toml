@@ -15,6 +15,10 @@ python = "^3.6.2,<3.9"
 isaacgym = {path = "thirdparty/isaacgym/python"}
 
 
+[tool.poetry.group.dev.dependencies]
+black = "<23.1.0"
+pylint = "<2.16"
+
 [build-system]
 requires = ["poetry-core"]
 build-backend = "poetry.core.masonry.api"
