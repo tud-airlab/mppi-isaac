@@ -1,29 +1,35 @@
 from isaacgym import gymapi
 from isaacgym import gymtorch
+from dataclasses import dataclass
 import torch
 
-from mppiisaac.planner.mppi import MPPIConfig, MPPIPlanner
+from mppiisaac.planner.mppi import MPPIPlanner
 
 
-def configure_sim(dt=0.05, substeps=2):
-    # Get default set of parameters
+@dataclass
+class IsaacSimConfig(object):
+    dt: float = 0.05
+    substeps: int = 2
+    use_gpu_pipeline: bool = True
+    num_client_threads: int = 0
+    viewer: bool = False
+
+
+def parse_isaacsim_config(cfg: IsaacSimConfig) -> gymapi.SimParams:
     sim_params = gymapi.SimParams()
-    # Set common parameters
-    sim_params.dt = dt
-    sim_params.substeps = substeps
+    sim_params.dt = cfg.dt
+    sim_params.substeps = cfg.substeps
+    sim_params.use_gpu_pipeline = cfg.use_gpu_pipeline
+    sim_params.num_client_threads = cfg.num_client_threads
+
     sim_params.up_axis = gymapi.UP_AXIS_Z
     sim_params.gravity = gymapi.Vec3(0.0, 0.0, -9.8)
-    # Set PhysX-specific parameters
-    sim_params.use_gpu_pipeline = True
-    sim_params.physx.solver_type = 1
-    sim_params.physx.num_position_iterations = 6
-    sim_params.physx.num_velocity_iterations = 1
-    sim_params.physx.num_threads = 8
-    sim_params.physx.use_gpu = True
     sim_params.physx.contact_offset = 0.001
     sim_params.physx.rest_offset = 0.0
     sim_params.physx.friction_offset_threshold = 0.01
     sim_params.physx.friction_correlation_distance = 0.001
+
+    # return the configured params
     return sim_params
 
 
@@ -33,18 +39,21 @@ class MPPIisaacPlanner(MPPIPlanner):
         dynamics, running_cost, and terminal_cost
     """
 
-    def __init__(self, goal, cfg: MPPIConfig = MPPIConfig()):
-        super().__init__(cfg)
+    def __init__(self, cfg):
+        super().__init__(cfg.mppi)
 
         self.gym = gymapi.acquire_gym()
         self.sim = self.gym.create_sim(
             compute_device=0,
             graphics_device=0,
             type=gymapi.SIM_PHYSX,
-            params=configure_sim(),
+            params=parse_isaacsim_config(cfg.isaacsim),
         )
-        self.viewer = None
-        #self.viewer = self.gym.create_viewer(self.sim, gymapi.CameraProperties())
+
+        if cfg.isaacsim.viewer:
+            self.viewer = self.gym.create_viewer(self.sim, gymapi.CameraProperties())
+        else:
+            self.viewer = None
 
         # Adds groundplane
         plane_params = gymapi.PlaneParams()
@@ -66,10 +75,10 @@ class MPPIisaacPlanner(MPPIPlanner):
         )
 
         spacing = 3
-        num_per_row = int(cfg.num_samples**0.5)
+        num_per_row = int(cfg.mppi.num_samples**0.5)
         robot_init_pose = gymapi.Transform()
         robot_init_pose.p = gymapi.Vec3(0.0, 0.0, 0.05)
-        for i in range(cfg.num_samples):
+        for i in range(cfg.mppi.num_samples):
             env = self.gym.create_env(
                 self.sim,
                 gymapi.Vec3(-spacing, 0.0, -spacing),
@@ -100,7 +109,7 @@ class MPPIisaacPlanner(MPPIPlanner):
         self.actor_velocities = self.root_state[:, 3:5]  # [vx, vy]
 
         # nav_goal
-        self.nav_goal = torch.tensor(goal, device=cfg.device)
+        self.nav_goal = torch.tensor(cfg.goal, device=cfg.mppi.device)
 
     def dynamics(self, state, u, t=None):
         self.gym.set_dof_velocity_target_tensor(self.sim, gymtorch.unwrap_tensor(u))
@@ -114,7 +123,7 @@ class MPPIisaacPlanner(MPPIPlanner):
             self.gym.draw_viewer(self.viewer, self.sim, False)
             self.gym.sync_frame_time(self.sim)
 
-        #return torch.cat((self.actor_positions, self.actor_velocities), axis=1), u
+        # return torch.cat((self.actor_positions, self.actor_velocities), axis=1), u
         return self.dof_state.view(-1, 4), u
 
     def running_cost(self, state, u):
@@ -132,8 +141,8 @@ class MPPIisaacPlanner(MPPIPlanner):
         state = (
             torch.tensor([q[0], qdot[0], q[1], qdot[1]])
             .type(torch.float32)
-            .to(self.d)
-        ) # [x, vx, y, vy]
+            .to(self.cfg.device)
+        )  # [x, vx, y, vy]
         state = state.repeat(self.K, 1)
         print(q)
         self.gym.set_dof_state_tensor(self.sim, gymtorch.unwrap_tensor(state))

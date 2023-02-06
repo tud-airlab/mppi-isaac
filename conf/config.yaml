@@ -1,0 +1,7 @@
+defaults:
+  - mppi: pointbot
+  - isaacsim: normal
+
+goal: [-2.0, 3.0]
+render: false
+n_steps: 10

@@ -1,0 +1,20 @@
+defaults:
+  - base_mppi
+
+nx: 4
+num_samples: 100
+horizon: 30
+device: "cuda:0"
+lambda_: 1.0
+u_scale: 1
+u_per_command: 1
+step_dependent_dynamics: False
+rollout_samples: 1
+rollout_var_cost: 0
+rollout_var_discount: 0.95
+sample_null_action: False
+use_vacuum: False
+robot: "point_robot"
+noise_abs_cost: False
+env_type: "normal"
+filter_u: False
