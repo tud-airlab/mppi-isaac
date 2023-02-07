@@ -1,0 +1,7 @@
+defaults:
+  - mppi: panda
+  - isaacsim: normal
+
+goal: [0.6, 0.2, 0.5]
+render: true
+n_steps: 1000

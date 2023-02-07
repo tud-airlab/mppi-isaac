@@ -1,10 +1,10 @@
 defaults:
   - base_mppi
 
-nx: 6
-urdf_file: "point_robot.urdf"
+nx: 14
+urdf_file: "panda.urdf"
 num_samples: 100
-horizon: 30
+horizon: 5
 device: "cuda:0"
 lambda_: 1.0
 u_scale: 1

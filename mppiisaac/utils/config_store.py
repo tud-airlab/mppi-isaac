@@ -15,6 +15,8 @@ class ExampleConfig:
 
 
 cs = ConfigStore.instance()
-cs.store(name="config", node=ExampleConfig)
+cs.store(name="config_point_robot", node=ExampleConfig)
+cs.store(name="config_panda", node=ExampleConfig)
+cs.store(name="config_panda_c_space_goal", node=ExampleConfig)
 cs.store(group="mppi", name="base_mppi", node=MPPIConfig)
 cs.store(group="isaacsim", name="base_isaacsim", node=IsaacSimConfig)
