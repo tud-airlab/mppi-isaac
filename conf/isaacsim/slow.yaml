@@ -1,0 +1,4 @@
+defaults:
+  - base_isaacsim
+
+dt: 0.01

@@ -1,9 +1,10 @@
 import torch
 import functools
 import numpy as np
+from typing import Optional, List
 from torch.distributions.multivariate_normal import MultivariateNormal
 from scipy import signal
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 from abc import ABC, abstractmethod
 
 
@@ -92,28 +93,44 @@ class MPPIConfig(object):
     nx: int = 4
     num_samples: int = 100
     horizon: int = 30
-    noise_sigma = torch.tensor([[1, 0], [0, 1]], device="cuda:0", dtype=torch.float32)
+    noise_sigma: List[List[float]] = field(default_factory=lambda: [[1, 0], [0, 1]])
+    noise_mu: Optional[List[float]] = None
     device: str = "cuda:0"
     lambda_: float = 1.0
-    noise_mu = None
-    u_min = None
-    u_max = None
-    u_init = None
-    U_init = None
-    u_scale = 1
-    u_per_command = 1
-    step_dependent_dynamics = False
-    rollout_samples = 1
-    rollout_var_cost = 0
-    rollout_var_discount = 0.95
-    sample_null_action = False
-    use_vacuum = False
+    u_min: float = -1.0
+    u_max: float = 1.0
+    u_init: float = 0.0
+    U_init: Optional[List[float]] = None
+    u_scale: float = 1
+    u_per_command: int = 1
+    step_dependent_dynamics: bool = False
+    rollout_samples: int = 1
+    rollout_var_cost: float = 0
+    rollout_var_discount: float = 0.95
+    sample_null_action: bool = False
+    use_vacuum: bool = False
     robot: str = "point_robot"
     noise_abs_cost: bool = False
-    actors_per_env = None
-    env_type = "normal"
-    bodies_per_env = None
+    actors_per_env: Optional[int] = None
+    env_type: str = "normal"
+    bodies_per_env: Optional[int] = None
     filter_u: bool = False
+
+    def __post_init__(self):
+        # Make sure noise_sigma is a square matrix
+        assert all([len(self.noise_sigma[0]) == len(row) for row in self.noise_sigma])
+
+        if not self.noise_mu:
+            self.noise_mu = [0.0] * len(self.noise_sigma)
+        if not self.U_init:
+            self.U_init = [[0.0] * len(self.noise_mu)] * self.horizon
+
+        # make sure if any of the limimts are specified, both are specified
+        if self.u_max and not self.u_min:
+            self.u_min = -self.u_max
+        if self.u_min and not self.u_max:
+            self.u_max = -self.u_min
+        assert self.u_max > 0 and self.u_min < 0
 
 
 class MPPIPlanner(ABC):
@@ -126,73 +143,49 @@ class MPPIPlanner(ABC):
     based off of https://github.com/ferreirafabio/mppi_pendulum
     """
 
-    def __init__(
-        self,
-        cfg: MPPIConfig
-    ):
-        self.d = cfg.device
-        self.dtype = cfg.noise_sigma.dtype
-        self.K = cfg.num_samples  # N_SAMPLES
-        self.T = cfg.horizon  # TIMESTEPS
-        self.filter_u = cfg.filter_u
-        # dimensions of state and control
-        self.nx = cfg.nx
-        self.nu = 1 if len(cfg.noise_sigma.shape) == 0 else cfg.noise_sigma.shape[0]
-        self.lambda_ = cfg.lambda_
+    def __init__(self, cfg: MPPIConfig):
+        self.cfg = cfg
 
-        if cfg.noise_mu is None:
-            cfg.noise_mu = torch.zeros(self.nu, dtype=self.dtype)
-
-        if cfg.u_init is None:
-            cfg.u_init = torch.zeros_like(cfg.noise_mu)
-
-        # handle 1D edge case
-        if self.nu == 1:
-            cfg.noise_mu = cfg.noise_mu.view(-1)
-            cfg.noise_sigma = cfg.noise_sigma.view(-1, 1)
-
-        # bounds
-        self.u_min = cfg.u_min
-        self.u_max = cfg.u_max
-        self.u_scale = cfg.u_scale
-        self.u_per_command = cfg.u_per_command
-        # make sure if any of thecfg.m is specified, both are specified
-        if self.u_max is not None and self.u_min is None:
-            if not torch.is_tensor(self.u_max):
-                self.u_max = torch.tensor(self.u_max)
-            self.u_min = -self.u_max
-        if self.u_min is not None and self.u_max is None:
-            if not torch.is_tensor(self.u_min):
-                self.u_min = torch.tensor(self.u_min)
-            self.u_max = -self.u_min
-        if self.u_min is not None:
-            self.u_min = self.u_min.to(device=self.d)
-            self.u_max = self.u_max.to(device=self.d)
-
-        self.noise_mu = cfg.noise_mu.to(self.d)
-        self.noise_sigma = cfg.noise_sigma.to(self.d)
+        # convert lists in cfg to tensors and put them on device
+        self.noise_sigma = torch.tensor(cfg.noise_sigma, device=cfg.device)
+        self.noise_mu = torch.tensor(cfg.noise_mu, device=cfg.device)
         self.noise_sigma_inv = torch.inverse(self.noise_sigma)
         self.noise_dist = MultivariateNormal(
             self.noise_mu, covariance_matrix=self.noise_sigma
         )
-        # T x nu control sequence
-        self.U = cfg.U_init
-        self.u_init = cfg.u_init.to(self.d)
+        self.u_init = torch.tensor(cfg.u_init, device=cfg.device)
+        self.U = torch.tensor(cfg.U_init, device=cfg.device)
+        # self.U = self.noise_dist.sample((self.T,))
+        self.u_max = torch.tensor(cfg.u_max, device=cfg.device)
+        self.u_min = torch.tensor(cfg.u_min, device=cfg.device)
 
-        if self.U is None:
-            self.U = self.noise_dist.sample((self.T,))
-
+        # other variables
+        self.K = cfg.num_samples  # N_SAMPLES
+        self.T = cfg.horizon  # TIMESTEPS
+        self.filter_u = cfg.filter_u
+        self.nx = cfg.nx
+        self.nu = 1 if len(self.noise_sigma.shape) == 0 else self.noise_sigma.shape[0]
+        self.lambda_ = cfg.lambda_
+        self.u_scale = cfg.u_scale
+        self.u_per_command = cfg.u_per_command
         self.step_dependency = cfg.step_dependent_dynamics
-        self.F = self.dynamics
-        self.terminal_state_cost = None
         self.sample_null_action = cfg.sample_null_action
         self.noise_abs_cost = cfg.noise_abs_cost
-        self.state = None
-
         # handling dynamics models that output a distribution (take multiple trajectory samples)
         self.M = cfg.rollout_samples
         self.rollout_var_cost = cfg.rollout_var_cost
         self.rollout_var_discount = cfg.rollout_var_discount
+        self.dtype = torch.float32
+
+        # special variables
+        self.state = None
+        self.terminal_state_cost = None
+        self.F = self.dynamics
+
+        # handle 1D edge case
+        if self.nu == 1:
+            self.noise_mu = self.noise_mu.view(-1)
+            self.noise_sigma = self.noise_sigma.view(-1, 1)
 
         # sampled results from last command
         self.cost_total = None
@@ -200,26 +193,6 @@ class MPPIPlanner(ABC):
         self.omega = None
         self.states = None
         self.actions = None
-
-        # filtering
-        if cfg.robot == "point_robot":
-            if self.T < 20:
-                self.sgf_window = self.T
-            else:
-                self.sgf_window = 10
-            self.sgf_order = 2
-        elif cfg.robot == "heijn":
-            if self.T < 20:
-                self.sgf_window = self.T
-            else:
-                self.sgf_window = 20
-            self.sgf_order = 1
-        elif cfg.robot == "boxer":
-            if self.T < 20:
-                self.sgf_window = self.T
-            else:
-                self.sgf_window = 10
-            self.sgf_order = 3
 
     @handle_batch_input
     def _dynamics(self, state, u, t):
@@ -239,7 +212,7 @@ class MPPIPlanner(ABC):
 
         if not torch.is_tensor(state):
             state = torch.tensor(state)
-        self.state = state.to(dtype=self.dtype, device=self.d)
+        self.state = state.to(dtype=self.dtype, device=self.cfg.device)
 
         cost_total = self._compute_total_cost_batch()
 
@@ -287,7 +260,7 @@ class MPPIPlanner(ABC):
         K, T, nu = perturbed_actions.shape
         assert nu == self.nu
 
-        cost_total = torch.zeros(K, device=self.d, dtype=self.dtype)
+        cost_total = torch.zeros(K, device=self.cfg.device, dtype=self.dtype)
         cost_samples = cost_total.repeat(self.M, 1)
         cost_var = torch.zeros_like(cost_total)
 
@@ -385,19 +358,19 @@ class MPPIPlanner(ABC):
         :returns states: num_rollouts x T x nx vector of trajectories
 
         """
-        state = state.view(-1, self.nx)
+        state = state.view(-1, self.cfg.nx)
         if state.size(0) == 1:
             state = state.repeat(num_rollouts, 1)
 
         T = self.U.shape[0]
         states = torch.zeros(
-            (num_rollouts, T + 1, self.nx), dtype=self.U.dtype, device=self.U.device
+            (num_rollouts, T + 1, self.cfg.nx), dtype=self.U.dtype, device=self.U.device
         )
         states[:, 0] = state
         for t in range(T):
             states[:, t + 1] = self._dynamics(
                 states[:, t].view(num_rollouts, -1),
-                self.u_scale * self.U[t].view(num_rollouts, -1),
+                self.cfg.u_scale * self.U[t].view(num_rollouts, -1),
                 t,
             )
         return states[:, 1:]
@@ -410,9 +383,9 @@ class MPPIPlanner(ABC):
     def running_cost(self):
         raise NotImplementedError
 
-#    @abstractmethod
-#    def terminal_cost(self):
-#        raise NotImplementedError
+    #    @abstractmethod
+    #    def terminal_cost(self):
+    #        raise NotImplementedError
 
     @abstractmethod
     def compute_action(self, q, qdot):
