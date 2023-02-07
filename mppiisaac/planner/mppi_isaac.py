@@ -39,7 +39,7 @@ class MPPIisaacPlanner(MPPIPlanner):
         dynamics, running_cost, and terminal_cost
     """
 
-    def __init__(self, cfg):
+    def __init__(self, cfg, objective):
         super().__init__(cfg.mppi)
 
         self.gym = gymapi.acquire_gym()
@@ -49,6 +49,7 @@ class MPPIisaacPlanner(MPPIPlanner):
             type=gymapi.SIM_PHYSX,
             params=parse_isaacsim_config(cfg.isaacsim),
         )
+        self.objective = objective
 
         if cfg.isaacsim.viewer:
             self.viewer = self.gym.create_viewer(self.sim, gymapi.CameraProperties())
@@ -66,7 +67,7 @@ class MPPIisaacPlanner(MPPIPlanner):
 
         # Adds robots
         asset_root = "../assets"
-        asset_file = "urdf/pointRobot.urdf"
+        asset_file = "urdf/" + cfg.mppi.urdf_file
         asset_options = gymapi.AssetOptions()
         asset_options.fix_base_link = True
         asset_options.armature = 0.01
@@ -88,12 +89,16 @@ class MPPIisaacPlanner(MPPIPlanner):
             robot_handle = self.gym.create_actor(
                 env, robot_asset, robot_init_pose, "robot", i, 1
             )
+            self.rigid_body_names = self.gym.get_actor_rigid_body_names(
+                env, robot_handle
+            )
             # Update point bot dynamics / control mode
             props = self.gym.get_asset_dof_properties(robot_asset)
             props["driveMode"].fill(gymapi.DOF_MODE_VEL)
             props["stiffness"].fill(0.0)
             props["damping"].fill(600.0)
             self.gym.set_actor_dof_properties(env, robot_handle, props)
+        self.number_rigid_bodies_actor = len(self.rigid_body_names)
         self.gym.prepare_sim(self.sim)
 
         self.root_state = gymtorch.wrap_tensor(
@@ -102,11 +107,16 @@ class MPPIisaacPlanner(MPPIPlanner):
         self.dof_state = gymtorch.wrap_tensor(
             self.gym.acquire_dof_state_tensor(self.sim)
         )
+        self.rigid_body_state = gymtorch.wrap_tensor(
+            self.gym.acquire_rigid_body_state_tensor(self.sim)
+        )
         self.gym.refresh_actor_root_state_tensor(self.sim)
         self.gym.refresh_dof_state_tensor(self.sim)
+        self.gym.refresh_rigid_body_state_tensor(self.sim)
 
         self.actor_positions = self.root_state[:, 0:2]  # [x, y]
         self.actor_velocities = self.root_state[:, 3:5]  # [vx, vy]
+
 
         # nav_goal
         self.nav_goal = torch.tensor(cfg.goal, device=cfg.mppi.device)
@@ -117,6 +127,7 @@ class MPPIisaacPlanner(MPPIPlanner):
         self.gym.fetch_results(self.sim, True)
         self.gym.refresh_actor_root_state_tensor(self.sim)
         self.gym.refresh_dof_state_tensor(self.sim)
+        self.gym.refresh_rigid_body_state_tensor(self.sim)
 
         if self.viewer is not None:
             self.gym.step_graphics(self.sim)
@@ -124,27 +135,28 @@ class MPPIisaacPlanner(MPPIPlanner):
             self.gym.sync_frame_time(self.sim)
 
         # return torch.cat((self.actor_positions, self.actor_velocities), axis=1), u
-        return self.dof_state.view(-1, 4), u
-
-    def running_cost(self, state, u):
-        state_pos = torch.cat((state[:, 0].unsqueeze(1), state[:, 2].unsqueeze(1)), 1)
-
-        return self._get_navigation_cost(state_pos, self.nav_goal)
-
-    @staticmethod
-    def _get_navigation_cost(pos, goal_pos):
-        return torch.clamp(
-            torch.linalg.norm(pos - goal_pos, axis=1) - 0.05, min=0, max=1999
+        return (
+            self.root_state,
+            self.dof_state.view(-1, self.nx),
+            self.rigid_body_state.view(-1, self.number_rigid_bodies_actor*13),
+            u
         )
 
+    def running_cost(self, root_state, dof_state, rigid_body_state):
+        return self.objective.compute_cost(root_state, dof_state, rigid_body_state)
+
+
     def compute_action(self, q, qdot):
+        reordered_state = []
+        for i in range(int(self.nx/2)):
+            reordered_state.append(q[i])
+            reordered_state.append(qdot[i])
         state = (
-            torch.tensor([q[0], qdot[0], q[1], qdot[1]])
+            torch.tensor(reordered_state)
             .type(torch.float32)
             .to(self.cfg.device)
         )  # [x, vx, y, vy]
         state = state.repeat(self.K, 1)
-        print(q)
         self.gym.set_dof_state_tensor(self.sim, gymtorch.unwrap_tensor(state))
 
         c = self.command(

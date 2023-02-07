@@ -91,9 +91,10 @@ class MPPIConfig(object):
     """
 
     nx: int = 4
+    urdf_file: str = "point_robot.urdf"
     num_samples: int = 100
     horizon: int = 30
-    noise_sigma: List[List[float]] = field(default_factory=lambda: [[1, 0], [0, 1]])
+    noise_sigma: Optional[List[List[float]]] = None
     noise_mu: Optional[List[float]] = None
     device: str = "cuda:0"
     lambda_: float = 1.0
@@ -109,7 +110,6 @@ class MPPIConfig(object):
     rollout_var_discount: float = 0.95
     sample_null_action: bool = False
     use_vacuum: bool = False
-    robot: str = "point_robot"
     noise_abs_cost: bool = False
     actors_per_env: Optional[int] = None
     env_type: str = "normal"
@@ -118,6 +118,8 @@ class MPPIConfig(object):
 
     def __post_init__(self):
         # Make sure noise_sigma is a square matrix
+        if not self.noise_sigma:
+            self.noise_sigma = np.identity(int(self.nx/2)).tolist()
         assert all([len(self.noise_sigma[0]) == len(row) for row in self.noise_sigma])
 
         if not self.noise_mu:
@@ -147,6 +149,7 @@ class MPPIPlanner(ABC):
         self.cfg = cfg
 
         # convert lists in cfg to tensors and put them on device
+        self.nx = cfg.nx
         self.noise_sigma = torch.tensor(cfg.noise_sigma, device=cfg.device)
         self.noise_mu = torch.tensor(cfg.noise_mu, device=cfg.device)
         self.noise_sigma_inv = torch.inverse(self.noise_sigma)
@@ -163,7 +166,6 @@ class MPPIPlanner(ABC):
         self.K = cfg.num_samples  # N_SAMPLES
         self.T = cfg.horizon  # TIMESTEPS
         self.filter_u = cfg.filter_u
-        self.nx = cfg.nx
         self.nu = 1 if len(self.noise_sigma.shape) == 0 else self.noise_sigma.shape[0]
         self.lambda_ = cfg.lambda_
         self.u_scale = cfg.u_scale
@@ -195,12 +197,17 @@ class MPPIPlanner(ABC):
         self.actions = None
 
     @handle_batch_input
-    def _dynamics(self, state, u, t):
-        return self.F(state, u, t) if self.step_dependency else self.F(state, u)
+    def _dynamics(self, state, u, t=None):
+        states = self.F(state, u, t)
+        return states
 
     @handle_batch_input
-    def _running_cost(self, state, u):
-        return self.running_cost(state, u)
+    def _running_cost(self, root_state, dof_state, rigid_body_state):
+        return self.running_cost(
+            root_state=root_state,
+            dof_state=dof_state,
+            rigid_body_state=rigid_body_state
+        )
 
     def command(self, state):
         """
@@ -285,8 +292,8 @@ class MPPIPlanner(ABC):
                 # Update perturbed action sequence for later use in cost computation
                 self.perturbed_action[self.K - 1][t] = u[:, self.K - 1, :]
 
-            state, u = self._dynamics(state, u, t)
-            c = self._running_cost(state, u)
+            root_states, dof_states, rigid_body_states, u = self._dynamics(state, u, t)
+            c = self._running_cost(root_states, dof_states, rigid_body_states)
 
             # Update action if there were changes in fusion mppi due for instance to suction constraints
             self.perturbed_action[:, t] = u
@@ -380,7 +387,7 @@ class MPPIPlanner(ABC):
         raise NotImplementedError
 
     @abstractmethod
-    def running_cost(self):
+    def running_cost(self, root_state, dof_state, rigid_body_state):
         raise NotImplementedError
 
     #    @abstractmethod
