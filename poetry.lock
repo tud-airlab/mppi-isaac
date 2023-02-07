@@ -477,7 +477,7 @@ category = "main"
 optional = false
 python-versions = ">=3.6,<3.9"
 files = []
-develop = false
+develop = true
 
 [package.dependencies]
 imageio = "*"
@@ -2053,4 +2053,4 @@ testing = ["flake8 (<5)", "func-timeout", "jaraco.functools", "jaraco.itertools"
 [metadata]
 lock-version = "2.0"
 python-versions = "^3.8,<3.9"
-content-hash = "34e95dcd2409d3f13e275c063e2d6c07f962f4dd4eb77e7abd4b8e471505ea87"
+content-hash = "60a45ad5b74b8de31637ca1ca433a01ee1cc3c8ce5361a31114df1797d3167fd"
