@@ -1,7 +1,8 @@
 from dataclasses import dataclass
 from mppiisaac.planner.mppi import MPPIConfig
-from mppiisaac.planner.mppi_isaac import IsaacSimConfig
+from mppiisaac.utils.isaacsim_utils import IsaacSimConfig
 from hydra.core.config_store import ConfigStore
+
 from typing import List
 
 
