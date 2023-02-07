@@ -12,8 +12,8 @@ readme = "README.md"
 
 [tool.poetry.dependencies]
 python = "^3.8,<3.9"
-isaacgym = {path = "thirdparty/isaacgym/python"}
 pytest = "^7.2.1"
+isaacgym = {path = "thirdparty/isaacgym/python", develop = true}
 
 [tool.poetry.group.dev]
 optional = true
