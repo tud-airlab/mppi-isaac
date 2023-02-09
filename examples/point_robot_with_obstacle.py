@@ -6,8 +6,8 @@ import hydra
 from omegaconf import OmegaConf
 from urdfenvs.sensors.full_sensor import FullSensor
 import os
-from urdfenvs.scene_examples.obstacles import sphereObst1
-from urdfenvs.scene_examples.goal import goal1
+from mpscenes.obstacles.sphere_obstacle import SphereObstacle
+from mpscenes.goals.static_sub_goal import StaticSubGoal
 
 from mppiisaac.utils.config_store import ExampleConfig
 
@@ -39,10 +39,19 @@ def initalize_environment(render, dt):
     env.reset()
 
     # add obstacle
+    obst1Dict = {
+        "type": "sphere",
+        "geometry": {"position": [1.0, 1.0, 0.0], "radius": 0.5},
+    }
+    sphereObst1 = SphereObstacle(name="simpleSphere", content_dict=obst1Dict)
     env.add_obstacle(sphereObst1)
 
-    # add goal
-    env.add_goal(goal1)
+    obst2Dict = {
+        "type": "sphere",
+        "geometry": {"position": [1.0, 2.0, 0.0], "radius": 0.3},
+    }
+    sphereObst2 = SphereObstacle(name="simpleSphere", content_dict=obst2Dict)
+    env.add_obstacle(sphereObst2)
 
     # sense both
     sensor = FullSensor(
@@ -85,7 +94,7 @@ def run_point_robot(cfg: ExampleConfig):
     # Note: Workaround to trigger the dataclasses __post_init__ method
     cfg = OmegaConf.to_object(cfg)
 
-    env = initalize_environment(cfg.render, cfg.isaacsim.dt)
+    env = initalize_environment(cfg.render, cfg.isaacgym.dt)
     planner = set_planner(cfg)
 
     action = np.array([0.0, 0.0, 0.0])

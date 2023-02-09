@@ -1,6 +1,6 @@
 from dataclasses import dataclass
 from mppiisaac.planner.mppi import MPPIConfig
-from mppiisaac.utils.isaacsim_utils import IsaacSimConfig
+from mppiisaac.planner.isaacgym_wrapper import IsaacGymConfig
 from hydra.core.config_store import ConfigStore
 
 from typing import List
@@ -11,11 +11,11 @@ class ExampleConfig:
     render: bool
     n_steps: int
     mppi: MPPIConfig
-    isaacsim: IsaacSimConfig
+    isaacgym: IsaacGymConfig
     goal: List[float]
 
 
 cs = ConfigStore.instance()
 cs.store(name="config", node=ExampleConfig)
 cs.store(group="mppi", name="base_mppi", node=MPPIConfig)
-cs.store(group="isaacsim", name="base_isaacsim", node=IsaacSimConfig)
+cs.store(group="isaacgym", name="base_isaacgym", node=IsaacGymConfig)

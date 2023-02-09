@@ -4,7 +4,8 @@ from dataclasses import dataclass
 import torch
 
 from mppiisaac.planner.mppi import MPPIPlanner
-from mppiisaac.utils.isaacsim_utils import IsaacSimWrapper
+from mppiisaac.planner.isaacgym_wrapper import IsaacGymWrapper
+
 
 
 class MPPIisaacPlanner(MPPIPlanner):
@@ -16,7 +17,7 @@ class MPPIisaacPlanner(MPPIPlanner):
     def __init__(self, cfg):
         super().__init__(cfg.mppi)
 
-        self.sim = IsaacSimWrapper(cfg.isaacsim, num_envs=cfg.mppi.num_samples)
+        self.sim = IsaacGymWrapper(cfg.isaacgym, num_envs=cfg.mppi.num_samples)
 
         self.actor_positions = self.sim.root_state[:, 0:2]  # [x, y]
         self.actor_velocities = self.sim.root_state[:, 3:5]  # [vx, vy]
