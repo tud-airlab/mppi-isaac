@@ -69,7 +69,6 @@ class MPPIConfig(object):
     """
     :param dynamics: function(state, action) -> next_state (K x nx) taking in batch state (K x nx) and action (K x nu)
     :param running_cost: function(state, action) -> cost (K) taking in batch state and action (same as dynamics)
-    :param nx: state dimension
     :param noise_sigma: (nu x nu) control noise covariance (assume v_t ~ N(u_t, noise_sigma))
     :param num_samples: K, number of trajectories to sample
     :param horizon: T, length of each trajectory
@@ -90,8 +89,6 @@ class MPPIConfig(object):
     :param noise_abs_cost: Whether to use the absolute value of the action noise to avoid bias when all states have the same cost
     """
 
-    nx: int = 4
-    urdf_file: str = "point_robot.urdf"
     num_samples: int = 100
     horizon: int = 30
     noise_sigma: Optional[List[List[float]]] = None
@@ -116,6 +113,7 @@ class MPPIConfig(object):
     bodies_per_env: Optional[int] = None
     filter_u: bool = False
 
+    """
     def __post_init__(self):
         # Make sure noise_sigma is a square matrix
         if not self.noise_sigma:
@@ -133,6 +131,7 @@ class MPPIConfig(object):
         if self.u_min and not self.u_max:
             self.u_max = -self.u_min
         assert self.u_max > 0 and self.u_min < 0
+    """
 
 
 class MPPIPlanner(ABC):
@@ -145,11 +144,26 @@ class MPPIPlanner(ABC):
     based off of https://github.com/ferreirafabio/mppi_pendulum
     """
 
-    def __init__(self, cfg: MPPIConfig):
+    def __init__(self, cfg: MPPIConfig, nx: int):
+        if not cfg.noise_sigma:
+            cfg.noise_sigma = np.identity(int(nx/2)).tolist()
+        assert all([len(cfg.noise_sigma[0]) == len(row) for row in cfg.noise_sigma])
+
+        if not cfg.noise_mu:
+            cfg.noise_mu = [0.0] * len(cfg.noise_sigma)
+        if not cfg.U_init:
+            cfg.U_init = [[0.0] * len(cfg.noise_mu)] * cfg.horizon
+
+        # make sure if any of the limimts are specified, both are specified
+        if cfg.u_max and not cfg.u_min:
+            cfg.u_min = -cfg.u_max
+        if cfg.u_min and not cfg.u_max:
+            cfg.u_max = -cfg.u_min
+        assert cfg.u_max > 0 and cfg.u_min < 0
         self.cfg = cfg
 
         # convert lists in cfg to tensors and put them on device
-        self.nx = cfg.nx
+        self.nx = nx
         self.noise_sigma = torch.tensor(cfg.noise_sigma, device=cfg.device)
         self.noise_mu = torch.tensor(cfg.noise_mu, device=cfg.device)
         self.noise_sigma_inv = torch.inverse(self.noise_sigma)
@@ -198,8 +212,8 @@ class MPPIPlanner(ABC):
 
     @handle_batch_input
     def _dynamics(self, state, u, t=None):
-        states = self.F(state, u, t)
-        return states
+        return self.dynamics(state, u, t)
+        #return self.F(state, u, t)
 
     @handle_batch_input
     def _running_cost(self, root_state, dof_state, rigid_body_state):

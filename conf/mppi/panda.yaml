@@ -1,8 +1,6 @@
 defaults:
   - base_mppi
 
-nx: 14
-urdf_file: "franka_description/robots/franka_panda.urdf"
 num_samples: 100
 horizon: 5
 device: "cuda:0"

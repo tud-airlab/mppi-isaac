@@ -115,6 +115,7 @@ def run_panda_robot(cfg: ExampleConfig):
             q=ob_robot["joint_state"]["position"],
             qdot=ob_robot["joint_state"]["velocity"],
         )
+        print(action)
         (
             ob,
             *_,

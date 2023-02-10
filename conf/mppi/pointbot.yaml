@@ -1,8 +1,6 @@
 defaults:
   - base_mppi
 
-nx: 6
-urdf_file: "point_robot.urdf"
 num_samples: 100
 horizon: 30
 device: "cuda:0"

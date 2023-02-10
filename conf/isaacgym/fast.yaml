@@ -1,4 +1,4 @@
 defaults:
-  - base_isaacsim
+  - base_isaacgym
 
 dt: 0.5

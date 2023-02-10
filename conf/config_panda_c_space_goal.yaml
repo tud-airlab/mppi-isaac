@@ -1,7 +1,9 @@
 defaults:
   - mppi: panda
-  - isaacsim: normal
+  - isaacgym: normal
 
 goal: [0.6, 0.0, 0.0, -1.875, 0, 1.875, 0]
 render: true
 n_steps: 1000
+urdf_file: "panda.urdf"
+nx: 14

@@ -1,30 +1,24 @@
 import gym
 import numpy as np
 from urdfenvs.robots.generic_urdf import GenericUrdfReacher
-from urdfenvs.urdf_common.urdf_env import UrdfEnv
 from mppiisaac.planner.mppi_isaac import MPPIisaacPlanner
 import hydra
 from omegaconf import OmegaConf
+from urdfenvs.sensors.full_sensor import FullSensor
 import os
-import torch
+from mpscenes.obstacles.sphere_obstacle import SphereObstacle
+from mpscenes.goals.static_sub_goal import StaticSubGoal
 
 from mppiisaac.utils.config_store import ExampleConfig
 
 # MPPI to navigate a simple robot to a goal position
 
-class Objective(object):
-    def __init__(self, cfg, device):
-        self.nav_goal = torch.tensor(cfg.goal, device=cfg.mppi.device)
-
-    def compute_cost(self, root_state, dof_state, rigid_body_state):
-        pos = torch.cat((dof_state[:, 0].unsqueeze(1), dof_state[:, 2].unsqueeze(1)), 1)
-        #dof_states = gym.acquire_dof_state_tensor(sim)
-        return torch.clamp(
-            torch.linalg.norm(pos - self.nav_goal, axis=1) - 0.05, min=0, max=1999
-        )
+urdf_file = (
+    os.path.dirname(os.path.abspath(__file__)) + "/../assets/urdf/point_robot.urdf"
+)
 
 
-def initalize_environment(urdf_file: str, render: bool) -> UrdfEnv:
+def initalize_environment(render, dt):
     """
     Initializes the simulation environment.
 
@@ -36,13 +30,35 @@ def initalize_environment(urdf_file: str, render: bool) -> UrdfEnv:
     render
         Boolean toggle to set rendering on (True) or off (False).
     """
-    urdf_file = os.path.dirname(os.path.abspath(__file__)) + "/../assets/urdf/" + urdf_file
     robots = [
         GenericUrdfReacher(urdf=urdf_file, mode="vel"),
     ]
-    env: UrdfEnv = gym.make("urdf-env-v0", dt=0.01, robots=robots, render=render)
+    env: UrdfEnv = gym.make("urdf-env-v0", dt=dt, robots=robots, render=render)
+
     # Set the initial position and velocity of the point mass.
     env.reset()
+
+    # add obstacle
+    obst1Dict = {
+        "type": "sphere",
+        "geometry": {"position": [1.0, 1.0, 0.0], "radius": 0.5},
+    }
+    sphereObst1 = SphereObstacle(name="simpleSphere", content_dict=obst1Dict)
+    env.add_obstacle(sphereObst1)
+
+    obst2Dict = {
+        "type": "sphere",
+        "geometry": {"position": [1.0, 2.0, 0.0], "radius": 0.3},
+    }
+    sphereObst2 = SphereObstacle(name="simpleSphere", content_dict=obst2Dict)
+    env.add_obstacle(sphereObst2)
+
+    # sense both
+    sensor = FullSensor(
+        goal_mask=["position"], obstacle_mask=["position", "velocity", "radius"]
+    )
+    env.add_sensor(sensor, [0])
+
     return env
 
 
@@ -56,13 +72,12 @@ def set_planner(cfg):
         The goal to the motion planning problem.
     """
     # urdf = "../assets/point_robot.urdf"
-    objective = Objective(cfg, cfg.mppi.device)
-    planner = MPPIisaacPlanner(cfg, objective)
+    planner = MPPIisaacPlanner(cfg)
 
     return planner
 
 
-@hydra.main(version_base=None, config_path="../conf", config_name="config_point_robot")
+@hydra.main(version_base=None, config_path="../conf", config_name="config")
 def run_point_robot(cfg: ExampleConfig):
     """
     Set the gym environment, the planner and run point robot example.
@@ -79,19 +94,20 @@ def run_point_robot(cfg: ExampleConfig):
     # Note: Workaround to trigger the dataclasses __post_init__ method
     cfg = OmegaConf.to_object(cfg)
 
-
-    env = initalize_environment(cfg.urdf_file, cfg.render)
+    env = initalize_environment(cfg.render, cfg.isaacgym.dt)
     planner = set_planner(cfg)
 
-    action = np.zeros(int(cfg.nx/2))
+    action = np.array([0.0, 0.0, 0.0])
     ob, *_ = env.step(action)
 
     for _ in range(cfg.n_steps):
         # Calculate action with the fabric planner, slice the states to drop Z-axis [3] information.
         ob_robot = ob["robot_0"]
-        action = planner.compute_action(
-            q=ob_robot["joint_state"]["position"],
-            qdot=ob_robot["joint_state"]["velocity"],
+        obst = ob["robot_0"]["FullSensor"]['obstacles']
+        action[0:2] = planner.compute_action(
+            q=ob_robot["joint_state"]["position"][0:2],
+            qdot=ob_robot["joint_state"]["velocity"][0:2],
+            obst=obst
         )
         (
             ob,
