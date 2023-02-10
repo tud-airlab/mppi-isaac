@@ -71,6 +71,8 @@ class MPPIisaacPlanner(MPPIPlanner):
         asset_options = gymapi.AssetOptions()
         asset_options.fix_base_link = True
         asset_options.armature = 0.01
+        asset_options.disable_gravity = True
+        asset_options.flip_visual_attachments = True
         robot_asset = self.gym.load_asset(
             self.sim, asset_root, asset_file, asset_options
         )
