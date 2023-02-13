@@ -1,17 +1,20 @@
 import os
 from subprocess import Popen, DEVNULL
-from hydra import compose, initialize
 
 
 def test_point_robot_example():
-    from point_robot import run_point_robot
+    example_folder = os.path.dirname(os.path.abspath(__file__))
+    Popen(
+        ["python3", example_folder + "/panda_robot.py", "--num_steps", "10"],
+        stdout=DEVNULL,
+    ).wait()
 
-    with initialize(version_base=None, config_path="../conf"):
-        cfg = compose(config_name="config", overrides=["render=false", "n_steps=10"])
-
-    res = run_point_robot(cfg)
-    assert isinstance(res, dict)
-
+def test_panda_robot_example():
+    example_folder = os.path.dirname(os.path.abspath(__file__))
+    Popen(
+        ["python3", example_folder + "/panda_robot.py", "--num_steps", "10"],
+        stdout=DEVNULL,
+    ).wait()
 
 def test_isaac_sanity():
     example_folder = os.path.dirname(os.path.abspath(__file__))

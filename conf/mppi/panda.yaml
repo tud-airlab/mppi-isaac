@@ -2,7 +2,7 @@ defaults:
   - base_mppi
 
 num_samples: 100
-horizon: 30
+horizon: 5
 device: "cuda:0"
 lambda_: 1.0
 u_scale: 1
