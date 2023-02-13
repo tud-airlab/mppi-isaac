@@ -56,6 +56,12 @@ class IsaacGymWrapper:
 
         self.add_ground_plane()
 
+        asset_file = "urdf/" + self._urdf_file
+        print(asset_file)
+        self._robot_asset = self.load_robot_asset_from_urdf(
+            asset_file=asset_file, asset_root="../assets", fix_base_link=True
+        )
+
         # Keep track of env idxs. Everytime an actor get added append with a tuple of (idx, type, name)
         self.env_cfg = [
             {"type": "axis", "name": "x", "handle": None},
@@ -129,14 +135,10 @@ class IsaacGymWrapper:
 
         robot_init_pose = gymapi.Transform()
         robot_init_pose.p = gymapi.Vec3(0.0, 0.0, 0.05)
-        asset_file = "urdf/" + self._urdf_file
-        robot_asset = self.load_robot_asset_from_urdf(
-            asset_file=asset_file, asset_root="../assets", fix_base_link=True
-        )
 
         robot_handle = self.gym.create_actor(
             env=env,
-            asset=robot_asset,
+            asset=self._robot_asset,
             pose=robot_init_pose,
             name=self.env_cfg[-1]["name"],
             group=env_idx,
@@ -144,7 +146,7 @@ class IsaacGymWrapper:
         self.env_cfg[-1]["handle"] = robot_handle
 
         # Update point bot dynamics / control mode
-        props = self.gym.get_asset_dof_properties(robot_asset)
+        props = self.gym.get_asset_dof_properties(self._robot_asset)
         props["driveMode"].fill(gymapi.DOF_MODE_VEL)
         props["stiffness"].fill(0.0)
         props["damping"].fill(600.0)
@@ -232,6 +234,7 @@ class IsaacGymWrapper:
         asset_options = gymapi.AssetOptions()
         asset_options.fix_base_link = fix_base_link
         asset_options.armature = 0.01
+        asset_options.flip_visual_attachments = True
         return self.gym.load_asset(self.sim, asset_root, asset_file, asset_options)
 
     def set_dof_state_tensor(self, state):
