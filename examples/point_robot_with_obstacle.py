@@ -22,7 +22,7 @@ class Objective(object):
         self.nav_goal = torch.tensor(cfg.goal, device=cfg.mppi.device)
 
         self.w_nav = 1.0
-        self.w_obs = 0.05
+        self.w_obs = 0.4
 
     def compute_cost(self, sim: IsaacGymWrapper):
         dof_state = sim.dof_state
@@ -44,7 +44,7 @@ class Objective(object):
         return nav_cost * self.w_nav + obs_cost * self.w_obs
 
 
-def initalize_environment(urdf_file: str, render: bool, dt: float = 0.05) -> UrdfEnv:
+def initalize_environment(cfg) -> UrdfEnv:
     """
     Initializes the simulation environment.
 
@@ -57,12 +57,12 @@ def initalize_environment(urdf_file: str, render: bool, dt: float = 0.05) -> Urd
         Boolean toggle to set rendering on (True) or off (False).
     """
     urdf_file = (
-        os.path.dirname(os.path.abspath(__file__)) + "/../assets/urdf/" + urdf_file
+        os.path.dirname(os.path.abspath(__file__)) + "/../assets/urdf/" + cfg.urdf_file
     )
     robots = [
         GenericUrdfReacher(urdf=urdf_file, mode="vel"),
     ]
-    env: UrdfEnv = gym.make("urdf-env-v0", dt=dt, robots=robots, render=render)
+    env: UrdfEnv = gym.make("urdf-env-v0", dt=0.05, robots=robots, render=cfg.render)
 
     # Set the initial position and velocity of the point mass.
     env.reset()
@@ -81,6 +81,18 @@ def initalize_environment(urdf_file: str, render: bool, dt: float = 0.05) -> Urd
     }
     sphereObst2 = SphereObstacle(name="simpleSphere", content_dict=obst2Dict)
     env.add_obstacle(sphereObst2)
+    goal_dict = {
+        "weight": 1.0,
+        "is_primary_goal": True,
+        "indices": [0, 1],
+        "parent_link": 0,
+        "child_link": 1,
+        "desired_position": cfg.goal,
+        "epsilon": 0.05,
+        "type": "staticSubGoal",
+    }
+    goal = StaticSubGoal(name="simpleGoal", content_dict=goal_dict)
+    env.add_goal(goal)
 
     # sense both
     sensor = FullSensor(
@@ -124,7 +136,7 @@ def run_point_robot(cfg: ExampleConfig):
     # Note: Workaround to trigger the dataclasses __post_init__ method
     cfg = OmegaConf.to_object(cfg)
 
-    env = initalize_environment(cfg.urdf_file, cfg.render)
+    env = initalize_environment(cfg)
     planner = set_planner(cfg)
 
     action = np.zeros(int(cfg.nx / 2))

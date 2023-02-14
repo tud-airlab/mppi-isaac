@@ -1,4 +1,5 @@
 import gym
+from mpscenes.goals.static_sub_goal import StaticSubGoal
 import numpy as np
 from mppiisaac.planner.mppi_isaac import MPPIisaacPlanner
 from urdfenvs.robots.generic_urdf import GenericUrdfReacher
@@ -47,7 +48,7 @@ class EndEffectorGoalObjective(object):
         )
 
 
-def initalize_environment(render):
+def initalize_environment(cfg):
     """
     Initializes the simulation environment.
 
@@ -62,9 +63,21 @@ def initalize_environment(render):
     robots = [
         GenericUrdfReacher(urdf=urdf_file, mode="vel"),
     ]
-    env: UrdfEnv = gym.make("urdf-env-v0", dt=0.05, robots=robots, render=render)
+    env: UrdfEnv = gym.make("urdf-env-v0", dt=0.05, robots=robots, render=cfg.render)
     # Set the initial position and velocity of the panda arm.
     env.reset()
+    goal_dict = {
+        "weight": 1.0,
+        "is_primary_goal": True,
+        "indices": [0, 1, 2],
+        "parent_link": "panda_link0",
+        "child_link": "panda_hand",
+        "desired_position": cfg.goal,
+        "epsilon": 0.05,
+        "type": "staticSubGoal",
+    }
+    goal = StaticSubGoal(name="simpleGoal", content_dict=goal_dict)
+    env.add_goal(goal)
     return env
 
 
@@ -102,7 +115,7 @@ def run_panda_robot(cfg: ExampleConfig):
     cfg = OmegaConf.to_object(cfg)
 
 
-    env = initalize_environment(cfg.render)
+    env = initalize_environment(cfg)
     planner = set_planner(cfg)
 
     action = np.zeros(7)
