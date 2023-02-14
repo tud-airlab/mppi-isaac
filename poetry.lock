@@ -334,6 +334,38 @@ files = [
 ]
 
 [[package]]
+name = "ghalton"
+version = "0.6.2"
+description = "Generalized Halton number generator"
+category = "main"
+optional = false
+python-versions = "*"
+files = [
+    {file = "ghalton-0.6.2-cp27-cp27m-macosx_10_13_x86_64.whl", hash = "sha256:8ff6043318fc6f2377b4316badddf79e1824f7cfc16645a5b5874e5843a014ff"},
+    {file = "ghalton-0.6.2-cp27-cp27m-macosx_10_14_x86_64.whl", hash = "sha256:cb096db215fc06b95e13e2142f1e3377361154f2b15e4624c2b14f8b43626dd1"},
+    {file = "ghalton-0.6.2-cp27-cp27m-manylinux2010_x86_64.whl", hash = "sha256:7ad5e0ed5415b846b34de4f73aeeaa2347062d600ca248bccd338e6cbacd6fae"},
+    {file = "ghalton-0.6.2-cp27-cp27m-win_amd64.whl", hash = "sha256:421e3060fefd6939d29062b460bf4cb6326cb51216ea557e1d236896b69a7609"},
+    {file = "ghalton-0.6.2-cp27-cp27mu-manylinux2010_x86_64.whl", hash = "sha256:5fecc794f86d5290c98a73c54be6533bceb19376a2cab65290d24b5f4ac3bc50"},
+    {file = "ghalton-0.6.2-cp34-cp34m-manylinux2010_x86_64.whl", hash = "sha256:43bd65786ad29fab5fdef74b8cf1c75cf0e3f92d716b9636f318fa9cb79336f8"},
+    {file = "ghalton-0.6.2-cp35-cp35m-manylinux2010_x86_64.whl", hash = "sha256:90ae02bf2625df29dfbf631c97efec22e949e79b98fe46909e71d42691431d57"},
+    {file = "ghalton-0.6.2-cp35-cp35m-win_amd64.whl", hash = "sha256:bc599eb6c630b9aee4f92c9a2a194c780f61282a292b25d71e7442040c7475d4"},
+    {file = "ghalton-0.6.2-cp36-cp36m-macosx_10_13_x86_64.whl", hash = "sha256:8a485c32da32707777a671ad851134d7d0e6320d44afe12f39e77ab010e38ad3"},
+    {file = "ghalton-0.6.2-cp36-cp36m-macosx_10_14_x86_64.whl", hash = "sha256:77da8da7ae9deb74da259bbd9b33881b3eb60eb3b550cc1fde6e51aeeb370443"},
+    {file = "ghalton-0.6.2-cp36-cp36m-manylinux2010_x86_64.whl", hash = "sha256:c5ee32dbc173586d636d638769531c75641796af865bbf29b39032a9e5ffd82f"},
+    {file = "ghalton-0.6.2-cp36-cp36m-win_amd64.whl", hash = "sha256:86640551d3ba2dc42f620f18071b5e1479006ff764b8aa66d2efa91666203800"},
+    {file = "ghalton-0.6.2-cp37-cp37m-macosx_10_13_x86_64.whl", hash = "sha256:20b46914851f758a49686d6238cc161256f62b11201f2a0a665b24f690a604d0"},
+    {file = "ghalton-0.6.2-cp37-cp37m-macosx_10_14_x86_64.whl", hash = "sha256:5d00e058fbf35ccb39ea4ddbda92f10f506a99559826439b12bd9a56e8c66b2c"},
+    {file = "ghalton-0.6.2-cp37-cp37m-manylinux2010_x86_64.whl", hash = "sha256:7f56e26ac785c148804875d3e877fdf4a92b80e93c07aac148bd288d1e59e186"},
+    {file = "ghalton-0.6.2-cp37-cp37m-win_amd64.whl", hash = "sha256:cee31108ce248a7b0102b77ac783298c15a0f33d908ac9b8fbe6f7e2f020952a"},
+    {file = "ghalton-0.6.2-cp38-cp38-macosx_10_13_x86_64.whl", hash = "sha256:254cbcac55e64a4e8e7571a0ca445ac5f06d35697073af05285c7b7fcb07aa7f"},
+    {file = "ghalton-0.6.2-cp38-cp38-macosx_10_14_x86_64.whl", hash = "sha256:665f8b47121a593f4eb70532886cbe4eede30fa8b9989e733ff0a67bfdd41129"},
+    {file = "ghalton-0.6.2-cp38-cp38-manylinux2010_x86_64.whl", hash = "sha256:8992da3bd9d0f71e55fa52adbd8034d6eb831edb18cd8b8320849e05050e41a2"},
+    {file = "ghalton-0.6.2-cp38-cp38-win_amd64.whl", hash = "sha256:2f684bc1140a4c888c475bff4d46ee2831263dae879e2b19cb204bd88f143b3a"},
+    {file = "ghalton-0.6.2-cp39-cp39-manylinux2010_x86_64.whl", hash = "sha256:8657453f0597493bd04078b46ba06811674bc7334ef292765dba4a1bd86848b8"},
+    {file = "ghalton-0.6.2.tar.gz", hash = "sha256:fcff3f528ead5f77a60ecc774a666c3b24747d05af1c693909bd824049eb30d2"},
+]
+
+[[package]]
 name = "gym"
 version = "0.22.0"
 description = "Gym: A universal API for reinforcement learning environments."
@@ -932,6 +964,7 @@ files = [
     {file = "ninja-1.11.1-py2.py3-none-musllinux_1_1_x86_64.whl", hash = "sha256:3b28b595ed580752240ade7821b6cb7a5a4c6a604c865dc474bd38f06e2eb7f5"},
     {file = "ninja-1.11.1-py2.py3-none-win32.whl", hash = "sha256:3329b4b7c1694730772522a3ba0ba40fd15c012476ed3e1c9f0fd9e76190394e"},
     {file = "ninja-1.11.1-py2.py3-none-win_amd64.whl", hash = "sha256:4e547bc759c570773d83d110c41fd5ca9a94c0a9a8388f5a3ea37bdf97d002b0"},
+    {file = "ninja-1.11.1-py2.py3-none-win_arm64.whl", hash = "sha256:8cf96f92ccc851c600cb3e1251c34db06f1dd682de79188ad490c33cddc66981"},
     {file = "ninja-1.11.1.tar.gz", hash = "sha256:c833a47d39b2d1eee3f9ca886fa1581efd5be6068b82734ac229961ee8748f90"},
 ]
 
@@ -1089,6 +1122,20 @@ category = "main"
 optional = false
 python-versions = ">=3.7"
 files = [
+    {file = "Pillow-9.4.0-1-cp310-cp310-macosx_10_10_x86_64.whl", hash = "sha256:1b4b4e9dda4f4e4c4e6896f93e84a8f0bcca3b059de9ddf67dac3c334b1195e1"},
+    {file = "Pillow-9.4.0-1-cp311-cp311-macosx_10_10_x86_64.whl", hash = "sha256:fb5c1ad6bad98c57482236a21bf985ab0ef42bd51f7ad4e4538e89a997624e12"},
+    {file = "Pillow-9.4.0-1-cp37-cp37m-macosx_10_10_x86_64.whl", hash = "sha256:f0caf4a5dcf610d96c3bd32932bfac8aee61c96e60481c2a0ea58da435e25acd"},
+    {file = "Pillow-9.4.0-1-cp38-cp38-macosx_10_10_x86_64.whl", hash = "sha256:3f4cc516e0b264c8d4ccd6b6cbc69a07c6d582d8337df79be1e15a5056b258c9"},
+    {file = "Pillow-9.4.0-1-cp39-cp39-macosx_10_10_x86_64.whl", hash = "sha256:b8c2f6eb0df979ee99433d8b3f6d193d9590f735cf12274c108bd954e30ca858"},
+    {file = "Pillow-9.4.0-1-pp38-pypy38_pp73-macosx_10_10_x86_64.whl", hash = "sha256:b70756ec9417c34e097f987b4d8c510975216ad26ba6e57ccb53bc758f490dab"},
+    {file = "Pillow-9.4.0-1-pp39-pypy39_pp73-macosx_10_10_x86_64.whl", hash = "sha256:43521ce2c4b865d385e78579a082b6ad1166ebed2b1a2293c3be1d68dd7ca3b9"},
+    {file = "Pillow-9.4.0-2-cp310-cp310-macosx_10_10_x86_64.whl", hash = "sha256:9d9a62576b68cd90f7075876f4e8444487db5eeea0e4df3ba298ee38a8d067b0"},
+    {file = "Pillow-9.4.0-2-cp311-cp311-macosx_10_10_x86_64.whl", hash = "sha256:87708d78a14d56a990fbf4f9cb350b7d89ee8988705e58e39bdf4d82c149210f"},
+    {file = "Pillow-9.4.0-2-cp37-cp37m-macosx_10_10_x86_64.whl", hash = "sha256:8a2b5874d17e72dfb80d917213abd55d7e1ed2479f38f001f264f7ce7bae757c"},
+    {file = "Pillow-9.4.0-2-cp38-cp38-macosx_10_10_x86_64.whl", hash = "sha256:83125753a60cfc8c412de5896d10a0a405e0bd88d0470ad82e0869ddf0cb3848"},
+    {file = "Pillow-9.4.0-2-cp39-cp39-macosx_10_10_x86_64.whl", hash = "sha256:9e5f94742033898bfe84c93c831a6f552bb629448d4072dd312306bab3bd96f1"},
+    {file = "Pillow-9.4.0-2-pp38-pypy38_pp73-macosx_10_10_x86_64.whl", hash = "sha256:013016af6b3a12a2f40b704677f8b51f72cb007dac785a9933d5c86a72a7fe33"},
+    {file = "Pillow-9.4.0-2-pp39-pypy39_pp73-macosx_10_10_x86_64.whl", hash = "sha256:99d92d148dd03fd19d16175b6d355cc1b01faf80dae93c6c3eb4163709edc0a9"},
     {file = "Pillow-9.4.0-cp310-cp310-macosx_10_10_x86_64.whl", hash = "sha256:2968c58feca624bb6c8502f9564dd187d0e1389964898f5e9e1fbc8533169157"},
     {file = "Pillow-9.4.0-cp310-cp310-macosx_11_0_arm64.whl", hash = "sha256:c5c1362c14aee73f50143d74389b2c158707b4abce2cb055b7ad37ce60738d47"},
     {file = "Pillow-9.4.0-cp310-cp310-manylinux_2_17_aarch64.manylinux2014_aarch64.whl", hash = "sha256:bd752c5ff1b4a870b7661234694f24b1d2b9076b8bf337321a814c612665f343"},
@@ -2071,4 +2118,4 @@ testing = ["flake8 (<5)", "func-timeout", "jaraco.functools", "jaraco.itertools"
 [metadata]
 lock-version = "2.0"
 python-versions = "^3.8,<3.9"
-content-hash = "30ba9630992ab1826cb507423fa1c4e90219ecb07162dc88288f3ea0c486e4ce"
+content-hash = "fae49ac93179b65e804835440276880d2df3d188d17b0f6b28ff490a866fe69f"
