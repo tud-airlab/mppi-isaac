@@ -1,7 +1,7 @@
 import torch
 import functools
 import numpy as np
-from typing import Optional, List
+from typing import Optional, List, Callable
 from torch.distributions.multivariate_normal import MultivariateNormal
 from scipy import signal
 from dataclasses import dataclass, field
@@ -14,53 +14,6 @@ def _ensure_non_zero(cost, beta, factor):
 
 def is_tensor_like(x):
     return torch.is_tensor(x) or type(x) is np.ndarray
-
-
-# from arm_pytorch_utilities, standalone since that package is not on pypi yet
-def handle_batch_input(func):
-    """For func that expect 2D input, handle input that have more than 2 dimensions by flattening them temporarily"""
-
-    @functools.wraps(func)
-    def wrapper(*args, **kwargs):
-        # assume inputs that are tensor-like have compatible shapes and is represented by the first argument
-        batch_dims = []
-        for arg in args:
-            if is_tensor_like(arg) and len(arg.shape) > 2:
-                batch_dims = arg.shape[
-                    :-1
-                ]  # last dimension is type dependent; all previous ones are batches
-                break
-        # no batches; just return normally
-        if not batch_dims:
-            return func(*args, **kwargs)
-
-        # reduce all batch dimensions down to the first one
-        args = [
-            v.view(-1, v.shape[-1]) if (is_tensor_like(v) and len(v.shape) > 2) else v
-            for v in args
-        ]
-        ret = func(*args, **kwargs)
-        # restore original batch dimensions; keep variable dimension (nx)
-        if type(ret) is tuple:
-            ret = [
-                v
-                if (not is_tensor_like(v) or len(v.shape) == 0)
-                else (
-                    v.view(*batch_dims, v.shape[-1])
-                    if len(v.shape) == 2
-                    else v.view(*batch_dims)
-                )
-                for v in ret
-            ]
-        else:
-            if is_tensor_like(ret):
-                if len(ret.shape) == 2:
-                    ret = ret.view(*batch_dims, ret.shape[-1])
-                else:
-                    ret = ret.view(*batch_dims)
-        return ret
-
-    return wrapper
 
 
 # TODO: integrate with localplannerbench, using class inheritence
@@ -113,26 +66,6 @@ class MPPIConfig(object):
     bodies_per_env: Optional[int] = None
     filter_u: bool = False
 
-    """
-    def __post_init__(self):
-        # Make sure noise_sigma is a square matrix
-        if not self.noise_sigma:
-            self.noise_sigma = np.identity(int(self.nx/2)).tolist()
-        assert all([len(self.noise_sigma[0]) == len(row) for row in self.noise_sigma])
-
-        if not self.noise_mu:
-            self.noise_mu = [0.0] * len(self.noise_sigma)
-        if not self.U_init:
-            self.U_init = [[0.0] * len(self.noise_mu)] * self.horizon
-
-        # make sure if any of the limimts are specified, both are specified
-        if self.u_max and not self.u_min:
-            self.u_min = -self.u_max
-        if self.u_min and not self.u_max:
-            self.u_max = -self.u_min
-        assert self.u_max > 0 and self.u_min < 0
-    """
-
 
 class MPPIPlanner(ABC):
     """
@@ -144,9 +77,9 @@ class MPPIPlanner(ABC):
     based off of https://github.com/ferreirafabio/mppi_pendulum
     """
 
-    def __init__(self, cfg: MPPIConfig, nx: int):
+    def __init__(self, cfg: MPPIConfig, nx: int, dynamics: Callable, running_cost: Callable):
         if not cfg.noise_sigma:
-            cfg.noise_sigma = np.identity(int(nx/2)).tolist()
+            cfg.noise_sigma = np.identity(int(nx / 2)).tolist()
         assert all([len(cfg.noise_sigma[0]) == len(row) for row in cfg.noise_sigma])
 
         if not cfg.noise_mu:
@@ -161,6 +94,9 @@ class MPPIPlanner(ABC):
             cfg.u_max = -cfg.u_min
         assert cfg.u_max > 0 and cfg.u_min < 0
         self.cfg = cfg
+
+        self.dynamics = dynamics
+        self.running_cost = running_cost
 
         # convert lists in cfg to tensors and put them on device
         self.nx = nx
@@ -196,7 +132,6 @@ class MPPIPlanner(ABC):
         # special variables
         self.state = None
         self.terminal_state_cost = None
-        self.F = self.dynamics
 
         # handle 1D edge case
         if self.nu == 1:
@@ -210,18 +145,11 @@ class MPPIPlanner(ABC):
         self.states = None
         self.actions = None
 
-    @handle_batch_input
     def _dynamics(self, state, u, t=None):
-        return self.dynamics(state, u, t)
-        #return self.F(state, u, t)
+        return self.dynamics(state, u, t=None)
 
-    @handle_batch_input
-    def _running_cost(self, root_state, dof_state, rigid_body_state):
-        return self.running_cost(
-            root_state=root_state,
-            dof_state=dof_state,
-            rigid_body_state=rigid_body_state
-        )
+    def _running_cost(self, state):
+        return self.running_cost(state)
 
     def command(self, state):
         """
@@ -245,16 +173,14 @@ class MPPIPlanner(ABC):
 
         for t in range(self.T):
             self.U[t] += torch.sum(self.omega.view(-1, 1) * self.noise[:, t], dim=0)
-        action = self.U[: self.u_per_command]
 
-        # reduce dimensionality if we only need the first command
-        if self.u_per_command == 1:
-            action = action[0]
-
+        action = self.U
         if self.sample_null_action and cost_total[-1] <= 0.01:
             action = torch.zeros_like(action)
 
         # Smoothing with Savitzky-Golay filter
+        self.sgf_window = self.T
+        self.sgf_order = 2
         if self.filter_u:
             u_ = action.cpu().numpy()
             u_filtered = signal.savgol_filter(
@@ -267,7 +193,13 @@ class MPPIPlanner(ABC):
                 mode="interp",
                 cval=0.0,
             )
-            action = torch.from_numpy(u_filtered).to("cuda")
+            action = torch.from_numpy(u_filtered).to(self.cfg.device)
+
+        # reduce dimensionality if we only need the first command
+        action = self.U[: self.u_per_command]
+        if self.u_per_command == 1:
+            action = action[0]
+
 
         return action
 
@@ -306,8 +238,8 @@ class MPPIPlanner(ABC):
                 # Update perturbed action sequence for later use in cost computation
                 self.perturbed_action[self.K - 1][t] = u[:, self.K - 1, :]
 
-            root_states, dof_states, rigid_body_states, u = self._dynamics(state, u, t)
-            c = self._running_cost(root_states, dof_states, rigid_body_states)
+            state, u = self._dynamics(state, u, t)
+            c = self._running_cost(state)
 
             # Update action if there were changes in fusion mppi due for instance to suction constraints
             self.perturbed_action[:, t] = u
@@ -396,18 +328,3 @@ class MPPIPlanner(ABC):
             )
         return states[:, 1:]
 
-    @abstractmethod
-    def dynamics(self):
-        raise NotImplementedError
-
-    @abstractmethod
-    def running_cost(self, root_state, dof_state, rigid_body_state):
-        raise NotImplementedError
-
-    #    @abstractmethod
-    #    def terminal_cost(self):
-    #        raise NotImplementedError
-
-    @abstractmethod
-    def compute_action(self, q, qdot):
-        raise NotImplementedError

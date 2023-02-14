@@ -16,9 +16,8 @@ class Objective(object):
     def __init__(self, cfg, device):
         self.nav_goal = torch.tensor(cfg.goal, device=cfg.mppi.device)
 
-    def compute_cost(self, root_state, dof_state, rigid_body_state):
-        pos = torch.cat((dof_state[:, 0].unsqueeze(1), dof_state[:, 2].unsqueeze(1)), 1)
-        #dof_states = gym.acquire_dof_state_tensor(sim)
+    def compute_cost(self, sim):
+        pos = torch.cat((sim.dof_state[:, 0].unsqueeze(1), sim.dof_state[:, 2].unsqueeze(1)), 1)
         return torch.clamp(
             torch.linalg.norm(pos - self.nav_goal, axis=1) - 0.05, min=0, max=1999
         )
