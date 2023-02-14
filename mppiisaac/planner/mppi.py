@@ -1,7 +1,7 @@
 import torch
 import functools
 import numpy as np
-from typing import Optional, List
+from typing import Optional, List, Callable
 from torch.distributions.multivariate_normal import MultivariateNormal
 from scipy import signal
 import scipy.interpolate as si
@@ -31,37 +31,6 @@ def bspline(c_arr, t_arr=None, n=100, degree=3):
     samples = torch.as_tensor(samples, device=sample_device, dtype=sample_dtype)
     return samples
 
-def handle_batch_input(func):
-    """For func that expect 2D input, handle input that have more than 2 dimensions by flattening them temporarily"""
-
-    @functools.wraps(func)
-    def wrapper(*args, **kwargs):
-        # assume inputs that are tensor-like have compatible shapes and is represented by the first argument
-        batch_dims = []
-        for arg in args:
-            if is_tensor_like(arg) and len(arg.shape) > 2:
-                batch_dims = arg.shape[:-1]  # last dimension is type dependent; all previous ones are batches
-                break
-        # no batches; just return normally
-        if not batch_dims:
-            return func(*args, **kwargs)
-
-        # reduce all batch dimensions down to the first one
-        args = [v.view(-1, v.shape[-1]) if (is_tensor_like(v) and len(v.shape) > 2) else v for v in args]
-        ret = func(*args, **kwargs)
-        # restore original batch dimensions; keep variable dimension (nx)
-        if type(ret) is tuple:
-            ret = [v if (not is_tensor_like(v) or len(v.shape) == 0) else (
-                v.view(*batch_dims, v.shape[-1]) if len(v.shape) == 2 else v.view(*batch_dims)) for v in ret]
-        else:
-            if is_tensor_like(ret):
-                if len(ret.shape) == 2:
-                    ret = ret.view(*batch_dims, ret.shape[-1])
-                else:
-                    ret = ret.view(*batch_dims)
-        return ret
-
-    return wrapper
 
 # TODO: integrate with localplannerbench, using class inheritence
 @dataclass
@@ -126,7 +95,7 @@ class MPPIPlanner(ABC):
                             mppi_mode = 'halton-spline', sample_mode = 'random'
     """
 
-    def __init__(self, cfg: MPPIConfig, nx: int):
+    def __init__(self, cfg: MPPIConfig, nx: int, dynamics: Callable, running_cost: Callable):
 
         # Parameters for mppi and sampling method
         self.mppi_mode = cfg.mppi_mode
@@ -169,17 +138,21 @@ class MPPIPlanner(ABC):
         assert cfg.u_max > 0 and cfg.u_min < 0
         self.cfg = cfg
 
-        # Convert lists in cfg to tensors and put them on selected device
-        self.noise_sigma = torch.tensor(cfg.noise_sigma, device=self.tensor_args['device'])
-        self.noise_mu = torch.tensor(cfg.noise_mu, device=self.tensor_args['device'])
+        self.dynamics = dynamics
+        self.running_cost = running_cost
+
+        # Convert lists in cfg to tensors and put them on device
+        self.noise_sigma = torch.tensor(cfg.noise_sigma, device=cfg.device)
+        self.noise_mu = torch.tensor(cfg.noise_mu, device=cfg.device)
         self.noise_sigma_inv = torch.inverse(self.noise_sigma)
         self.noise_dist = MultivariateNormal(
             self.noise_mu, covariance_matrix=self.noise_sigma
         )
-        self.u_init = torch.tensor(cfg.u_init, device=self.tensor_args['device'])
-        self.U = torch.tensor(cfg.U_init, device=self.tensor_args['device'])
-        self.u_max = torch.tensor(cfg.u_max, device=self.tensor_args['device'])
-        self.u_min = torch.tensor(cfg.u_min, device=self.tensor_args['device'])
+        self.u_init = torch.tensor(cfg.u_init, device=cfg.device)
+        self.U = torch.tensor(cfg.U_init, device=cfg.device)
+        # self.U = self.noise_dist.sample((self.T,))
+        self.u_max = torch.tensor(cfg.u_max, device=cfg.device)
+        self.u_min = torch.tensor(cfg.u_min, device=cfg.device)
 
         # Dimensions of state nx and control nu
         self.nx = nx
@@ -231,17 +204,11 @@ class MPPIPlanner(ABC):
         self.eta_min = 0.01     # 1%
         self.lambda_mult = 0.1  # Update rate
 
-    @handle_batch_input
     def _dynamics(self, state, u, t=None):
-        return self.dynamics(state, u, t)
+        return self.dynamics(state, u, t=None)
 
-    @handle_batch_input
-    def _running_cost(self, root_state, dof_state, rigid_body_state):
-        return self.running_cost(
-            root_state=root_state,
-            dof_state=dof_state,
-            rigid_body_state=rigid_body_state
-        )
+    def _running_cost(self, state):
+        return self.running_cost(state)
 
     def _exp_util(self, costs, actions):
         """
@@ -290,6 +257,9 @@ class MPPIPlanner(ABC):
         """
             Given a state, returns the best action sequence
         """
+        # shift command 1 time step
+        self.U = torch.roll(self.U, -1, dims=0)
+
         if not torch.is_tensor(state):
             state = torch.tensor(state)
         self.state = state.to(dtype=self.tensor_args['dtype'], device=self.tensor_args['device'])
@@ -386,8 +356,8 @@ class MPPIPlanner(ABC):
                 u[self.K -1, :] = torch.zeros_like(u[self.K -1, :])
                 self.perturbed_action[self.K - 1][t] = u[self.K -1, :]
 
-            root_states, dof_states, rigid_body_states, u = self._dynamics(state, u, t)
-            c = self._running_cost(root_states, dof_states, rigid_body_states)
+            state, u = self._dynamics(state, u, t)
+            c = self._running_cost(state)
 
             # Update action if there were changes in fusion mppi due for instance to suction constraints
             self.perturbed_action[:,t] = u
@@ -397,7 +367,7 @@ class MPPIPlanner(ABC):
             # Save total states/actions
             states.append(state)
             actions.append(u)
-            
+
         # Actions is K x T x nu
         # States is K x T x nx
         actions = torch.stack(actions, dim=-2)
@@ -419,7 +389,6 @@ class MPPIPlanner(ABC):
             Update moments using sample trajectories.
             So far only mean is updated, eventually one could also update the covariance
         """
-
         w = self._exp_util(costs, actions)
         
         # Compute also top n best actions to plot
@@ -521,19 +490,3 @@ class MPPIPlanner(ABC):
         if self.u_max is not None:
             action = torch.max(torch.min(action, self.u_max), self.u_min)
         return action
-
-    @abstractmethod
-    def dynamics(self):
-        raise NotImplementedError
-
-    @abstractmethod
-    def running_cost(self, root_state, dof_state, rigid_body_state):
-        raise NotImplementedError
-
-    #    @abstractmethod
-    #    def terminal_cost(self):
-    #        raise NotImplementedError
-
-    @abstractmethod
-    def compute_action(self, q, qdot):
-        raise NotImplementedError

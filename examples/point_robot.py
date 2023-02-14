@@ -7,6 +7,7 @@ import hydra
 from omegaconf import OmegaConf
 import os
 import torch
+from mpscenes.goals.static_sub_goal import StaticSubGoal
 
 from mppiisaac.utils.config_store import ExampleConfig
 
@@ -16,15 +17,14 @@ class Objective(object):
     def __init__(self, cfg, device):
         self.nav_goal = torch.tensor(cfg.goal, device=cfg.mppi.device)
 
-    def compute_cost(self, root_state, dof_state, rigid_body_state):
-        pos = torch.cat((dof_state[:, 0].unsqueeze(1), dof_state[:, 2].unsqueeze(1)), 1)
-        #dof_states = gym.acquire_dof_state_tensor(sim)
+    def compute_cost(self, sim):
+        pos = torch.cat((sim.dof_state[:, 0].unsqueeze(1), sim.dof_state[:, 2].unsqueeze(1)), 1)
         return torch.clamp(
             torch.linalg.norm(pos - self.nav_goal, axis=1) - 0.05, min=0, max=1999
         )
 
 
-def initalize_environment(urdf_file: str, render: bool) -> UrdfEnv:
+def initalize_environment(cfg) -> UrdfEnv:
     """
     Initializes the simulation environment.
 
@@ -36,13 +36,25 @@ def initalize_environment(urdf_file: str, render: bool) -> UrdfEnv:
     render
         Boolean toggle to set rendering on (True) or off (False).
     """
-    urdf_file = os.path.dirname(os.path.abspath(__file__)) + "/../assets/urdf/" + urdf_file
+    urdf_file = os.path.dirname(os.path.abspath(__file__)) + "/../assets/urdf/" + cfg.urdf_file
     robots = [
         GenericUrdfReacher(urdf=urdf_file, mode="vel"),
     ]
-    env: UrdfEnv = gym.make("urdf-env-v0", dt=0.01, robots=robots, render=render)
+    env: UrdfEnv = gym.make("urdf-env-v0", dt=0.01, robots=robots, render=cfg.render)
     # Set the initial position and velocity of the point mass.
     env.reset()
+    goal_dict = {
+        "weight": 1.0,
+        "is_primary_goal": True,
+        "indices": [0, 1],
+        "parent_link": 0,
+        "child_link": 1,
+        "desired_position": cfg.goal,
+        "epsilon": 0.05,
+        "type": "staticSubGoal",
+    }
+    goal = StaticSubGoal(name="simpleGoal", content_dict=goal_dict)
+    env.add_goal(goal)
     return env
 
 
@@ -80,7 +92,7 @@ def run_point_robot(cfg: ExampleConfig):
     cfg = OmegaConf.to_object(cfg)
 
 
-    env = initalize_environment(cfg.urdf_file, cfg.render)
+    env = initalize_environment(cfg)
     planner = set_planner(cfg)
 
     action = np.zeros(int(cfg.nx/2))
