@@ -39,17 +39,31 @@ def parse_isaacgym_config(cfg: IsaacGymConfig) -> gymapi.SimParams:
 class IsaacGymWrapper:
     def __init__(self, cfg: IsaacGymConfig, urdf_file: str, num_envs: int = 0):
         self.gym = gymapi.acquire_gym()
+
+        # Keep track of env idxs. Everytime an actor get added append with a tuple of (idx, type, name)
+        self.env_cfg = [
+            {"type": "axis", "name": "x", "handle": None},
+            {"type": "axis", "name": "y", "handle": None},
+            *[
+                {"type": "sphere", "name": f"sphere{i}", "handle": None, "radius": 1}
+                for i in range(cfg.num_obstacles)
+            ],
+            {"type": "robot", "name": "main_robot", "handle": None},
+        ]
+        self.cfg = cfg
+        self.num_envs = num_envs
+        self._urdf_file = urdf_file
+        self.start_sim()
+
+    def start_sim(self):
         self.sim = self.gym.create_sim(
             compute_device=0,
             graphics_device=0,
             type=gymapi.SIM_PHYSX,
-            params=parse_isaacgym_config(cfg),
+            params=parse_isaacgym_config(self.cfg),
         )
-        self.cfg = cfg
-        self.num_envs = num_envs
-        self._urdf_file = urdf_file
 
-        if cfg.viewer:
+        if self.cfg.viewer:
             self.viewer = self.gym.create_viewer(self.sim, gymapi.CameraProperties())
         else:
             self.viewer = None
@@ -62,33 +76,37 @@ class IsaacGymWrapper:
             asset_file=asset_file, asset_root="../assets", fix_base_link=True
         )
 
-        # Keep track of env idxs. Everytime an actor get added append with a tuple of (idx, type, name)
-        self.env_cfg = [
-            {"type": "axis", "name": "x", "handle": None},
-            {"type": "axis", "name": "y", "handle": None},
-            *[
-                {"type": "sphere", "name": f"sphere{i}", "handle": None}
-                for i in range(cfg.num_obstacles)
-            ],
-            {"type": "robot", "name": "main_robot", "handle": None},
-        ]
-        self.envs = [self.create_env(i) for i in range(num_envs)]
+        self.envs = [self.create_env(i) for i in range(self.num_envs)]
 
         self.gym.prepare_sim(self.sim)
 
         self.root_state = gymtorch.wrap_tensor(
             self.gym.acquire_actor_root_state_tensor(self.sim)
-        )
+        ).view(self.num_envs, -1, 13)
         self.dof_state = gymtorch.wrap_tensor(
             self.gym.acquire_dof_state_tensor(self.sim)
-        )
+        ).view(self.num_envs, -1)
         self.rigid_body_state = gymtorch.wrap_tensor(
             self.gym.acquire_rigid_body_state_tensor(self.sim)
+        ).view(self.num_envs, -1, 13)
+
+        self.net_cf = gymtorch.wrap_tensor(
+            self.gym.acquire_net_contact_force_tensor(self.sim)
         )
+
+        # helpfull slices
+        self.robot_positions = self.root_state[:, -1, 0:3]  # [x, y, z]
+        self.obstacle_positions = self.root_state[:, 2:-2, 0:3]  # [x, y, z]
 
         self.gym.refresh_actor_root_state_tensor(self.sim)
         self.gym.refresh_dof_state_tensor(self.sim)
         self.gym.refresh_rigid_body_state_tensor(self.sim)
+        self.gym.refresh_net_contact_force_tensor(self.sim)
+
+    def stop_sim(self):
+        if self.viewer:
+            self.gym.destroy_viewer(self.viewer)
+        self.gym.destroy_sim(self.sim)
 
     def create_env(self, env_idx):
         env = self.gym.create_env(
@@ -127,7 +145,7 @@ class IsaacGymWrapper:
                 env=env,
                 env_idx=env_idx,
                 name=obst_cfg["name"],
-                radius=1,
+                radius=obst_cfg["radius"],
                 pos=gymapi.Vec3(0, 0, -20),
                 color=gymapi.Vec3(1.0, 1.0, 1.0),
             )
@@ -149,7 +167,7 @@ class IsaacGymWrapper:
         props = self.gym.get_asset_dof_properties(self._robot_asset)
         props["driveMode"].fill(gymapi.DOF_MODE_VEL)
         props["stiffness"].fill(0.0)
-        props["damping"].fill(600.0)
+        props["damping"].fill(1e7)
         self.gym.set_actor_dof_properties(env, robot_handle, props)
         return env
 
@@ -257,9 +275,11 @@ class IsaacGymWrapper:
 
     def set_root_state_tensor_by_actor_idx(self, state_tensor, idx):
         for i in range(self.num_envs):
-            self.root_state[i * len(self.env_cfg) + idx] = state_tensor
+            self.root_state[i, idx] = state_tensor
 
     def update_root_state_tensor_by_obstacles(self, obstacles):
+        env_cfg_changed = False
+
         for i, obst in enumerate(obstacles):
             name = f"sphere{i}"
             obst_idx = [actor["name"] for actor in self.env_cfg].index(name)
@@ -267,14 +287,21 @@ class IsaacGymWrapper:
                 [*obst[0], 0, 0, 0, 1, *obst[1], 0, 0, 0], device="cuda:0"
             )
 
-            # set scale
-            for env in self.envs:
-               self.gym.set_actor_scale(
-                   env, self.env_cfg[obst_idx]['handle'], obst[2]
-               )
+            # Note: setting the scale every timestep is problematic, isaacgym does weird stuff.
+            if "radius" not in self.env_cfg[obst_idx].keys() or self.env_cfg[obst_idx]["radius"] != obst[2]:
+               env_cfg_changed = True
+               self.env_cfg[obst_idx]["radius"] = obst[2]
 
-            self.set_root_state_tensor_by_actor_idx(obst_state, obst_idx)
+            for j, env in enumerate(self.envs):
+                self.root_state[j, obst_idx] = obst_state
+
+        # restart sim for env changes
+        if env_cfg_changed:
+            self.stop_sim()
+            self.start_sim()
 
         self.gym.set_actor_root_state_tensor(
             self.sim, gymtorch.unwrap_tensor(self.root_state)
         )
+
+

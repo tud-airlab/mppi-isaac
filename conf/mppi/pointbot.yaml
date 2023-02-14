@@ -2,9 +2,9 @@ defaults:
   - base_mppi
 
 num_samples: 100
-horizon: 30
+horizon: 20
 device: "cuda:0"
-lambda_: 1.0
+lambda_: 0.1
 u_scale: 1
 u_per_command: 1
 step_dependent_dynamics: False
@@ -15,4 +15,4 @@ sample_null_action: False
 use_vacuum: False
 noise_abs_cost: False
 env_type: "normal"
-filter_u: False
+filter_u: True
