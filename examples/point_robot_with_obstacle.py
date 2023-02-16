@@ -22,7 +22,7 @@ class Objective(object):
         self.nav_goal = torch.tensor(cfg.goal, device=cfg.mppi.device)
 
         self.w_nav = 1.0
-        self.w_obs = 0.4
+        self.w_obs = 0.5
 
     def compute_cost(self, sim: IsaacGymWrapper):
         dof_state = sim.dof_state
@@ -36,6 +36,7 @@ class Objective(object):
         #sim.gym.refresh_net_contact_force_tensor(sim.sim)
         #sim.net_cf
 
+        # This can cause steady state error if the goal is close to an obstacle, better use contact forces later on
         obs_cost = torch.sum(
             1 / torch.linalg.norm(obs_positions[:, :, :2] - pos.unsqueeze(1), axis=2),
             axis=1,

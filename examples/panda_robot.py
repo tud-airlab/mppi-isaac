@@ -63,7 +63,7 @@ def initalize_environment(cfg):
     robots = [
         GenericUrdfReacher(urdf=urdf_file, mode="vel"),
     ]
-    env: UrdfEnv = gym.make("urdf-env-v0", dt=0.05, robots=robots, render=cfg.render)
+    env: UrdfEnv = gym.make("urdf-env-v0", dt=0.01, robots=robots, render=cfg.render)
     # Set the initial position and velocity of the panda arm.
     env.reset()
     goal_dict = {
