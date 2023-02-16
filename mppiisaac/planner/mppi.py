@@ -44,7 +44,8 @@ class MPPIConfig(object):
         :param noise_mu: (nu) control noise mean (used to bias control samples); defaults to zero mean        
         :param device: pytorch device
         :param lambda_: inverse temperature, positive scalar where smaller values will allow more exploration
-        :param lambda_update: flag for updating
+        :param update_lambda: flag for updating inv temperature
+        :param update_cov: flag for updating covariance
         :param u_min: (nu) minimum values for each dimension of control to pass into dynamics
         :param u_max: (nu) maximum values for each dimension of control to pass into dynamics
         :param u_init: (nu) what to initialize new end of trajectory control to be; defeaults to zero
@@ -62,7 +63,8 @@ class MPPIConfig(object):
     noise_mu: Optional[List[float]] = None
     device: str = "cuda:0"
     lambda_: float = 1.0
-    lambda_update: bool = False
+    update_lambda: bool = False
+    update_cov: bool = False
     u_min: float = -1.0
     u_max: float = 1.0
     u_init: float = 0.0
@@ -111,7 +113,8 @@ class MPPIPlanner(ABC):
         self.sample_null_action = cfg.sample_null_action
         self.u_per_command = cfg.u_per_command
         self.terminal_state_cost = None
-        self.lambda_update = cfg.lambda_update
+        self.update_lambda = cfg.update_lambda
+        self.update_cov = cfg.update_cov
 
         # Bound actions
         self.u_min = cfg.u_min
@@ -204,6 +207,10 @@ class MPPIPlanner(ABC):
         self.eta_min = 0.01     # 1%
         self.lambda_mult = 0.1  # Update rate
 
+        # covariance update  for now the update of lambda is not performed
+        self.step_size_cov = 0.7
+        self.kappa = 0.005
+
     def _dynamics(self, state, u, t=None):
         return self.dynamics(state, u, t=None)
 
@@ -279,14 +286,6 @@ class MPPIPlanner(ABC):
 
             action = self.U
 
-            # Lambda update
-            if self.lambda_update:
-                if eta > self.eta_max*self.K:
-                    self.lambda_ = (1+self.lambda_mult)*self.lambda_
-                elif eta < self.eta_min*self.K:
-                    self.lambda_ = (1-self.lambda_mult)*self.lambda_
-                print('hello')
-
         elif self.mppi_mode == 'halton-spline':
             # shift command 1 time step
             self.mean_action = torch.roll(self.mean_action, -1, dims=0)
@@ -298,7 +297,7 @@ class MPPIPlanner(ABC):
             action = torch.clone(self.mean_action)
 
         # Lambda update
-        if self.lambda_update:
+        if self.update_lambda:
             if eta > self.eta_max*self.K:
                 self.lambda_ = (1+self.lambda_mult)*self.lambda_
             elif eta < self.eta_min*self.K:
@@ -412,6 +411,18 @@ class MPPIPlanner(ABC):
             self.step_size_mean * new_mean 
        
         delta = actions - self.mean_action.unsqueeze(0)
+
+        #Update Covariance
+        if self.update_cov:
+            #Diagonal covariance of size AxA
+            weighted_delta = w * (delta ** 2).T
+            # cov_update = torch.diag(torch.mean(torch.sum(weighted_delta.T, dim=0), dim=0))
+            cov_update = torch.mean(torch.sum(weighted_delta.T, dim=0), dim=0)
+    
+            self.cov_action = (1.0 - self.step_size_cov) * self.cov_action + self.step_size_cov * cov_update
+            self.cov_action += self.kappa #* self.init_cov_action
+            # self.cov_action[self.cov_action < 0.0005] = 0.0005
+            self.scale_tril = torch.sqrt(self.cov_action)
         return delta
 
     def get_action_cost(self):
