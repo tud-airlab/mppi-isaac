@@ -1,0 +1,163 @@
+<?xml version="1.0"?>
+<robot name="heijn">
+  <!--colors-->
+  <material name="blue">
+      <color rgba="0 0 0.8 1"/>
+  </material>
+  <material name="red">
+      <color rgba="0.8 0 0.0 1"/>
+  </material>
+  <material name="transparent_red">
+      <color rgba="0.8 0 0.0 0.2"/>
+  </material>
+  <material name="darkgrey">
+      <color rgba="0.5 0.5 0.5 1.0"/>
+  </material>
+  <material name="grey">
+      <color rgba="0.7 0.7 0.7 1.0"/>
+  </material>
+  <material name="lightgrey">
+      <color rgba="0.8 0.8 0.8 1"/>
+  </material>
+  <!--links-->
+  <link name="world"/>
+  <link name="base_link_x">
+    <inertial>
+      <mass value="1.0"/>
+      <origin rpy="0 0 0" xyz="0 0 0"/>
+      <inertia ixx="1.0" ixy="0.0" ixz="0.0" iyy="1.0" iyz="0.0" izz="1.0"/>
+    </inertial>
+  </link>
+  <link name="base_link_y">
+    <inertial>
+      <mass value="1.0"/>
+      <origin rpy="0 0 0" xyz="0 0 0"/>
+      <inertia ixx="1.0" ixy="0.0" ixz="0.0" iyy="1.0" iyz="0.0" izz="1.0"/>
+    </inertial>
+  </link>
+  <link name="base_link">
+    <inertial>
+      <mass value="40.0"/>
+      <origin rpy="0 0 0" xyz="0 0 0"/>
+      <inertia ixx="1.0" ixy="0.0" ixz="0.0" iyy="1.0" iyz="0.0" izz="1.0"/>
+    </inertial>
+    <collision>
+      <origin rpy="0.0 0 0" xyz="0 0 0"/>
+      <geometry>
+        <box size='0.61 0.33 0.13'/>
+      </geometry>
+    </collision>
+    <visual>
+      <origin rpy="0.0 0 0" xyz="0 0 0"/>
+      <geometry>
+        <box size='0.61 0.33 0.13'/>
+      </geometry>
+      <material name="lightgrey"/>
+    </visual>
+  </link>
+  <link name="pole_link">
+    <inertial>
+      <mass value="1.0"/>
+      <origin rpy="0 0 0" xyz="0 0 0"/>
+      <inertia ixx="1.0" ixy="0.0" ixz="0.0" iyy="1.0" iyz="0.0" izz="1.0"/>
+    </inertial>
+    <collision>
+      <origin rpy="0.0 0 0" xyz="0 0 0.1"/>
+      <geometry>
+          <cylinder length="0.33" radius="0.02"/>
+      </geometry>
+    </collision>
+    <visual>
+      <origin rpy="0.0 0 0" xyz="0 0 0.1"/>
+      <geometry>
+          <cylinder length="0.33" radius="0.02"/>
+      </geometry>
+      <material name="grey"/>
+    </visual>
+  </link>
+  <link name="platform_link">
+    <inertial>
+      <mass value="1.0"/>
+      <origin rpy="0 0 0" xyz="0 0 0"/>
+      <inertia ixx="1.0" ixy="0.0" ixz="0.0" iyy="1.0" iyz="0.0" izz="1.0"/>
+    </inertial>
+    <collision>
+      <origin rpy="0.0 0 0" xyz="0 0 0"/>
+      <geometry>
+          <cylinder length="0.05" radius="0.05"/>
+      </geometry>
+    </collision>
+    <visual>
+      <origin rpy="0.0 0 0" xyz="0 0 0"/>
+      <geometry>
+          <cylinder length="0.05" radius="0.05"/>
+      </geometry>
+      <material name="grey"/>
+    </visual>
+  </link>
+  <link name="front_link">
+    <inertial>
+      <mass value="0.01"/>
+      <origin rpy="0 0 0" xyz="0 0 0"/>
+      <inertia ixx="1.0" ixy="0.0" ixz="0.0" iyy="1.0" iyz="0.0" izz="1.0"/>
+    </inertial>
+    <visual>
+      <origin rpy="0.0 0 0" xyz="0 0 0"/>
+      <geometry>
+          <sphere radius="0.02"/>
+      </geometry>
+      <material name="red"/>
+    </visual>
+  </link>
+  <link name="lidar_sensor_link">
+    <inertial>
+      <mass value="0.01"/>
+      <origin rpy="0 0 0" xyz="0 0 0"/>
+      <inertia ixx="1.0" ixy="0.0" ixz="0.0" iyy="1.0" iyz="0.0" izz="1.0"/>
+    </inertial>
+  </link>
+  <!--joints-->
+  <joint name="mobile_joint_x" type="prismatic">
+    <safety_controller k_position="100.0" k_velocity="40.0" soft_lower_limit="-2.8973" soft_upper_limit="2.8973"/>
+    <parent link="world"/>
+    <child link="base_link_x"/>
+    <origin rpy="0 0 0" xyz="0 0 0.05"/>
+    <axis xyz="1 0 0"/>
+    <limit effort="300" lower="-5" upper="5" velocity="2.1750"/>
+  </joint>
+  <joint name="mobile_joint_y" type="prismatic">
+    <safety_controller k_position="100.0" k_velocity="40.0" soft_lower_limit="-2.8973" soft_upper_limit="2.8973"/>
+    <parent link="base_link_x"/>
+    <child link="base_link_y"/>
+    <origin rpy="0 0 0" xyz="0 0 0"/>
+    <axis xyz="0 1 0"/>
+    <limit effort="300" lower="-5" upper="5" velocity="2.1750"/>
+  </joint>
+  <joint name="mobile_joint_theta" type="revolute">
+    <parent link="base_link_y"/>
+    <child link="base_link"/>
+    <origin rpy="0 0 0" xyz="0 0 0"/>
+    <axis xyz="0 0 1"/>
+    <limit effort="300" lower="-5000" upper="5000" velocity="2.1750"/>
+  </joint>
+  <joint name="robot_pole_joint" type="fixed">
+    <parent link="base_link"/>
+    <child link="pole_link"/>
+    <origin rpy="0 0 0" xyz="0 0 0.1"/>
+  </joint>
+  <joint name="platform_joint" type="fixed">
+    <parent link="pole_link"/>
+    <child link="platform_link"/>
+    <origin rpy="0 0 0" xyz="0 0 0.2"/>
+  </joint>
+  <joint name="lidar_sensor_joint" type="fixed">
+    <parent link="platform_link"/>
+    <child link="lidar_sensor_link"/>
+    <origin rpy="0 0 0" xyz="0 0 0.1"/>
+  </joint>
+  <joint name="front_link_joint" type='fixed'>
+    <parent link="base_link"/>
+    <child link="front_link"/>
+    <origin rpy="0 0 0" xyz="0.31 0.0 0.05"/>
+  </joint>  
+</robot>
