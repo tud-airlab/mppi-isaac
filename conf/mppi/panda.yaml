@@ -3,14 +3,13 @@ defaults:
 
 mppi_mode: "halton-spline"  # halton-spline, simple
 sampling_method: "halton"   # halton, random
-num_samples: 100
-horizon: 12                 # At least 12 for Halton Sampling
+num_samples: 200
+horizon: 20                 # At least 12 for Halton Sampling
 device: "cuda:0"
+u_min: -4.
+u_max: 4.
 lambda_: 0.01
-lambda_update: False
-u_scale: 1
-u_per_command: 1
 rollout_var_discount: 0.95
+update_cov: False
 sample_null_action: True
-noise_abs_cost: False
 filter_u: True
