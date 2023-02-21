@@ -1,0 +1,39 @@
+<?xml version="1.0"?>
+<robot xmlns:xacro="http://ros.org/wiki/xacro" name="510_mm_sensor_arch">
+
+    <xacro:macro name="sensor_arch" params="prefix parent size:=510 *origin">
+
+        <link name="${prefix}sensor_arch_base_link" />
+
+        <!-- Spawn the sensor arch link -->
+        <link name="${prefix}sensor_arch_mount_link">
+             <origin xyz="0 0 0" rpy="0 0 0"/>
+             <visual>
+                 <geometry>
+                     <mesh filename="package://husky_description/meshes/accessories/${size}_mm_sensor_arch.dae" />
+                 </geometry>
+             </visual>
+             <collision>
+                 <origin xyz="0 0 0" rpy="0 0 0"/>
+                 <geometry>
+                     <mesh filename="package://husky_description/meshes/accessories/${size}_mm_sensor_arch.dae" />
+                 </geometry>
+             </collision>
+        </link>
+
+        <joint name="${prefix}sensor_arch_base_link_joint" type="fixed">
+            <parent link="${parent}" />
+            <child link="${prefix}sensor_arch_base_link" />
+            <xacro:insert_block name="origin" />
+        </joint>
+
+        <!-- Attach the sensor arch to the top plate -->
+        <joint name="${prefix}sensor_arch_mount" type="fixed">
+             <parent link="${prefix}sensor_arch_base_link"/>
+             <child link="${prefix}sensor_arch_mount_link"/>
+             <origin xyz="0 0 ${size/1000}" rpy="0 0 0" />
+        </joint>
+
+    </xacro:macro>
+
+</robot>
