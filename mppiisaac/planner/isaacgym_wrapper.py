@@ -44,10 +44,6 @@ class IsaacGymWrapper:
         self.env_cfg = [
             {"type": "axis", "name": "x", "handle": None},
             {"type": "axis", "name": "y", "handle": None},
-            *[
-                {"type": "sphere", "name": f"sphere{i}", "handle": None, "radius": 1}
-                for i in range(cfg.num_obstacles)
-            ],
             {"type": "robot", "name": "main_robot", "handle": None},
         ]
         self.cfg = cfg
@@ -95,8 +91,8 @@ class IsaacGymWrapper:
         )
 
         # helpfull slices
-        self.robot_positions = self.root_state[:, -1, 0:3]  # [x, y, z]
-        self.obstacle_positions = self.root_state[:, 2:-2, 0:3]  # [x, y, z]
+        self.robot_positions = self.root_state[:, 2, 0:3]  # [x, y, z]
+        self.obstacle_positions = self.root_state[:, 3:, 0:3]  # [x, y, z]
 
         self.gym.refresh_actor_root_state_tensor(self.sim)
         self.gym.refresh_dof_state_tensor(self.sim)
@@ -136,21 +132,6 @@ class IsaacGymWrapper:
         )
         self.env_cfg[1]["handle"] = y_axis
 
-        for i, obst_cfg in enumerate(self.env_cfg):
-            if obst_cfg["type"] is not "sphere":
-                continue
-
-            # add spheres
-            handle = self.add_sphere(
-                env=env,
-                env_idx=env_idx,
-                name=obst_cfg["name"],
-                radius=obst_cfg["radius"],
-                pos=gymapi.Vec3(0, 0, -20),
-                color=gymapi.Vec3(1.0, 1.0, 1.0),
-            )
-            obst_cfg["handle"] = handle
-
         robot_init_pose = gymapi.Transform()
         robot_init_pose.p = gymapi.Vec3(0.0, 0.0, 0.05)
 
@@ -158,10 +139,10 @@ class IsaacGymWrapper:
             env=env,
             asset=self._robot_asset,
             pose=robot_init_pose,
-            name=self.env_cfg[-1]["name"],
+            name=self.env_cfg[2]["name"],
             group=env_idx,
         )
-        self.env_cfg[-1]["handle"] = robot_handle
+        self.env_cfg[2]["handle"] = robot_handle
 
         # Update point bot dynamics / control mode
         props = self.gym.get_asset_dof_properties(self._robot_asset)
@@ -169,6 +150,33 @@ class IsaacGymWrapper:
         props["stiffness"].fill(0.0)
         props["damping"].fill(1e7)
         self.gym.set_actor_dof_properties(env, robot_handle, props)
+
+        for obst_cfg in self.env_cfg[3:]:
+            if obst_cfg["type"] == "sphere":
+                # add spheres
+                handle = self.add_sphere(
+                    env=env,
+                    env_idx=env_idx,
+                    name=obst_cfg["name"],
+                    radius=obst_cfg["size"][0],
+                    pos=gymapi.Vec3(0, 0, -20),
+                    color=gymapi.Vec3(1.0, 1.0, 1.0),
+                )
+            elif obst_cfg["type"] == "box":
+                # add spheres
+                handle = self.add_box(
+                    env=env,
+                    env_idx=env_idx,
+                    name=obst_cfg["name"],
+                    whd=obst_cfg["size"],
+                    pos=gymapi.Vec3(0, 0, -20),
+                    color=gymapi.Vec3(1.0, 1.0, 1.0),
+                )
+            else:
+                raise NotImplementedError(
+                    f"obstacles of type {obst_cfg['type']} are not supported!"
+                )
+            obst_cfg["handle"] = handle
         return env
 
     def add_box(
@@ -278,19 +286,32 @@ class IsaacGymWrapper:
             self.root_state[i, idx] = state_tensor
 
     def update_root_state_tensor_by_obstacles(self, obstacles):
+        """
+        Note: obstacles param should be a list of obstacles,
+        where each obstacle is a list of the following order [position, velocity, type, size]
+        """
         env_cfg_changed = False
 
         for i, obst in enumerate(obstacles):
-            name = f"sphere{i}"
-            obst_idx = [actor["name"] for actor in self.env_cfg].index(name)
+            pos, vel, o_type, o_size = obst
+            name = f"{o_type}{i}"
+            try:
+                obst_idx = [actor["name"] for actor in self.env_cfg].index(name)
+            except:
+                self.env_cfg.append(
+                    {"type": o_type, "name": name, "handle": None, "size": o_size}
+                )
+                env_cfg_changed = True
+                continue
+
             obst_state = torch.tensor(
-                [*obst[0], 0, 0, 0, 1, *obst[1], 0, 0, 0], device="cuda:0"
+                [*pos, 0, 0, 0, 1, *vel, 0, 0, 0], device="cuda:0"
             )
 
-            # Note: setting the scale every timestep is problematic, isaacgym does weird stuff.
-            if "radius" not in self.env_cfg[obst_idx].keys() or self.env_cfg[obst_idx]["radius"] != obst[2]:
-               env_cfg_changed = True
-               self.env_cfg[obst_idx]["radius"] = obst[2]
+            # Note: reset simulator if size changed, because this cannot be done at runtime.
+            if not all(o_size == self.env_cfg[obst_idx]["size"]):
+                env_cfg_changed = True
+                self.env_cfg[obst_idx]["size"] = o_size
 
             for j, env in enumerate(self.envs):
                 self.root_state[j, obst_idx] = obst_state
@@ -303,5 +324,3 @@ class IsaacGymWrapper:
         self.gym.set_actor_root_state_tensor(
             self.sim, gymtorch.unwrap_tensor(self.root_state)
         )
-
-
