@@ -1,6 +1,6 @@
 import gym
 import numpy as np
-from urdfenvs.robots.boxer import BoxerRobot
+from urdfenvs.robots.jackal import JackalRobot
 from urdfenvs.urdf_common.urdf_env import UrdfEnv
 from mppiisaac.planner.mppi_isaac import MPPIisaacPlanner
 import hydra
@@ -39,10 +39,10 @@ def initalize_environment(cfg) -> UrdfEnv:
     """
     # urdf_file = os.path.dirname(os.path.abspath(__file__)) + "/../assets/urdf/" + cfg.urdf_file
     robots = [
-        BoxerRobot(mode="vel"),
+        JackalRobot(mode="vel"),
     ]
     env: UrdfEnv = gym.make("urdf-env-v0", dt=0.02, robots=robots, render=cfg.render)
-    # Set the initial position and velocity of the boxer robot
+    # Set the initial position and velocity of the jackal robot
     env.reset()
     goal_dict = {
         "weight": 1.0,
@@ -61,7 +61,7 @@ def initalize_environment(cfg) -> UrdfEnv:
 
 def set_planner(cfg):
     """
-    Initializes the mppi planner for boxer robot.
+    Initializes the mppi planner for jackal robot.
 
     Params
     ----------
@@ -74,10 +74,10 @@ def set_planner(cfg):
     return planner
 
 
-@hydra.main(version_base=None, config_path="../conf", config_name="config_boxer_robot")
-def run_boxer_robot(cfg: ExampleConfig):
+@hydra.main(version_base=None, config_path="../conf", config_name="config_jackal_robot")
+def run_jackal_robot(cfg: ExampleConfig):
     """
-    Set the gym environment, the planner and run boxer robot example.
+    Set the gym environment, the planner and run jackal robot example.
     The initial zero action step is needed to initialize the sensor in the
     urdf environment.
 
@@ -118,4 +118,4 @@ def run_boxer_robot(cfg: ExampleConfig):
 
 
 if __name__ == "__main__":
-    res = run_boxer_robot()
+    res = run_jackal_robot()

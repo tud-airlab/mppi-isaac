@@ -2,6 +2,7 @@ from isaacgym import gymapi
 from isaacgym import gymtorch
 from dataclasses import dataclass
 import torch
+import numpy as np
 
 
 @dataclass
@@ -37,7 +38,14 @@ def parse_isaacgym_config(cfg: IsaacGymConfig) -> gymapi.SimParams:
 
 
 class IsaacGymWrapper:
-    def __init__(self, cfg: IsaacGymConfig, urdf_file: str, fix_base: bool, flip_visual:bool, num_envs: int = 0):
+    def __init__(
+        self,
+        cfg: IsaacGymConfig,
+        urdf_file: str,
+        fix_base: bool,
+        flip_visual: bool,
+        num_envs: int = 0,
+    ):
         self.gym = gymapi.acquire_gym()
 
         # Keep track of env idxs. Everytime an actor get added append with a tuple of (idx, type, name)
@@ -71,7 +79,10 @@ class IsaacGymWrapper:
         asset_file = "urdf/" + self._urdf_file
         print(asset_file)
         self._robot_asset = self.load_robot_asset_from_urdf(
-            asset_file=asset_file, asset_root="../assets", fix_base_link=self._fix_base, flip_visual_attachments=self._flip_visual
+            asset_file=asset_file,
+            asset_root="../assets",
+            fix_base_link=self._fix_base,
+            flip_visual_attachments=self._flip_visual,
         )
 
         self.envs = [self.create_env(i) for i in range(self.num_envs)]
@@ -81,6 +92,7 @@ class IsaacGymWrapper:
         self.root_state = gymtorch.wrap_tensor(
             self.gym.acquire_actor_root_state_tensor(self.sim)
         ).view(self.num_envs, -1, 13)
+        self.saved_root_state = None
         self.dof_state = gymtorch.wrap_tensor(
             self.gym.acquire_dof_state_tensor(self.sim)
         ).view(self.num_envs, -1)
@@ -94,6 +106,7 @@ class IsaacGymWrapper:
 
         # helpfull slices
         self.robot_positions = self.root_state[:, 2, 0:3]  # [x, y, z]
+        self.robot_velocities = self.root_state[:, 2, 7:10]  # [x, y, z]
         self.obstacle_positions = self.root_state[:, 3:, 0:3]  # [x, y, z]
 
         self.gym.refresh_actor_root_state_tensor(self.sim)
@@ -257,7 +270,11 @@ class IsaacGymWrapper:
         self.gym.add_ground(self.sim, plane_params)
 
     def load_robot_asset_from_urdf(
-        self, asset_file, asset_root="../assets", fix_base_link=False, flip_visual_attachments=False
+        self,
+        asset_file,
+        asset_root="../assets",
+        fix_base_link=False,
+        flip_visual_attachments=False,
     ):
         asset_options = gymapi.AssetOptions()
         asset_options.fix_base_link = fix_base_link
@@ -286,6 +303,33 @@ class IsaacGymWrapper:
     def set_root_state_tensor_by_actor_idx(self, state_tensor, idx):
         for i in range(self.num_envs):
             self.root_state[i, idx] = state_tensor
+
+    def save_root_state(self):
+        self.saved_root_state = self.root_state.clone()
+
+    def reset_root_state(self):
+        if self.saved_root_state is not None:
+            self.gym.set_actor_root_state_tensor(
+                self.sim, gymtorch.unwrap_tensor(self.saved_root_state)
+            )
+
+    def update_root_state_tensor_robot(self, pos, vel):
+        roll = 0
+        pitch = 0
+        yaw = pos[2]
+        orientation = [
+            np.sin(roll / 2) * np.cos(pitch / 2) * np.cos(yaw / 2)
+            - np.cos(roll / 2) * np.sin(pitch / 2) * np.sin(yaw / 2),
+            np.cos(roll / 2) * np.sin(pitch / 2) * np.cos(yaw / 2)
+            + np.sin(roll / 2) * np.cos(pitch / 2) * np.sin(yaw / 2),
+            np.cos(roll / 2) * np.cos(pitch / 2) * np.sin(yaw / 2)
+            - np.sin(roll / 2) * np.sin(pitch / 2) * np.cos(yaw / 2),
+            np.cos(roll / 2) * np.cos(pitch / 2) * np.cos(yaw / 2),
+        ]
+
+        self.root_state[:, 2, :2] = torch.tensor(pos[:2], device="cuda:0")
+        self.root_state[:, 2, 3:7] = torch.tensor(orientation, device="cuda:0")
+        self.root_state[:, 2, 7:10] = torch.tensor(vel, device="cuda:0")
 
     def update_root_state_tensor_by_obstacles(self, obstacles):
         """
