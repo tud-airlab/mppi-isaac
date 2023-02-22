@@ -15,7 +15,7 @@ from mppiisaac.utils.config_store import ExampleConfig
 # MPPI to navigate a simple robot to a goal position
 
 urdf_file = (
-    os.path.dirname(os.path.abspath(__file__)) + "/../assets/urdf/panda.urdf"
+    os.path.dirname(os.path.abspath(__file__)) + "/../assets/urdf/panda_bullet/panda.urdf"
 )
 
 class JointSpaceGoalObjective(object):
@@ -99,7 +99,7 @@ def initalize_environment(cfg):
 
     # sense both
     sensor = FullSensor(
-        goal_mask=["position"], obstacle_mask=["position", "velocity", "radius"]
+        goal_mask=["position"], obstacle_mask=["position", "velocity", "type", "size"]
     )
     env.add_sensor(sensor, [0])
     return env

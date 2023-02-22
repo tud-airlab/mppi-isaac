@@ -1,0 +1,15 @@
+defaults:
+  - mppi: jackal
+  - isaacgym: normal
+
+goal: [2.0, 2.0]
+render: true
+n_steps: 1000
+urdf_file: "jackal/jackal.urdf"
+fix_base: false
+flip_visual: false
+nx: 4
+differential_drive: true
+wheel_radius: 0.14
+wheel_base: 0.400
+wheel_count: 4

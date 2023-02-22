@@ -10,6 +10,7 @@ import os
 import torch
 from urdfenvs.sensors.full_sensor import FullSensor
 from mpscenes.obstacles.sphere_obstacle import SphereObstacle
+from mpscenes.obstacles.box_obstacle import BoxObstacle
 from mpscenes.goals.static_sub_goal import StaticSubGoal
 
 from mppiisaac.utils.config_store import ExampleConfig
@@ -33,8 +34,8 @@ class Objective(object):
             torch.linalg.norm(pos - self.nav_goal, axis=1) - 0.05, min=0, max=1999
         )
 
-        #sim.gym.refresh_net_contact_force_tensor(sim.sim)
-        #sim.net_cf
+        # sim.gym.refresh_net_contact_force_tensor(sim.sim)
+        # sim.net_cf
 
         # This can cause steady state error if the goal is close to an obstacle, better use contact forces later on
         obs_cost = torch.sum(
@@ -73,15 +74,20 @@ def initalize_environment(cfg) -> UrdfEnv:
         "type": "sphere",
         "geometry": {"position": [1.0, 1.0, 0.0], "radius": 0.5},
     }
-    sphereObst1 = SphereObstacle(name="simpleSphere", content_dict=obst1Dict)
-    env.add_obstacle(sphereObst1)
+    sphereObst = SphereObstacle(name="simpleSphere", content_dict=obst1Dict)
+    env.add_obstacle(sphereObst)
 
     obst2Dict = {
-        "type": "sphere",
-        "geometry": {"position": [1.0, 2.0, 0.0], "radius": 0.3},
+        "type": "box",
+        "geometry": {
+            "position": [1.0, 2.0, 0.0],
+            "width": 0.3,
+            "height": 0.2,
+            "length": 1.0,
+        },
     }
-    sphereObst2 = SphereObstacle(name="simpleSphere", content_dict=obst2Dict)
-    env.add_obstacle(sphereObst2)
+    boxObst = BoxObstacle(name="simpleBox", content_dict=obst2Dict)
+    env.add_obstacle(boxObst)
     goal_dict = {
         "weight": 1.0,
         "is_primary_goal": True,
@@ -97,7 +103,7 @@ def initalize_environment(cfg) -> UrdfEnv:
 
     # sense both
     sensor = FullSensor(
-        goal_mask=["position"], obstacle_mask=["position", "velocity", "radius"]
+        goal_mask=["position"], obstacle_mask=["position", "velocity", "type", "size"]
     )
     env.add_sensor(sensor, [0])
 

@@ -1,0 +1,11 @@
+defaults:
+  - mppi: heijn
+  - isaacgym: normal
+
+goal: [2.0, 2.0]
+render: true
+n_steps: 1000
+urdf_file: "heijn/heijn.urdf"
+fix_base: true
+flip_visual: true
+nx: 6

@@ -325,7 +325,7 @@ test = ["pytest (>=6)"]
 name = "geomdl"
 version = "5.3.1"
 description = "Object-oriented B-Spline and NURBS evaluation library"
-category = "dev"
+category = "main"
 optional = false
 python-versions = "*"
 files = [
@@ -813,7 +813,7 @@ files = [
 name = "mpmath"
 version = "1.2.1"
 description = "Python library for arbitrary-precision floating-point arithmetic"
-category = "dev"
+category = "main"
 optional = false
 python-versions = "*"
 files = [
@@ -827,14 +827,14 @@ tests = ["pytest (>=4.6)"]
 
 [[package]]
 name = "mpscenes"
-version = "0.1.2"
+version = "0.3.1"
 description = "Generic motion planning scenes, including goals and obstacles."
-category = "dev"
+category = "main"
 optional = false
 python-versions = ">=3.8,<4.0"
 files = [
-    {file = "mpscenes-0.1.2-py3-none-any.whl", hash = "sha256:e0dad26edbde6c503ae5ac96bb0341c4ce9141d7c9deb88a5c5a4c0bae5c53ee"},
-    {file = "mpscenes-0.1.2.tar.gz", hash = "sha256:57ae9ac01b8861cadab1111954e7af19c4bcceb44f8626d9895cf3f43525c1bd"},
+    {file = "mpscenes-0.3.1-py3-none-any.whl", hash = "sha256:42bbe6195cb2588f8e02adec0a51e12835a5c92ed6b3f7d3314ace5013296577"},
+    {file = "mpscenes-0.3.1.tar.gz", hash = "sha256:2874ee359505763d53b14e7e7b3ff04715fa143aac8a55a0a021324c299ac768"},
 ]
 
 [package.dependencies]
@@ -1316,7 +1316,7 @@ testutils = ["gitpython (>3)"]
 name = "pyquaternion"
 version = "0.9.9"
 description = "A fully featured, pythonic library for representing and using quaternions."
-category = "dev"
+category = "main"
 optional = false
 python-versions = "*"
 files = [
@@ -1677,7 +1677,7 @@ test = ["Pillow", "pytest", "pytest-cov"]
 name = "sympy"
 version = "1.11.1"
 description = "Computer algebra system (CAS) in Python"
-category = "dev"
+category = "main"
 optional = false
 python-versions = ">=3.8"
 files = [
@@ -1843,26 +1843,23 @@ files = [
 
 [[package]]
 name = "urdfenvs"
-version = "0.5.1"
+version = "0.5.2"
 description = "Simple simulation environment for robots, based on the urdf files."
 category = "dev"
 optional = false
 python-versions = ">=3.8,<4.0"
 files = [
-    {file = "urdfenvs-0.5.1-py3-none-any.whl", hash = "sha256:632a348604f3d8950c36798455f11b30acf9de7b43bee38aa74ad75833ae4bad"},
-    {file = "urdfenvs-0.5.1.tar.gz", hash = "sha256:4ed5e6d4e34bd5d9337bd4cff2fdefe9d9582da7875173c8ddb993e444b14aeb"},
+    {file = "urdfenvs-0.5.2-py3-none-any.whl", hash = "sha256:deaa6fd39deab9b653dee93c1ad5cf15ccb103178395eb9ee12be0bfa02ffcc3"},
+    {file = "urdfenvs-0.5.2.tar.gz", hash = "sha256:ea94e48fb76494bb1d01188390dcfbfc48e09871bd36c1e57aaf947929da6c14"},
 ]
 
 [package.dependencies]
 deprecation = ">=2.1.0,<3.0.0"
 gym = ">=0.22,<0.23"
-mpscenes = ">=0.1.2,<0.2.0"
+mpscenes = ">=0.3.0,<0.4.0"
 numpy = ">=1.19,<1.24"
 pybullet = ">=3.2.1,<4.0.0"
 yourdfpy = ">=0.0.52,<0.0.53"
-
-[package.extras]
-keyboard = ["multiprocess (>=0.70.12,<0.71.0)", "pynput (>=1.7.6,<2.0.0)"]
 
 [[package]]
 name = "urllib3"
@@ -2118,4 +2115,4 @@ testing = ["flake8 (<5)", "func-timeout", "jaraco.functools", "jaraco.itertools"
 [metadata]
 lock-version = "2.0"
 python-versions = "^3.8,<3.9"
-content-hash = "fae49ac93179b65e804835440276880d2df3d188d17b0f6b28ff490a866fe69f"
+content-hash = "432de2302bb9f8016771547d515d286397bd0b6817b0799c65838c7d7a584e5c"
