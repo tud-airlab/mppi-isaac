@@ -21,7 +21,7 @@ class MPPIisaacPlanner(object):
         )
 
         self.sim = IsaacGymWrapper(
-            cfg.isaacgym, cfg.urdf_file, num_envs=cfg.mppi.num_samples
+            cfg.isaacgym, cfg.urdf_file, cfg.fix_base, cfg.flip_visual, num_envs=cfg.mppi.num_samples
         )
 
         # Note: place_holder variable to pass to mppi so it doesn't complain, while the real state is actually the isaacgym simulator itself.

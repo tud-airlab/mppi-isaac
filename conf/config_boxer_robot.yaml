@@ -1,11 +1,11 @@
 defaults:
-  - mppi: pointbot
+  - mppi: boxer
   - isaacgym: normal
 
 goal: [2.0, 2.0]
 render: true
 n_steps: 1000
-urdf_file: "point_robot.urdf"
-fix_base: true
+urdf_file: "boxer/boxer.urdf"
+fix_base: false
 flip_visual: false
-nx: 6
+nx: 4
