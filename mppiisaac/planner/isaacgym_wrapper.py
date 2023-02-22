@@ -37,7 +37,7 @@ def parse_isaacgym_config(cfg: IsaacGymConfig) -> gymapi.SimParams:
 
 
 class IsaacGymWrapper:
-    def __init__(self, cfg: IsaacGymConfig, urdf_file: str, num_envs: int = 0):
+    def __init__(self, cfg: IsaacGymConfig, urdf_file: str, fix_base: bool, flip_visual:bool, num_envs: int = 0):
         self.gym = gymapi.acquire_gym()
 
         # Keep track of env idxs. Everytime an actor get added append with a tuple of (idx, type, name)
@@ -49,6 +49,8 @@ class IsaacGymWrapper:
         self.cfg = cfg
         self.num_envs = num_envs
         self._urdf_file = urdf_file
+        self._fix_base = fix_base
+        self._flip_visual = flip_visual
         self.start_sim()
 
     def start_sim(self):
@@ -69,7 +71,7 @@ class IsaacGymWrapper:
         asset_file = "urdf/" + self._urdf_file
         print(asset_file)
         self._robot_asset = self.load_robot_asset_from_urdf(
-            asset_file=asset_file, asset_root="../assets", fix_base_link=True
+            asset_file=asset_file, asset_root="../assets", fix_base_link=self._fix_base, flip_visual_attachments=self._flip_visual
         )
 
         self.envs = [self.create_env(i) for i in range(self.num_envs)]
@@ -255,12 +257,12 @@ class IsaacGymWrapper:
         self.gym.add_ground(self.sim, plane_params)
 
     def load_robot_asset_from_urdf(
-        self, asset_file, asset_root="../assets", fix_base_link=False
+        self, asset_file, asset_root="../assets", fix_base_link=False, flip_visual_attachments=False
     ):
         asset_options = gymapi.AssetOptions()
         asset_options.fix_base_link = fix_base_link
         asset_options.armature = 0.01
-        asset_options.flip_visual_attachments = True
+        asset_options.flip_visual_attachments = flip_visual_attachments
         return self.gym.load_asset(self.sim, asset_root, asset_file, asset_options)
 
     def set_dof_state_tensor(self, state):
