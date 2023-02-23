@@ -4,6 +4,8 @@ from dataclasses import dataclass
 import torch
 import numpy as np
 
+import pathlib
+file_path = pathlib.Path(__file__).parent.resolve()
 
 @dataclass
 class IsaacGymConfig(object):
@@ -80,7 +82,7 @@ class IsaacGymWrapper:
         print(asset_file)
         self._robot_asset = self.load_robot_asset_from_urdf(
             asset_file=asset_file,
-            asset_root="../assets",
+            asset_root=f"{file_path}/../../assets",
             fix_base_link=self._fix_base,
             flip_visual_attachments=self._flip_visual,
         )
@@ -203,6 +205,7 @@ class IsaacGymWrapper:
         pos: gymapi.Vec3,
         color: gymapi.Vec3,
         fixed: bool = True,
+        mass: float = 1.0
     ) -> int:
         asset_options_objects = gymapi.AssetOptions()
         asset_options_objects.fix_base_link = fixed
@@ -226,6 +229,9 @@ class IsaacGymWrapper:
         self.gym.set_rigid_body_color(
             env, handle, 0, gymapi.MESH_VISUAL_AND_COLLISION, color
         )
+        props = self.gym.get_actor_rigid_body_properties(env, handle)
+        props[0].mass = mass
+        self.gym.set_actor_rigid_body_properties(env, handle, props)
         return handle
 
     def add_sphere(
@@ -272,7 +278,7 @@ class IsaacGymWrapper:
     def load_robot_asset_from_urdf(
         self,
         asset_file,
-        asset_root="../assets",
+        asset_root=f"{file_path}/../../assets",
         fix_base_link=False,
         flip_visual_attachments=False,
     ):
@@ -355,7 +361,7 @@ class IsaacGymWrapper:
             )
 
             # Note: reset simulator if size changed, because this cannot be done at runtime.
-            if not all(o_size == self.env_cfg[obst_idx]["size"]):
+            if not all([a == b for a, b in zip(o_size, self.env_cfg[obst_idx]["size"]) ]):
                 env_cfg_changed = True
                 self.env_cfg[obst_idx]["size"] = o_size
 
@@ -370,3 +376,12 @@ class IsaacGymWrapper:
         self.gym.set_actor_root_state_tensor(
             self.sim, gymtorch.unwrap_tensor(self.root_state)
         )
+
+    def update_root_state_tensor_by_obstacles_tensor(self, obst_tensor):
+        for i, o_tensor in enumerate(obst_tensor):
+            self.root_state[:, i+3] = o_tensor.repeat(self.num_envs, 1)
+
+        self.gym.set_actor_root_state_tensor(
+            self.sim, gymtorch.unwrap_tensor(self.root_state)
+        )
+
