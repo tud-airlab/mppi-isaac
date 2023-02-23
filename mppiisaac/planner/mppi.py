@@ -68,7 +68,7 @@ class MPPIConfig(object):
     u_min: float = -1.0
     u_max: float = 1.0
     u_init: float = 0.0
-    U_init: Optional[List[float]] = None
+    U_init: Optional[List[List[float]]] = None
     u_scale: float = 1
     u_per_command: int = 1
     rollout_var_discount: float = 0.95

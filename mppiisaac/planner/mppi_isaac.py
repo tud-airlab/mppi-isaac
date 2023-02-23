@@ -64,12 +64,8 @@ class MPPIisaacPlanner(object):
         # Note: again normally mppi passes the state as a parameter in the running cost call, but using isaacgym the state is already saved and accesible in the simulator itself, so we ignore it and pass a handle to the simulator.
         return self.objective.compute_cost(self.sim)
 
-    def compute_action(self, q, qdot, obst=None):
+    def compute_action(self, q, qdot, obst=None, obst_tensor=None):
         self.sim.reset_root_state()
-
-        if obst:
-            # NOTE: for now this updates based on id in the list of obstacles
-            self.sim.update_root_state_tensor_by_obstacles(obst)
 
         # Deal with non fixed base link robots, that we need to reset the root_state position / velocity of.
         # Currently only differential drive bases are non fixed. We also have to deal with the kinematic transforms.
@@ -106,6 +102,14 @@ class MPPIisaacPlanner(object):
 
         state = state.repeat(self.sim.num_envs, 1)
         self.sim.set_dof_state_tensor(state)
+
+        # NOTE: There are two different ways of updating obstacle root_states
+        # Both update based on id in the list of obstacles 
+        if obst:
+            self.sim.update_root_state_tensor_by_obstacles(obst)
+
+        if obst_tensor:
+            self.sim.update_root_state_tensor_by_obstacles_tensor(obst_tensor)
 
         self.sim.save_root_state()
         actions = self.mppi.command(self.state_place_holder).cpu()
