@@ -39,13 +39,19 @@ class JointSpaceGoalObjective(object):
 class EndEffectorGoalObjective(object):
     def __init__(self, cfg, device):
         self.nav_goal = torch.tensor(cfg.goal, device=cfg.mppi.device)
+        self.ort_goal = torch.tensor([1, 0, 0, 0], device=cfg.mppi.device)
 
     def compute_cost(self, sim):
         pos = sim.rigid_body_state[:, -1, :3]
+        ort = sim.rigid_body_state[:, -1, 3:7]
         #dof_states = gym.acquire_dof_state_tensor(sim)
-        return torch.clamp(
-            torch.linalg.norm(pos - self.nav_goal, axis=1) - 0.05, min=0, max=1999
-        )
+        
+        reach_cost = torch.linalg.norm(pos - self.nav_goal, axis = 1) 
+        align_cost = torch.linalg.norm(ort - self.ort_goal, axis = 1) 
+        return  10*reach_cost + align_cost
+        # return torch.clamp(
+        #     torch.linalg.norm(pos - self.nav_goal, axis=1) - 0.05, min=0, max=1999
+        # )
 
 
 def initalize_environment(cfg):
@@ -128,7 +134,7 @@ def run_panda_robot(cfg: ExampleConfig):
             q=ob_robot["joint_state"]["position"],
             qdot=ob_robot["joint_state"]["velocity"],
         )
-        print(action)
+        # print(action)
         (
             ob,
             *_,
