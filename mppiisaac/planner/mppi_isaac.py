@@ -1,5 +1,6 @@
 from mppiisaac.planner.isaacgym_wrapper import IsaacGymWrapper
 from mppiisaac.planner.mppi import MPPIPlanner
+from typing import Callable, Optional
 
 import torch
 
@@ -12,13 +13,9 @@ class MPPIisaacPlanner(object):
         dynamics, running_cost, and terminal_cost
     """
 
-    def __init__(self, cfg, objective):
+    def __init__(self, cfg, objective: Callable, prior: Optional[Callable] = None):
         self.cfg = cfg
         self.objective = objective
-
-        self.mppi = MPPIPlanner(
-            cfg.mppi, cfg.nx, dynamics=self.dynamics, running_cost=self.running_cost
-        )
 
         self.sim = IsaacGymWrapper(
             cfg.isaacgym,
@@ -27,6 +24,20 @@ class MPPIisaacPlanner(object):
             cfg.flip_visual,
             num_envs=cfg.mppi.num_samples,
         )
+
+        if prior:
+            self.prior = lambda state, t : prior.compute_command(self.sim)
+        else:
+            self.prior = None
+
+        self.mppi = MPPIPlanner(
+            cfg.mppi,
+            cfg.nx,
+            dynamics=self.dynamics,
+            running_cost=self.running_cost,
+            prior=self.prior,
+        )
+
 
         # Note: place_holder variable to pass to mppi so it doesn't complain, while the real state is actually the isaacgym simulator itself.
         self.state_place_holder = torch.zeros((self.cfg.mppi.num_samples, self.cfg.nx))
@@ -84,11 +95,13 @@ class MPPIisaacPlanner(object):
                 qdot = [0] * self.cfg.wheel_count
 
             reordered_state = []
-            for i in range(int(self.cfg.nx / 2)+(self.cfg.wheel_count-2)):
+            for i in range(int(self.cfg.nx / 2) + (self.cfg.wheel_count - 2)):
                 reordered_state.append(q[i])
                 reordered_state.append(qdot[i])
             state = (
-                torch.tensor(reordered_state).type(torch.float32).to(self.cfg.mppi.device)
+                torch.tensor(reordered_state)
+                .type(torch.float32)
+                .to(self.cfg.mppi.device)
             )  # [x, vx, y, vy]
 
         else:
@@ -97,14 +110,16 @@ class MPPIisaacPlanner(object):
                 reordered_state.append(q[i])
                 reordered_state.append(qdot[i])
             state = (
-                torch.tensor(reordered_state).type(torch.float32).to(self.cfg.mppi.device)
+                torch.tensor(reordered_state)
+                .type(torch.float32)
+                .to(self.cfg.mppi.device)
             )  # [x, vx, y, vy]
 
         state = state.repeat(self.sim.num_envs, 1)
         self.sim.set_dof_state_tensor(state)
 
         # NOTE: There are two different ways of updating obstacle root_states
-        # Both update based on id in the list of obstacles 
+        # Both update based on id in the list of obstacles
         if obst:
             self.sim.update_root_state_tensor_by_obstacles(obst)
 
