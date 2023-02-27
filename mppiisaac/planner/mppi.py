@@ -65,8 +65,8 @@ class MPPIConfig(object):
     lambda_: float = 1.0
     update_lambda: bool = False
     update_cov: bool = False
-    u_min: float = -1.0
-    u_max: float = 1.0
+    u_min: Optional[List[float]] = None
+    u_max: Optional[List[float]] = None
     u_init: float = 0.0
     U_init: Optional[List[List[float]]] = None
     u_scale: float = 1
@@ -138,7 +138,6 @@ class MPPIPlanner(ABC):
             cfg.u_min = -cfg.u_max
         if cfg.u_min and not cfg.u_max:
             cfg.u_max = -cfg.u_min
-        assert cfg.u_max > 0 and cfg.u_min < 0
         self.cfg = cfg
 
         self.dynamics = dynamics

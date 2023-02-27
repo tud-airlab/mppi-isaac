@@ -5,7 +5,9 @@ import torch
 import numpy as np
 
 import pathlib
+
 file_path = pathlib.Path(__file__).parent.resolve()
+
 
 @dataclass
 class IsaacGymConfig(object):
@@ -52,8 +54,8 @@ class IsaacGymWrapper:
 
         # Keep track of env idxs. Everytime an actor get added append with a tuple of (idx, type, name)
         self.env_cfg = [
-            {"type": "axis", "name": "x", "handle": None},
-            {"type": "axis", "name": "y", "handle": None},
+            {"type": "axis", "name": "x", "handle": None, "fixed": True},
+            {"type": "axis", "name": "y", "handle": None, "fixed": True},
             {"type": "robot", "name": "main_robot", "handle": None},
         ]
         self.cfg = cfg
@@ -188,6 +190,7 @@ class IsaacGymWrapper:
                     whd=obst_cfg["size"],
                     pos=gymapi.Vec3(0, 0, -20),
                     color=gymapi.Vec3(1.0, 1.0, 1.0),
+                    fixed=obst_cfg["fixed"],
                 )
             else:
                 raise NotImplementedError(
@@ -205,7 +208,7 @@ class IsaacGymWrapper:
         pos: gymapi.Vec3,
         color: gymapi.Vec3,
         fixed: bool = True,
-        mass: float = 1.0
+        mass: float = 1.0,
     ) -> int:
         asset_options_objects = gymapi.AssetOptions()
         asset_options_objects.fix_base_link = fixed
@@ -361,7 +364,9 @@ class IsaacGymWrapper:
             )
 
             # Note: reset simulator if size changed, because this cannot be done at runtime.
-            if not all([a == b for a, b in zip(o_size, self.env_cfg[obst_idx]["size"]) ]):
+            if not all(
+                [a == b for a, b in zip(o_size, self.env_cfg[obst_idx]["size"])]
+            ):
                 env_cfg_changed = True
                 self.env_cfg[obst_idx]["size"] = o_size
 
@@ -379,9 +384,8 @@ class IsaacGymWrapper:
 
     def update_root_state_tensor_by_obstacles_tensor(self, obst_tensor):
         for i, o_tensor in enumerate(obst_tensor):
-            self.root_state[:, i+3] = o_tensor.repeat(self.num_envs, 1)
+            self.root_state[:, i + 3] = o_tensor.repeat(self.num_envs, 1)
 
         self.gym.set_actor_root_state_tensor(
             self.sim, gymtorch.unwrap_tensor(self.root_state)
         )
-
