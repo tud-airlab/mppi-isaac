@@ -284,11 +284,13 @@ class IsaacGymWrapper:
         asset_root=f"{file_path}/../../assets",
         fix_base_link=False,
         flip_visual_attachments=False,
+        gravity=False,
     ):
         asset_options = gymapi.AssetOptions()
         asset_options.fix_base_link = fix_base_link
         asset_options.armature = 0.01
         asset_options.flip_visual_attachments = flip_visual_attachments
+        asset_options.disable_gravity = not gravity
         return self.gym.load_asset(self.sim, asset_root, asset_file, asset_options)
 
     def set_dof_state_tensor(self, state):
