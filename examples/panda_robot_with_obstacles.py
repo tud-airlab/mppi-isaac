@@ -9,6 +9,7 @@ import torch
 from urdfenvs.sensors.full_sensor import FullSensor
 from mpscenes.obstacles.sphere_obstacle import SphereObstacle
 from mpscenes.goals.static_sub_goal import StaticSubGoal
+from mppiisaac.priors.fabrics_panda import FabricsPandaPrior
 
 from mppiisaac.utils.config_store import ExampleConfig
 
@@ -43,11 +44,8 @@ class EndEffectorGoalObjective(object):
         self.nav_goal = torch.tensor(cfg.goal, device=cfg.mppi.device)
 
     def compute_cost(self, sim):
-        pos = sim.rigid_body_state[:, -1, :3]
-        #dof_states = gym.acquire_dof_state_tensor(sim)
-        return torch.clamp(
-            torch.linalg.norm(pos - self.nav_goal, axis=1) - 0.05, min=0, max=1999
-        )
+        pos = sim.rigid_body_state[:, sim.robot_rigid_body_ee_idx, :3]
+        return 10 * torch.linalg.norm(pos - self.nav_goal, axis=1)
 
 
 def initalize_environment(cfg):
@@ -116,7 +114,8 @@ def set_planner(cfg):
     """
     objective = EndEffectorGoalObjective(cfg, cfg.mppi.device)
     #objective = JointSpaceGoalObjective(cfg, cfg.mppi.device)
-    planner = MPPIisaacPlanner(cfg, objective)
+    prior = FabricsPandaPrior(cfg)
+    planner = MPPIisaacPlanner(cfg, objective, prior)
 
     return planner
 
@@ -154,7 +153,6 @@ def run_panda_robot(cfg: ExampleConfig):
             qdot=ob_robot["joint_state"]["velocity"],
             obst=obst
         )
-        print(action)
         (
             ob,
             *_,

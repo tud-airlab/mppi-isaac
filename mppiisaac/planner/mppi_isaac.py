@@ -23,6 +23,7 @@ class MPPIisaacPlanner(object):
             cfg.fix_base,
             cfg.flip_visual,
             num_envs=cfg.mppi.num_samples,
+            ee_link=cfg.ee_link
         )
 
         if prior:

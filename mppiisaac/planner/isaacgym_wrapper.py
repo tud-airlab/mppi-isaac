@@ -49,6 +49,7 @@ class IsaacGymWrapper:
         fix_base: bool,
         flip_visual: bool,
         num_envs: int = 0,
+        ee_link: str = None
     ):
         self.gym = gymapi.acquire_gym()
 
@@ -63,6 +64,7 @@ class IsaacGymWrapper:
         self._urdf_file = urdf_file
         self._fix_base = fix_base
         self._flip_visual = flip_visual
+        self._ee_link = ee_link
         self.start_sim()
 
     def start_sim(self):
@@ -162,6 +164,11 @@ class IsaacGymWrapper:
             group=env_idx,
         )
         self.env_cfg[2]["handle"] = robot_handle
+
+        if self._ee_link:
+            self.robot_rigid_body_ee_idx = self.gym.find_actor_rigid_body_index(
+                env, robot_handle, self._ee_link, gymapi.IndexDomain.DOMAIN_ENV
+            )
 
         # Update point bot dynamics / control mode
         props = self.gym.get_asset_dof_properties(self._robot_asset)
@@ -356,7 +363,13 @@ class IsaacGymWrapper:
                 obst_idx = [actor["name"] for actor in self.env_cfg].index(name)
             except:
                 self.env_cfg.append(
-                        {"type": o_type, "name": name, "handle": None, "size": o_size, "fixed": True}
+                    {
+                        "type": o_type,
+                        "name": name,
+                        "handle": None,
+                        "size": o_size,
+                        "fixed": True,
+                    }
                 )
                 env_cfg_changed = True
                 continue

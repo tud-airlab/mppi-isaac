@@ -48,8 +48,8 @@ class EndEffectorGoalObjective(object):
         self.ort_goal = torch.tensor([1, 0, 0, 0], device=cfg.mppi.device)
 
     def compute_cost(self, sim):
-        pos = sim.rigid_body_state[:, -1, :3]
-        ort = sim.rigid_body_state[:, -1, 3:7]
+        pos = sim.rigid_body_state[:, sim.robot_rigid_body_ee_idx, :3]
+        ort = sim.rigid_body_state[:, sim.robot_rigid_body_ee_idx, 3:7]
         # dof_states = gym.acquire_dof_state_tensor(sim)
 
         reach_cost = torch.linalg.norm(pos - self.nav_goal, axis=1)
@@ -140,7 +140,6 @@ def run_panda_robot(cfg: ExampleConfig):
             q=ob_robot["joint_state"]["position"],
             qdot=ob_robot["joint_state"]["velocity"],
         )
-        # print(action)
         (
             ob,
             *_,
