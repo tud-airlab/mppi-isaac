@@ -12,6 +12,7 @@ from urdfenvs.sensors.full_sensor import FullSensor
 from mpscenes.obstacles.sphere_obstacle import SphereObstacle
 from mpscenes.obstacles.box_obstacle import BoxObstacle
 from mpscenes.goals.static_sub_goal import StaticSubGoal
+from mppiisaac.priors.fabrics_point import FabricsPointPrior
 
 from mppiisaac.utils.config_store import ExampleConfig
 
@@ -121,7 +122,8 @@ def set_planner(cfg):
     """
     # urdf = "../assets/point_robot.urdf"
     objective = Objective(cfg, cfg.mppi.device)
-    planner = MPPIisaacPlanner(cfg, objective)
+    prior = FabricsPointPrior(cfg)
+    planner = MPPIisaacPlanner(cfg, objective, prior)
 
     return planner
 

@@ -356,7 +356,7 @@ class IsaacGymWrapper:
                 obst_idx = [actor["name"] for actor in self.env_cfg].index(name)
             except:
                 self.env_cfg.append(
-                    {"type": o_type, "name": name, "handle": None, "size": o_size}
+                        {"type": o_type, "name": name, "handle": None, "size": o_size, "fixed": True}
                 )
                 env_cfg_changed = True
                 continue
