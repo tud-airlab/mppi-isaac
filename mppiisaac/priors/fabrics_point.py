@@ -5,28 +5,49 @@ from fabrics.planner.parameterized_planner import ParameterizedFabricPlanner
 import numpy as np
 import torch
 import hydra
+from isaacgym import gymapi
 
 
 torch.set_printoptions(precision=3, sci_mode=False, linewidth=160)
 
 
 class FabricsPointPrior(object):
-    def __init__(self, cfg):
+    def __init__(self, cfg, max_num_obstacles=10):
         self.nav_goal = list(cfg.goal)
         self.weight = 5.0
         self.dt = cfg.isaacgym.dt
         self.device = cfg.mppi.device
         self.env_id = -2
-        self._fabrics_prior = fabrics_point(self.nav_goal, self.weight)
+        self.max_num_obstacles = max_num_obstacles
+        self._fabrics_prior = fabrics_point(
+            self.nav_goal, self.weight, self.max_num_obstacles
+        )
 
     def compute_command(self, sim):
         dof_state = sim.dof_state[self.env_id].cpu()
         pos = np.array([dof_state[0], dof_state[2]])
         vel = np.array([dof_state[1], dof_state[3]])
 
+        obst_positions = np.array(sim.obstacle_positions[self.env_id].cpu())
+
+        x_obsts = []
+        radius_obsts = []
+        for i in range(self.max_num_obstacles):
+            if i < len(obst_positions):
+                x_obsts.append(obst_positions[i][:2])
+                if 'type' in sim.env_cfg[i + 3].keys() and sim.env_cfg[i+3]['type'] == 'sphere':
+                    radius_obsts.append(sim.env_cfg[i + 3]["size"][0])
+                else:
+                    radius_obsts.append(0.2)
+            else:
+                x_obsts.append(np.array([100, 100]))
+                radius_obsts.append(0.2)
+
         acc_action = self._fabrics_prior.compute_action(
             q=pos,
             qdot=vel,
+            x_obsts=x_obsts,
+            radius_obsts=radius_obsts,
             x_goal_0=self.nav_goal,
             weight_goal_0=self.weight,
             radius_body_1=np.array([0.2]),
@@ -40,7 +61,7 @@ class FabricsPointPrior(object):
         return out
 
 
-def fabrics_point(goal, weight=0.5):
+def fabrics_point(goal, weight=0.5, max_num_obstacles=10):
     """
     Initializes the fabric planner for the point robot.
     This function defines the forward kinematics for collision avoidance,
@@ -84,7 +105,7 @@ def fabrics_point(goal, weight=0.5):
         collision_links,
         self_collision_links,
         goal_composition,
-        number_obstacles=0,
+        number_obstacles=max_num_obstacles,
     )
     planner.concretize()
     return planner
@@ -102,6 +123,26 @@ def test(cfg: ExampleConfig):
         cfg.fix_base,
         cfg.flip_visual,
         num_envs=1,
+    )
+
+    sim.env_cfg.append(
+        {
+            "type": "sphere",
+            "name": "sphere0",
+            "handle": None,
+            "size": [0.2],
+            "fixed": True,
+        }
+    )
+    sim.stop_sim()
+    sim.start_sim()
+
+    sim.update_root_state_tensor_by_obstacles_tensor(
+        torch.tensor([[1.0, 1.0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0]], device="cuda:0")
+    )
+
+    sim.gym.viewer_camera_look_at(
+        sim.viewer, None, gymapi.Vec3(1.5, 6, 8), gymapi.Vec3(1.5, 0, 0)
     )
 
     prior = FabricsPointPrior(cfg)

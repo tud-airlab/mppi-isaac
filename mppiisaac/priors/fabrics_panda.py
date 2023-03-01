@@ -7,13 +7,14 @@ from fabrics.planner.parameterized_planner import ParameterizedFabricPlanner
 import numpy as np
 import torch
 import hydra
+from isaacgym import gymapi
 
 
 torch.set_printoptions(precision=3, sci_mode=False, linewidth=160)
 
 
 class FabricsPandaPrior(object):
-    def __init__(self, cfg):
+    def __init__(self, cfg, max_num_obstacles=10):
         self.nav_goal = list(cfg.goal)
         assert len(self.nav_goal) == 3
 
@@ -21,6 +22,7 @@ class FabricsPandaPrior(object):
         self.dt = cfg.isaacgym.dt
         self.device = cfg.mppi.device
         self.env_id = -2
+        self.max_num_obstacles = max_num_obstacles
 
         # Convert cartesian goal to goal composition
         goal_dict = {
@@ -37,16 +39,33 @@ class FabricsPandaPrior(object):
         }
         goal = GoalComposition(name="goal", content_dict=goal_dict)
 
-        self._fabrics_prior = fabrics_panda(goal, cfg.urdf_file)
+        self._fabrics_prior = fabrics_panda(goal, cfg.urdf_file, self.max_num_obstacles)
 
     def compute_command(self, sim):
         dofs = sim.dof_state[self.env_id].cpu() 
         pos = np.array(dofs[::2])
         vel = np.array(dofs[1::2])
 
+        obst_positions = np.array(sim.obstacle_positions[self.env_id].cpu())
+
+        x_obsts = []
+        radius_obsts = []
+        for i in range(self.max_num_obstacles):
+            if i < len(obst_positions):
+                x_obsts.append(obst_positions[i])
+                if 'type' in sim.env_cfg[i + 3].keys() and sim.env_cfg[i+3]['type'] == 'sphere':
+                    radius_obsts.append(sim.env_cfg[i + 3]["size"][0])
+                else:
+                    radius_obsts.append(0.2)
+            else:
+                x_obsts.append(np.array([100, 100, 100]))
+                radius_obsts.append(0.2)
+
         acc_action = self._fabrics_prior.compute_action(
             q=pos,
             qdot=vel,
+            x_obsts=x_obsts,
+            radius_obsts=radius_obsts,
             x_goal_0=self.nav_goal,
             weight_goal_0=self.weight,
             radius_body_panda_link3=np.array([0.02]),
@@ -60,7 +79,7 @@ class FabricsPandaPrior(object):
         )
         return vel_action
 
-def fabrics_panda(goal, urdf_file):
+def fabrics_panda(goal, urdf_file, max_num_obstacles=10):
     """
     Initializes the fabric planner for the panda robot.
     This function defines the forward kinematics for collision avoidance,
@@ -105,7 +124,7 @@ def fabrics_panda(goal, urdf_file):
         collision_links,
         self_collision_pairs,
         goal,
-        number_obstacles=0,
+        number_obstacles=max_num_obstacles,
         limits=panda_limits,
     )
     planner.concretize()
@@ -124,6 +143,26 @@ def test(cfg: ExampleConfig):
         cfg.fix_base,
         cfg.flip_visual,
         num_envs=1,
+    )
+
+    sim.env_cfg.append(
+        {
+            "type": "sphere",
+            "name": "sphere0",
+            "handle": None,
+            "size": [0.1],
+            "fixed": True,
+        }
+    )
+    sim.stop_sim()
+    sim.start_sim()
+
+    sim.update_root_state_tensor_by_obstacles_tensor(
+        torch.tensor([[0.6, 0.3, 0.9, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0]], device="cuda:0")
+    )
+
+    sim.gym.viewer_camera_look_at(
+        sim.viewer, None, gymapi.Vec3(1.5, 2, 3), gymapi.Vec3(1.5, 0, 0)
     )
 
     prior = FabricsPandaPrior(cfg)
