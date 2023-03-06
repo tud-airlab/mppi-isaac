@@ -114,7 +114,10 @@ def set_planner(cfg):
     """
     objective = EndEffectorGoalObjective(cfg, cfg.mppi.device)
     #objective = JointSpaceGoalObjective(cfg, cfg.mppi.device)
-    prior = FabricsPandaPrior(cfg)
+    if cfg.mppi.use_priors == True:
+        prior = FabricsPandaPrior(cfg)
+    else:
+        prior = None
     planner = MPPIisaacPlanner(cfg, objective, prior)
 
     return planner

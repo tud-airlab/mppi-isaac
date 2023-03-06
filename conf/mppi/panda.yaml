@@ -20,3 +20,4 @@ rollout_var_discount: 0.95
 update_cov: False
 sample_null_action: True
 filter_u: True
+use_priors: False

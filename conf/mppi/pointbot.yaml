@@ -15,3 +15,5 @@ rollout_var_discount: 0.95
 sample_null_action: True
 noise_abs_cost: False
 filter_u: True
+use_priors: True
+

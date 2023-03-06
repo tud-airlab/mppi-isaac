@@ -122,7 +122,10 @@ def set_planner(cfg):
     """
     # urdf = "../assets/point_robot.urdf"
     objective = Objective(cfg, cfg.mppi.device)
-    prior = FabricsPointPrior(cfg)
+    if cfg.mppi.use_priors == True:
+        prior = FabricsPointPrior(cfg)
+    else:
+        prior = None
     planner = MPPIisaacPlanner(cfg, objective, prior)
 
     return planner

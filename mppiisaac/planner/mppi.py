@@ -75,6 +75,7 @@ class MPPIConfig(object):
     sample_null_action: bool = False
     noise_abs_cost: bool = False
     filter_u: bool = False
+    use_priors: bool = False
 
 class MPPIPlanner(ABC):
     """
