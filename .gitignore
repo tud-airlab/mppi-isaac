@@ -3,7 +3,7 @@ __pycache__/*
 *.pyc
 dist
 build
-thirdparty/*/*
+thirdparty/**/*
 
 **/outputs/**
 .venv

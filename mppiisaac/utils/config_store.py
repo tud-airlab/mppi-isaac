@@ -3,7 +3,7 @@ from mppiisaac.planner.mppi import MPPIConfig
 from mppiisaac.planner.isaacgym_wrapper import IsaacGymConfig
 from hydra.core.config_store import ConfigStore
 
-from typing import List
+from typing import List, Optional
 
 
 @dataclass
@@ -21,6 +21,7 @@ class ExampleConfig:
     wheel_base: float = 0
     wheel_radius: float = 0
     wheel_count: int = 0
+    ee_link: Optional[str] = None
 
 
 cs = ConfigStore.instance()

@@ -65,8 +65,8 @@ class MPPIConfig(object):
     lambda_: float = 1.0
     update_lambda: bool = False
     update_cov: bool = False
-    u_min: float = -1.0
-    u_max: float = 1.0
+    u_min: Optional[List[float]] = None
+    u_max: Optional[List[float]] = None
     u_init: float = 0.0
     U_init: Optional[List[List[float]]] = None
     u_scale: float = 1
@@ -75,6 +75,7 @@ class MPPIConfig(object):
     sample_null_action: bool = False
     noise_abs_cost: bool = False
     filter_u: bool = False
+    use_priors: bool = False
 
 class MPPIPlanner(ABC):
     """
@@ -97,7 +98,7 @@ class MPPIPlanner(ABC):
                             mppi_mode = 'halton-spline', sample_mode = 'random'
     """
 
-    def __init__(self, cfg: MPPIConfig, nx: int, dynamics: Callable, running_cost: Callable):
+    def __init__(self, cfg: MPPIConfig, nx: int, dynamics: Callable, running_cost: Callable, prior: Optional[Callable] = None):
 
         # Parameters for mppi and sampling method
         self.mppi_mode = cfg.mppi_mode
@@ -138,11 +139,11 @@ class MPPIPlanner(ABC):
             cfg.u_min = -cfg.u_max
         if cfg.u_min and not cfg.u_max:
             cfg.u_max = -cfg.u_min
-        assert cfg.u_max > 0 and cfg.u_min < 0
         self.cfg = cfg
 
         self.dynamics = dynamics
         self.running_cost = running_cost
+        self.prior = prior
 
         # Convert lists in cfg to tensors and put them on device
         self.noise_sigma = torch.tensor(cfg.noise_sigma, device=cfg.device)
@@ -352,9 +353,13 @@ class MPPIPlanner(ABC):
 
             # Last rollout is a braking manover
             if self.sample_null_action:
-                u[self.K -1, :] = torch.zeros_like(u[self.K -1, :])
+                u[self.K - 1, :] = torch.zeros_like(u[self.K -1, :])
                 self.perturbed_action[self.K - 1][t] = u[self.K -1, :]
 
+            if self.prior:
+                u[self.K - 2] = self.prior(state, t)
+                self.perturbed_action[self.K - 2][t] = u[self.K - 2]
+                
             state, u = self._dynamics(state, u, t)
             c = self._running_cost(state)
 

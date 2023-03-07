@@ -17,6 +17,7 @@ isaacgym = {path = "thirdparty/isaacgym/python", develop = true}
 hydra-core = "^1.3.1"
 ghalton = "^0.6.2"
 mpscenes = "^0.3.1"
+fabrics = "^0.6.2"
 
 [tool.poetry.group.dev]
 optional = true

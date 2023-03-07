@@ -8,17 +8,20 @@ from omegaconf import OmegaConf
 import os
 import torch
 from mpscenes.goals.static_sub_goal import StaticSubGoal
-
 from mppiisaac.utils.config_store import ExampleConfig
+from mppiisaac.priors.fabrics_point import FabricsPointPrior
 
 # MPPI to navigate a simple robot to a goal position
+
 
 class Objective(object):
     def __init__(self, cfg, device):
         self.nav_goal = torch.tensor(cfg.goal, device=cfg.mppi.device)
 
     def compute_cost(self, sim):
-        pos = torch.cat((sim.dof_state[:, 0].unsqueeze(1), sim.dof_state[:, 2].unsqueeze(1)), 1)
+        pos = torch.cat(
+            (sim.dof_state[:, 0].unsqueeze(1), sim.dof_state[:, 2].unsqueeze(1)), 1
+        )
         return torch.clamp(
             torch.linalg.norm(pos - self.nav_goal, axis=1) - 0.05, min=0, max=1999
         )
@@ -36,7 +39,9 @@ def initalize_environment(cfg) -> UrdfEnv:
     render
         Boolean toggle to set rendering on (True) or off (False).
     """
-    urdf_file = os.path.dirname(os.path.abspath(__file__)) + "/../assets/urdf/" + cfg.urdf_file
+    urdf_file = (
+        os.path.dirname(os.path.abspath(__file__)) + "/../assets/urdf/" + cfg.urdf_file
+    )
     robots = [
         GenericUrdfReacher(urdf=urdf_file, mode="vel"),
     ]
@@ -69,7 +74,11 @@ def set_planner(cfg):
     """
     # urdf = "../assets/point_robot.urdf"
     objective = Objective(cfg, cfg.mppi.device)
-    planner = MPPIisaacPlanner(cfg, objective)
+    if cfg.mppi.use_priors == True:
+        prior = FabricsPointPrior(cfg)
+    else:
+        prior = None
+    planner = MPPIisaacPlanner(cfg, objective, prior)
 
     return planner
 
@@ -91,11 +100,10 @@ def run_point_robot(cfg: ExampleConfig):
     # Note: Workaround to trigger the dataclasses __post_init__ method
     cfg = OmegaConf.to_object(cfg)
 
-
     env = initalize_environment(cfg)
     planner = set_planner(cfg)
 
-    action = np.zeros(int(cfg.nx/2))
+    action = np.zeros(int(cfg.nx / 2))
     ob, *_ = env.step(action)
 
     for _ in range(cfg.n_steps):
