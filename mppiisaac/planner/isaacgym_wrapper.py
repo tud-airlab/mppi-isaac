@@ -49,7 +49,8 @@ class IsaacGymWrapper:
         fix_base: bool,
         flip_visual: bool,
         num_envs: int = 0,
-        ee_link: str = None
+        ee_link: str = None,
+        disable_gravity: bool = False
     ):
         self.gym = gymapi.acquire_gym()
 
@@ -65,6 +66,8 @@ class IsaacGymWrapper:
         self._fix_base = fix_base
         self._flip_visual = flip_visual
         self._ee_link = ee_link
+        self._disable_gravity = disable_gravity
+
         self.start_sim()
 
     def start_sim(self):
@@ -89,6 +92,7 @@ class IsaacGymWrapper:
             asset_root=f"{file_path}/../../assets",
             fix_base_link=self._fix_base,
             flip_visual_attachments=self._flip_visual,
+            disable_gravity=self._disable_gravity
         )
 
         self.envs = [self.create_env(i) for i in range(self.num_envs)]
@@ -291,13 +295,13 @@ class IsaacGymWrapper:
         asset_root=f"{file_path}/../../assets",
         fix_base_link=False,
         flip_visual_attachments=False,
-        gravity=False,
+        disable_gravity=False,
     ):
         asset_options = gymapi.AssetOptions()
         asset_options.fix_base_link = fix_base_link
         asset_options.armature = 0.01
         asset_options.flip_visual_attachments = flip_visual_attachments
-        asset_options.disable_gravity = not gravity
+        asset_options.disable_gravity = disable_gravity
         return self.gym.load_asset(self.sim, asset_root, asset_file, asset_options)
 
     def set_dof_state_tensor(self, state):

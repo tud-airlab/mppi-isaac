@@ -17,6 +17,7 @@ class ExampleConfig:
     urdf_file: str
     fix_base: bool
     flip_visual: bool
+    disable_gravity: bool = False
     differential_drive: bool = False
     wheel_base: float = 0
     wheel_radius: float = 0
