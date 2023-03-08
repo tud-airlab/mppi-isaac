@@ -9,4 +9,5 @@ urdf_file: "panda_isaac/robots/franka_panda.urdf"
 ee_link: "panda_link7"
 fix_base: true
 flip_visual: true
+disable_gravity: true
 nx: 14

@@ -8,4 +8,5 @@ n_steps: 1000
 urdf_file: "panda_bullet/panda.urdf"
 fix_base: true
 flip_visual: false
+disable_gravity: true
 nx: 14
