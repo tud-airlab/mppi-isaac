@@ -47,7 +47,7 @@
       <inertia ixx="2.3" ixy="0" ixz="0" iyy="3.35" iyz="0.00" izz="1.22"/>
     </inertial>
     <visual>
-      <origin rpy="1.5708 0 0" xyz="0 0 0"/>
+      <origin rpy="0 0 0" xyz="0 0 0"/>
       <geometry>
         <mesh filename="meshes/visual/chassis_link.dae"/>
       </geometry>
@@ -83,7 +83,7 @@
       </geometry>
     </collision>
   </link>
-  <joint name="rotacastor_right_joint" type="fixed">
+  <joint name="rotacastor_right_joint" type="continuous">
     <origin rpy="0 0 0" xyz="-0.177 -0.274 0.043"/>
     <parent link="chassis_link"/>
     <child link="rotacastor_right_link"/>
@@ -110,7 +110,7 @@
       </geometry>
     </collision>
   </link>
-  <joint name="rotacastor_left_joint" type="fixed">
+  <joint name="rotacastor_left_joint" type="continuous">
     <origin rpy="0 0 0" xyz="0.177 -0.274 0.043"/>
     <parent link="chassis_link"/>
     <child link="rotacastor_left_link"/>
@@ -209,7 +209,7 @@ to be that way. -->
     <child link="ee_link"/>
   </joint>
   <joint name="base_add_orientation" type="fixed">
-    <origin rpy="0 0 0" xyz="0.0 0 0"/>
+    <origin rpy="0 0 1.57079" xyz="0.0 0 0"/>
     <parent link="base_link_ori"/>
     <child link="base_link"/>
   </joint>

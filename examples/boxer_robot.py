@@ -1,7 +1,7 @@
 import gym
 import numpy as np
-from urdfenvs.robots.boxer import BoxerRobot
 from urdfenvs.urdf_common.urdf_env import UrdfEnv
+from urdfenvs.robots.generic_urdf import GenericDiffDriveRobot
 from mppiisaac.planner.mppi_isaac import MPPIisaacPlanner
 import hydra
 from omegaconf import OmegaConf
@@ -12,6 +12,11 @@ from mpscenes.goals.static_sub_goal import StaticSubGoal
 from mppiisaac.utils.config_store import ExampleConfig
 
 # MPPI to navigate a simple robot to a goal position
+
+urdf_file = (
+    os.path.dirname(os.path.abspath(__file__))
+    + "/../assets/urdf/boxer/boxer_bullet.urdf"
+)
 
 class Objective(object):
     def __init__(self, cfg, device):
@@ -39,9 +44,20 @@ def initalize_environment(cfg) -> UrdfEnv:
     """
     # urdf_file = os.path.dirname(os.path.abspath(__file__)) + "/../assets/urdf/" + cfg.urdf_file
     robots = [
-        BoxerRobot(mode="vel"),
+        GenericDiffDriveRobot(
+            urdf=urdf_file,
+            mode="vel",
+            actuated_wheels=["wheel_right_joint", "wheel_left_joint"],
+            castor_wheels=["rotacastor_right_joint", "rotacastor_left_joint"],
+            spawn_offset=np.array([0.0, 0.0, 0.05]),
+            wheel_radius = 0.08,
+            wheel_distance = 0.494,
+        ),
     ]
-    env: UrdfEnv = gym.make("urdf-env-v0", dt=0.02, robots=robots, render=cfg.render)
+    env = gym.make(
+        "urdf-env-v0",
+        dt=0.01, robots=robots, render=cfg.render
+    )
     # Set the initial position and velocity of the boxer robot
     env.reset()
     goal_dict = {
@@ -97,8 +113,6 @@ def run_boxer_robot(cfg: ExampleConfig):
 
     action = np.zeros(int(cfg.nx/2))
     ob, *_ = env.step(action)
-    
-    
     for _ in range(cfg.n_steps):
         #Calculate action with the fabric planner, slice the states to drop Z-axis [3] information.
 
@@ -113,7 +127,7 @@ def run_boxer_robot(cfg: ExampleConfig):
             ob,
             *_,
         ) = env.step(action)
-        print(action)
+        #print(action)
     return {}
 
 

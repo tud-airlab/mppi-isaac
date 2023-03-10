@@ -2045,20 +2045,20 @@ pyyaml = "*"
 
 [[package]]
 name = "urdfenvs"
-version = "0.5.2"
+version = "0.6.0"
 description = "Simple simulation environment for robots, based on the urdf files."
 category = "dev"
 optional = false
 python-versions = ">=3.8,<4.0"
 files = [
-    {file = "urdfenvs-0.5.2-py3-none-any.whl", hash = "sha256:deaa6fd39deab9b653dee93c1ad5cf15ccb103178395eb9ee12be0bfa02ffcc3"},
-    {file = "urdfenvs-0.5.2.tar.gz", hash = "sha256:ea94e48fb76494bb1d01188390dcfbfc48e09871bd36c1e57aaf947929da6c14"},
+    {file = "urdfenvs-0.6.0-py3-none-any.whl", hash = "sha256:25735046c1e08b988aa00a884f6fa8738bb9f790556518621ec9da2a2a9eab16"},
+    {file = "urdfenvs-0.6.0.tar.gz", hash = "sha256:7bb68308b5107c9f2780abd626e2b9736dbf50320c1994e14ecbef47339b1a46"},
 ]
 
 [package.dependencies]
 deprecation = ">=2.1.0,<3.0.0"
 gym = ">=0.22,<0.23"
-mpscenes = ">=0.3.0,<0.4.0"
+mpscenes = ">=0.3.1,<0.4.0"
 numpy = ">=1.19,<1.24"
 pybullet = ">=3.2.1,<4.0.0"
 yourdfpy = ">=0.0.52,<0.0.53"
@@ -2317,4 +2317,4 @@ testing = ["flake8 (<5)", "func-timeout", "jaraco.functools", "jaraco.itertools"
 [metadata]
 lock-version = "2.0"
 python-versions = "^3.8,<3.9"
-content-hash = "002bd23f1420edeeef967f1ec6346b723a8def79dd0313eabf97287f542fd02e"
+content-hash = "bf6574adb80a740dd35aea5a0cbe2542176a8a66d2c9111484e48cc4d7e6578b"
