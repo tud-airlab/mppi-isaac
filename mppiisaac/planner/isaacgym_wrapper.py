@@ -360,8 +360,11 @@ class IsaacGymWrapper:
         """
         env_cfg_changed = False
 
-        for i, obst in enumerate(obstacles):
-            pos, vel, o_type, o_size = obst
+        for i, obst in enumerate(list(obstacles.values())):
+            pos = obst['position']
+            vel = obst['velocity']
+            o_type = obst['type']
+            o_size = obst['size']
             name = f"{o_type}{i}"
             try:
                 obst_idx = [actor["name"] for actor in self.env_cfg].index(name)
