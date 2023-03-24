@@ -4,7 +4,7 @@ config:
   n_steps: 1000
   mppi:
     num_samples: 100
-    horizon: 20
+    horizon: 12
     mppi_mode: halton-spline
     sampling_method: halton
     noise_sigma:
@@ -23,21 +23,21 @@ config:
     update_lambda: false
     update_cov: false
     u_min:
-    - -1.5
+    - -2
     u_max:
-    - 1.5
+    - 2
     u_init: 0.0
     U_init: null
     u_scale: 1.0
     u_per_command: 1
-    rollout_var_discount: 0.95
+    rollout_var_discount: 0.99
     sample_null_action: true
     noise_abs_cost: false
     filter_u: true
     use_priors: true
   isaacgym:
     dt: 0.05
-    substeps: 2
+    substeps: 1
     use_gpu_pipeline: true
     num_client_threads: 0
     viewer: false

@@ -9,8 +9,8 @@ class Objective(object):
     def __init__(self, goal, device):
         self.nav_goal = torch.tensor(goal, device=device)
 
-        self.w_nav = 1.0
-        self.w_obs = 0.5
+        self.w_nav = 2.0
+        self.w_obs = 1
 
     def compute_cost(self, sim: IsaacGymWrapper):
         dof_state = sim.dof_state
@@ -18,7 +18,7 @@ class Objective(object):
         obs_positions = sim.obstacle_positions
 
         nav_cost = torch.clamp(
-            torch.linalg.norm(pos - self.nav_goal, axis=1) - 0.05, min=0, max=1999
+            torch.linalg.norm(pos - self.nav_goal, axis=1), min=0, max=1999
         )
 
         # sim.gym.refresh_net_contact_force_tensor(sim.sim)
