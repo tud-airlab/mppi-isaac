@@ -50,7 +50,8 @@ class IsaacGymWrapper:
         flip_visual: bool,
         num_envs: int = 0,
         ee_link: str = None,
-        disable_gravity: bool = False
+        disable_gravity: bool = False,
+        viewer: bool = False
     ):
         self.gym = gymapi.acquire_gym()
 
@@ -61,6 +62,7 @@ class IsaacGymWrapper:
             {"type": "robot", "name": "main_robot", "handle": None},
         ]
         self.cfg = cfg
+        if viewer: self.cfg.viewer = viewer
         self.num_envs = num_envs
         self._urdf_file = urdf_file
         self._fix_base = fix_base
@@ -92,7 +94,7 @@ class IsaacGymWrapper:
             asset_root=f"{file_path}/../../assets",
             fix_base_link=self._fix_base,
             flip_visual_attachments=self._flip_visual,
-            disable_gravity=self._disable_gravity
+            disable_gravity=self._disable_gravity,
         )
 
         self.envs = [self.create_env(i) for i in range(self.num_envs)]
@@ -182,6 +184,11 @@ class IsaacGymWrapper:
         self.gym.set_actor_dof_properties(env, robot_handle, props)
 
         for obst_cfg in self.env_cfg[3:]:
+            if "init_pos" in obst_cfg.keys():
+                init_pos = gymapi.Vec3(*obst_cfg["init_pos"])
+            else:
+                init_pos=gymapi.Vec3(0, 0, -20)
+
             if obst_cfg["type"] == "sphere":
                 # add spheres
                 handle = self.add_sphere(
@@ -189,19 +196,28 @@ class IsaacGymWrapper:
                     env_idx=env_idx,
                     name=obst_cfg["name"],
                     radius=obst_cfg["size"][0],
-                    pos=gymapi.Vec3(0, 0, -20),
+                    pos=init_pos,
                     color=gymapi.Vec3(1.0, 1.0, 1.0),
                 )
             elif obst_cfg["type"] == "box":
                 # add spheres
+                if "mass" in obst_cfg.keys():
+                    mass = obst_cfg['mass']
+                else:
+                    mass = 1.0
+                if "mass" in obst_cfg.keys():
+                    color = gymapi.Vec3(*obst_cfg['color'])
+                else:
+                    color = gymapi.Vec3(1.0, 1.0, 1.0)
                 handle = self.add_box(
                     env=env,
                     env_idx=env_idx,
                     name=obst_cfg["name"],
                     whd=obst_cfg["size"],
-                    pos=gymapi.Vec3(0, 0, -20),
-                    color=gymapi.Vec3(1.0, 1.0, 1.0),
+                    pos=init_pos,
+                    color=color,
                     fixed=obst_cfg["fixed"],
+                    mass=mass
                 )
             else:
                 raise NotImplementedError(
@@ -403,6 +419,7 @@ class IsaacGymWrapper:
 
     def update_root_state_tensor_by_obstacles_tensor(self, obst_tensor):
         for i, o_tensor in enumerate(obst_tensor):
+            if self.env_cfg[i + 3]['fixed']: continue
             self.root_state[:, i + 3] = o_tensor.repeat(self.num_envs, 1)
 
         self.gym.set_actor_root_state_tensor(
