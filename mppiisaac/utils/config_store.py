@@ -1,6 +1,6 @@
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 from mppiisaac.planner.mppi import MPPIConfig
-from mppiisaac.planner.isaacgym_wrapper import IsaacGymConfig
+from mppiisaac.planner.isaacgym_wrapper import IsaacGymConfig, ActorWrapper
 from hydra.core.config_store import ConfigStore
 
 from typing import List, Optional
@@ -17,6 +17,7 @@ class ExampleConfig:
     urdf_file: str
     fix_base: bool
     flip_visual: bool
+    initial_position: List[float] = field(default_factory=lambda: [0, 0, 0])
     disable_gravity: bool = False
     differential_drive: bool = False
     wheel_base: float = 0

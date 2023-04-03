@@ -36,6 +36,7 @@ class MPPIisaacPlanner(object):
             cfg.urdf_file,
             cfg.fix_base,
             cfg.flip_visual,
+            robot_init_pos=cfg.initial_position,
             num_envs=cfg.mppi.num_samples,
             ee_link=cfg.ee_link,
             disable_gravity=cfg.disable_gravity,

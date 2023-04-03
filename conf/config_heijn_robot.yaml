@@ -3,6 +3,7 @@ defaults:
   - isaacgym: normal
 
 goal: [2.0, 2.0]
+initial_position: [0.0, 0.0, 0.05]
 render: true
 n_steps: 1000
 urdf_file: "heijn/heijn.urdf"

@@ -75,6 +75,7 @@ class IsaacGymWrapper:
         flip_visual: bool,
         num_envs: int = 0,
         ee_link: str = None,
+        robot_init_pos: List[float] = [0.0, 0.0, 0.0],
         disable_gravity: bool = False,
         viewer: bool = False,
     ):
@@ -87,7 +88,7 @@ class IsaacGymWrapper:
                 "handle": None,
                 "fixed": True,
                 "size": [0.5, 0.05, 0.01],
-                "init_pos": [0, 0.25, 0.01],
+                "init_pos": [0.25, 0.0, 0.01],
                 "color": [1, 0.0, 0.2],
                 "collision": False
             },
@@ -97,11 +98,11 @@ class IsaacGymWrapper:
                 "handle": None,
                 "fixed": True,
                 "size": [0.05, 0.5, 0.01],
-                "init_pos": [0.25, 0, 0.01],
+                "init_pos": [0.0, 0.25, 0.01],
                 "color": [0.0, 1, 0.2],
                 "collision": False
             },
-            {"type": "robot", "name": "main_robot", "handle": None, "fixed": True},
+            {"type": "robot", "name": "main_robot", "handle": None, "fixed": fix_base, "init_pos": robot_init_pos},
         ]
         self.env_cfg = [ActorWrapper(**a) for a in self.env_cfg]
 
@@ -298,6 +299,9 @@ class IsaacGymWrapper:
         self.saved_root_state = self.root_state.clone()
 
     def reset_root_state(self):
+        if self._ee_link:
+            self.ee_positions_buffer = []
+
         if self.saved_root_state is not None:
             self.gym.set_actor_root_state_tensor(
                 self.sim, gymtorch.unwrap_tensor(self.saved_root_state)
@@ -332,10 +336,10 @@ class IsaacGymWrapper:
             pos, vel, o_type, o_size = obst
             name = f"{o_type}{i}"
             try:
-                obst_idx = [idx for idx, actor in enumerate(self.env_cfg) if actor.name == name]
+                obst_idx = [idx for idx, actor in enumerate(self.env_cfg) if actor.name == name][0]
             except:
                 self.env_cfg.append(
-                    ActorWrapper({
+                    ActorWrapper(**{
                         "type": o_type,
                         "name": name,
                         "handle": None,

@@ -35,8 +35,8 @@ class FabricsPointPrior(object):
         for i in range(self.max_num_obstacles):
             if i < len(obst_positions):
                 x_obsts.append(obst_positions[i][:2])
-                if 'type' in sim.env_cfg[i + 3].keys() and sim.env_cfg[i+3]['type'] == 'sphere':
-                    radius_obsts.append(sim.env_cfg[i + 3]["size"][0])
+                if sim.env_cfg[i+3].type == 'sphere':
+                    radius_obsts.append(sim.env_cfg[i + 3].size[0])
                 else:
                     radius_obsts.append(0.2)
             else:
@@ -123,23 +123,22 @@ def test(cfg: ExampleConfig):
         cfg.fix_base,
         cfg.flip_visual,
         num_envs=1,
+        robot_init_pos=cfg.initial_position,
+        disable_gravity=cfg.disable_gravity,
     )
 
-    sim.env_cfg.append(
+    sim.add_to_envs([
         {
             "type": "sphere",
             "name": "sphere0",
             "handle": None,
             "size": [0.2],
             "fixed": True,
-        }
+            "init_pos": [1.0, 1.0, 0.0]
+        }]
     )
     sim.stop_sim()
     sim.start_sim()
-
-    sim.update_root_state_tensor_by_obstacles_tensor(
-        torch.tensor([[1.0, 1.0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0]], device="cuda:0")
-    )
 
     sim.gym.viewer_camera_look_at(
         sim.viewer, None, gymapi.Vec3(1.5, 6, 8), gymapi.Vec3(1.5, 0, 0)
