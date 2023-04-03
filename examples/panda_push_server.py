@@ -31,7 +31,6 @@ def bytes_to_torch(b: bytes) -> torch.Tensor:
 def run_panda_robot(cfg: ExampleConfig):
     # Note: Workaround to trigger the dataclasses __post_init__ method
     cfg = OmegaConf.to_object(cfg)
-    cfg.isaacgym.dt=0.05
 
     sim = IsaacGymWrapper(
         cfg.isaacgym,
@@ -62,13 +61,12 @@ def run_panda_robot(cfg: ExampleConfig):
             "mass": 0.250,
             "fixed": False,
             "handle": None,
-            "color": [0.2, 0.2, 1.0]
+            "color": [0.2, 0.2, 1.0],
+            "friction": 0.2
         }
     ]
-    for a in additions:
-        sim.env_cfg.append(a)
-    sim.stop_sim()
-    sim.start_sim()
+
+    sim.add_to_envs(additions)
 
     sim.gym.viewer_camera_look_at(
         sim.viewer, None, gymapi.Vec3(1.5, 2, 3), gymapi.Vec3(1.5, 0, 0)
@@ -81,7 +79,7 @@ def run_panda_robot(cfg: ExampleConfig):
     planner.add_to_env(additions)
 
     pi = 3.14
-    sim.set_dof_state_tensor(torch.tensor([0, 0, 0, 0, 0, 0, -pi/2, 0, 0, 0, pi/2, 0, pi/4, 0], device="cuda:0"))
+    sim.set_dof_state_tensor(torch.tensor([0, 0, 0, 0, 0, 0, -pi * 0.65, 0, 0, 0, pi/2, 0, 0, 0], device="cuda:0"))
 
     for _ in range(cfg.n_steps):
         t = time.time()
@@ -91,14 +89,20 @@ def run_panda_robot(cfg: ExampleConfig):
             torch_to_bytes(sim.root_state[0]),
             torch_to_bytes(sim.rigid_body_state[0]),
         )
+        sim.gym.clear_lines(sim.viewer)
 
         # Compute action
         action = bytes_to_torch(planner.command())
         if torch.any(torch.isnan(action)):
+            print("nan action")
             action = torch.zeros_like(action)
 
         # Apply action
         sim.set_dof_velocity_target_tensor(action)
+
+        # Visualize samples
+        rollouts = bytes_to_torch(planner.get_rollouts())
+        sim.draw_lines(rollouts)
 
         # Step simulator
         sim.step()
@@ -106,7 +110,7 @@ def run_panda_robot(cfg: ExampleConfig):
         # Print error of block
         pos = sim.root_state[0, -1][:2].cpu().numpy()
         goal = np.array([0.5, 0])
-        print(f"L2: {np.linalg.norm(pos - goal)} FPS: {1/(time.time() - t)}")
+        print(f"L2: {np.linalg.norm(pos - goal)} FPS: {1/(time.time() - t)} RT-factor: {cfg.isaacgym.dt/(time.time() - t)}")
     return {}
 
 

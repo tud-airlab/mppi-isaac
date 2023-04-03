@@ -148,6 +148,7 @@ class MPPIisaacPlanner(object):
     def reset_rollout_sim(
         self, dof_state_tensor, root_state_tensor, rigid_body_state_tensor
     ):
+        self.sim.ee_positions_buffer = []
         self.sim.dof_state[:] = bytes_to_torch(dof_state_tensor)
         self.sim.root_state[:] = bytes_to_torch(root_state_tensor)
         self.sim.rigid_body_state[:] = bytes_to_torch(rigid_body_state_tensor)
@@ -159,9 +160,8 @@ class MPPIisaacPlanner(object):
         return torch_to_bytes(self.mppi.command(self.state_place_holder))
 
     def add_to_env(self, env_cfg_additions):
-        for addition in env_cfg_additions: 
-            self.sim.env_cfg.append(addition)
+        self.sim.add_to_envs(env_cfg_additions)
 
-        self.sim.stop_sim()
-        self.sim.start_sim()
+    def get_rollouts(self):
+        return torch_to_bytes(torch.stack(self.sim.ee_positions_buffer))
 
