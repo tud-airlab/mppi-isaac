@@ -1,10 +1,24 @@
 from mppiisaac.planner.isaacgym_wrapper import IsaacGymWrapper
 from mppiisaac.planner.mppi import MPPIPlanner
 from typing import Callable, Optional
+import io
 
+from isaacgym import gymtorch
 import torch
 
 torch.set_printoptions(precision=2, sci_mode=False)
+
+
+def torch_to_bytes(t: torch.Tensor) -> bytes:
+    buff = io.BytesIO()
+    torch.save(t, buff)
+    buff.seek(0)
+    return buff.read()
+
+
+def bytes_to_torch(b: bytes) -> torch.Tensor:
+    buff = io.BytesIO(b)
+    return torch.load(buff)
 
 
 class MPPIisaacPlanner(object):
@@ -22,13 +36,14 @@ class MPPIisaacPlanner(object):
             cfg.urdf_file,
             cfg.fix_base,
             cfg.flip_visual,
+            robot_init_pos=cfg.initial_position,
             num_envs=cfg.mppi.num_samples,
             ee_link=cfg.ee_link,
-            disable_gravity=cfg.disable_gravity
+            disable_gravity=cfg.disable_gravity,
         )
 
         if prior:
-            self.prior = lambda state, t : prior.compute_command(self.sim)
+            self.prior = lambda state, t: prior.compute_command(self.sim)
         else:
             self.prior = None
 
@@ -39,7 +54,6 @@ class MPPIisaacPlanner(object):
             running_cost=self.running_cost,
             prior=self.prior,
         )
-
 
         # Note: place_holder variable to pass to mppi so it doesn't complain, while the real state is actually the isaacgym simulator itself.
         self.state_place_holder = torch.zeros((self.cfg.mppi.num_samples, self.cfg.nx))
@@ -131,3 +145,24 @@ class MPPIisaacPlanner(object):
         self.sim.save_root_state()
         actions = self.mppi.command(self.state_place_holder).cpu()
         return actions
+
+    def reset_rollout_sim(
+        self, dof_state_tensor, root_state_tensor, rigid_body_state_tensor
+    ):
+        self.sim.ee_positions_buffer = []
+        self.sim.dof_state[:] = bytes_to_torch(dof_state_tensor)
+        self.sim.root_state[:] = bytes_to_torch(root_state_tensor)
+        self.sim.rigid_body_state[:] = bytes_to_torch(rigid_body_state_tensor)
+
+        self.sim.gym.set_dof_state_tensor(self.sim.sim, gymtorch.unwrap_tensor(self.sim.dof_state))
+        self.sim.gym.set_actor_root_state_tensor(self.sim.sim, gymtorch.unwrap_tensor(self.sim.root_state))
+
+    def command(self):
+        return torch_to_bytes(self.mppi.command(self.state_place_holder))
+
+    def add_to_env(self, env_cfg_additions):
+        self.sim.add_to_envs(env_cfg_additions)
+
+    def get_rollouts(self):
+        return torch_to_bytes(torch.stack(self.sim.ee_positions_buffer))
+
