@@ -28,7 +28,7 @@ class Objective(object):
         self.ee_index = 11
         self.block_index = 4
         self.ort_goal_euler = torch.tensor([0, 0, 0], device=cfg.mppi.device)
-        self.ee_hover_height = 0.135
+        self.ee_hover_height = 0.14
 
         self.block_goal_pose_emdn_1 = torch.tensor([0.5, 0.3, 0.5, 0.0, 0.0, 0.0, 1.0], device=cfg.mppi.device)
         self.block_goal_pose_emdn_2 = torch.tensor([0.5, 0.3, 0.5, 0, 0, 0.7071068, 0.7071068], device=cfg.mppi.device) # Rotation 90 deg
