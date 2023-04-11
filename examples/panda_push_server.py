@@ -53,10 +53,11 @@ def run_panda_robot(cfg: ExampleConfig):
                 [0.198, 0.198, 0.06, 0.198, 0.565, 0.42, 0.],     # Baseline 2, C
                 [0.166, 0.228, 0.08, 0.312, 0.587, 0.42, 0.],     # Baseline 2, D
                 [0.153, 0.462, 0.05, 0.181, 0.506, 0.40, 0.],]    # Baseline 2, E
+    
     obj_ = obj_set[obj_index][:]
     table_dim = [0.8, 1.0, 0.108]
     table_pos = [0.5, 0., table_dim[-1]/2]
-    
+
     additions = [
         {
             "type": "box",
@@ -68,7 +69,7 @@ def run_panda_robot(cfg: ExampleConfig):
         },
         {
             "type": "box",
-            "name": "block",
+            "name": "block_to_push",
             "size": [obj_[0], obj_[1], obj_[2]],
             "init_pos": [obj_[5], obj_[6], table_dim[-1] + obj_[2] / 2],
             "mass": obj_[4],
@@ -91,13 +92,14 @@ def run_panda_robot(cfg: ExampleConfig):
 
     planner.add_to_env(additions)
 
-    pi = 3.14
     init_pos = [0.0, -0.94, 0., -2.8, 0., 1.8675, 0.]
     init_vel = [0., 0., 0., 0., 0., 0., 0.,]
 
     sim.set_dof_state_tensor(torch.tensor([init_pos[0], init_vel[0], init_pos[1], init_vel[1], init_pos[2], init_vel[2],
                                            init_pos[3], init_vel[3], init_pos[4], init_vel[4], init_pos[5], init_vel[5],
                                            init_pos[6], init_vel[6]], device="cuda:0"))
+
+    count = 0
 
     for _ in range(cfg.n_steps):
         t = time.time()
@@ -126,9 +128,15 @@ def run_panda_robot(cfg: ExampleConfig):
         sim.step()
 
         # Print error of block
-        pos = sim.root_state[0, -1][:2].cpu().numpy()
-        goal = np.array([0.5, 0])
-        print(f"L2: {np.linalg.norm(pos - goal)} FPS: {1/(time.time() - t)} RT-factor: {cfg.isaacgym.dt/(time.time() - t)}")
+        # pos = sim.root_state[0, -1][:2].cpu().numpy()
+        # goal = np.array([0.5, 0])
+        # print(f"L2: {np.linalg.norm(pos - goal)} FPS: {1/(time.time() - t)} RT-factor: {cfg.isaacgym.dt/(time.time() - t)}")
+        if count > 50:
+            print(f"FPS: {1/(time.time() - t)} RT-factor: {cfg.isaacgym.dt/(time.time() - t)}")
+            count = 0
+        else:
+            count +=1 
+
     return {}
 
 

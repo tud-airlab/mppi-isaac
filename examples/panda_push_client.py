@@ -22,7 +22,6 @@ class Objective(object):
         self.w_block_to_goal_ort=  190#0.2
         self.w_ee_hover=           540#5
         self.w_ee_align=           3#1
-        self.w_ee_contact=         0.1#0.02
         self.w_push_align=         450#1
 
         # Task configration for comparison with baselines
@@ -43,7 +42,7 @@ class Objective(object):
         self.block_ort_goal = torch.clone(self.block_goal_pose[3:7])
 
         self.success = False
-        self.ee_goal = torch.tensor([0.4, 0., 0.3], device=cfg.mppi.device)
+        self.ee_celebration = 0.25
         self.count = 0
 
     def compute_cost(self, sim):
@@ -99,7 +98,7 @@ class Objective(object):
         
         # Move to cartesian pose after succesful pushing, otherwise push
         if self.success == True:
-            total_cost =  torch.linalg.norm(r_pos-self.ee_goal, axis = 1) + ee_align
+            total_cost =  5*torch.abs(ee_height - self.ee_celebration) + 0.5*ee_align
         else:
             total_cost = (
                 self.w_robot_to_block_pos * robot_to_block_dist
