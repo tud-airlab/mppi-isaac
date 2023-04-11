@@ -180,11 +180,11 @@ class MPPIPlanner(ABC):
             self.noise_sigma = self.noise_sigma.view(-1, 1)
     
         # Halton sampling 
-        self.knot_scale = 1             # From mppi config storm
+        self.knot_scale = 2             # From mppi config storm is 4
         self.seed_val = 0               # From mppi config storm
         self.n_knots = self.T//self.knot_scale
         self.ndims = self.n_knots * self.nu
-        self.degree = 1                 # From sample_lib storm
+        self.degree = 1                 # From sample_lib storm is 2
         self.Z_seq = torch.zeros(1, self.T, self.nu, **self.tensor_args)
         self.cov_action = torch.diagonal(self.noise_sigma, 0)
         self.scale_tril = torch.sqrt(self.cov_action)

@@ -44,25 +44,38 @@ def run_panda_robot(cfg: ExampleConfig):
     )
 
     # Manually add table + block and restart isaacgym
+    obj_index = 5
+    
+                #  l      w     h     mu      m     x    y
+    obj_set =  [[0.100, 0.100, 0.05, 0.150, 0.150, 0.40, 0.],     # Baseline 1
+                [0.116, 0.116, 0.06, 0.637, 0.016, 0.37, 0.],     # Baseline 2, A
+                [0.168, 0.237, 0.05, 0.232, 0.615, 0.40, 0.],     # Baseline 2, B
+                [0.198, 0.198, 0.06, 0.198, 0.565, 0.42, 0.],     # Baseline 2, C
+                [0.166, 0.228, 0.08, 0.312, 0.587, 0.42, 0.],     # Baseline 2, D
+                [0.153, 0.462, 0.05, 0.181, 0.506, 0.40, 0.],]    # Baseline 2, E
+    obj_ = obj_set[obj_index][:]
+    table_dim = [0.8, 1.0, 0.108]
+    table_pos = [0.5, 0., table_dim[-1]/2]
+    
     additions = [
         {
             "type": "box",
             "name": "table",
-            "size": [0.5, 1.0, 0.112],
-            "init_pos": [0.5, 0, 0.112 / 2],
+            "size": table_dim,
+            "init_pos": table_pos,
             "fixed": True,
             "handle": None,
         },
         {
             "type": "box",
             "name": "block",
-            "size": [0.105, 0.063, 0.063],
-            "init_pos": [0.55, 0.2, 0.3],
-            "mass": 0.250,
+            "size": [obj_[0], obj_[1], obj_[2]],
+            "init_pos": [obj_[5], obj_[6], table_dim[-1] + obj_[2] / 2],
+            "mass": obj_[4],
             "fixed": False,
             "handle": None,
-            "color": [0.2, 0.2, 1.0],
-            "friction": 0.2
+            "color": [4 / 255, 160 / 255, 218 / 255],
+            "friction": obj_[3]
         }
     ]
 
@@ -79,7 +92,12 @@ def run_panda_robot(cfg: ExampleConfig):
     planner.add_to_env(additions)
 
     pi = 3.14
-    sim.set_dof_state_tensor(torch.tensor([0, 0, 0, 0, 0, 0, -pi * 0.65, 0, 0, 0, pi/2, 0, 0, 0], device="cuda:0"))
+    init_pos = [0.0, -0.94, 0., -2.8, 0., 1.8675, 0.]
+    init_vel = [0., 0., 0., 0., 0., 0., 0.,]
+
+    sim.set_dof_state_tensor(torch.tensor([init_pos[0], init_vel[0], init_pos[1], init_vel[1], init_pos[2], init_vel[2],
+                                           init_pos[3], init_vel[3], init_pos[4], init_vel[4], init_pos[5], init_vel[5],
+                                           init_pos[6], init_vel[6]], device="cuda:0"))
 
     for _ in range(cfg.n_steps):
         t = time.time()
@@ -101,8 +119,8 @@ def run_panda_robot(cfg: ExampleConfig):
         sim.set_dof_velocity_target_tensor(action)
 
         # Visualize samples
-        rollouts = bytes_to_torch(planner.get_rollouts())
-        sim.draw_lines(rollouts)
+        # rollouts = bytes_to_torch(planner.get_rollouts())
+        # sim.draw_lines(rollouts)
 
         # Step simulator
         sim.step()

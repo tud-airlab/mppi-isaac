@@ -1,6 +1,6 @@
 defaults:
   - mppi: panda_push
-  - isaacgym: normal
+  - isaacgym: slow
 
 goal: [0.5, 0.4, 0.7]
 render: true
