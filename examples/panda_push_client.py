@@ -17,12 +17,12 @@ class Objective(object):
     def __init__(self, cfg, device):
         
         # Tuning of the weights
-        self.w_robot_to_block_pos= 10#0.2
-        self.w_block_to_goal_pos=  220#2.0 
-        self.w_block_to_goal_ort=  190#0.2
+        self.w_robot_to_block_pos= 10#0.5
+        self.w_block_to_goal_pos=  220#8.0 
+        self.w_block_to_goal_ort=  190#2.0
         self.w_ee_hover=           540#5
-        self.w_ee_align=           3#1
-        self.w_push_align=         450#1
+        self.w_ee_align=           3#0.5
+        self.w_push_align=         450#1.0
 
         # Task configration for comparison with baselines
         self.ee_index = 11
@@ -31,14 +31,14 @@ class Objective(object):
         self.ee_hover_height = 0.14
 
         self.block_goal_pose_emdn_1 = torch.tensor([0.5, 0.3, 0.5, 0.0, 0.0, 0.0, 1.0], device=cfg.mppi.device)
-        self.block_goal_pose_emdn_2 = torch.tensor([0.5, 0.3, 0.5, 0, 0, 0.7071068, 0.7071068], device=cfg.mppi.device) # Rotation 90 deg
+        self.block_goal_pose_emdn_2 = torch.tensor([0.5, 0.3, 0.5, 0, 0, -0.7071068, 0.7071068], device=cfg.mppi.device) # Rotation 90 deg
 
         self.block_goal_pose_ur5_c = torch.tensor([0.65, 0, 0.5, 0, 0, 0, 1], device=cfg.mppi.device)
         self.block_goal_pose_ur5_l= torch.tensor([0.7, 0.2, 0.5,  0, 0, 0.258819, 0.9659258 ], device=cfg.mppi.device) # Rotation 30 deg
         self.block_goal_pose_ur5_r= torch.tensor([0.7, -0.2, 0.5,  0, 0, -0.258819, 0.9659258 ], device=cfg.mppi.device) # Rotation -30 deg
 
         # Select goal according to test
-        self.block_goal_pose = torch.clone(self.block_goal_pose_ur5_l)
+        self.block_goal_pose = torch.clone(self.block_goal_pose_ur5_r)
         self.block_ort_goal = torch.clone(self.block_goal_pose[3:7])
 
         self.success = False
@@ -57,7 +57,7 @@ class Objective(object):
         robot_euler = pytorch3d.transforms.matrix_to_euler_angles(pytorch3d.transforms.quaternion_to_matrix(r_ort), "ZYX")   
 
         # Distances block
-        block_to_goal = self.block_goal_pose[0:2] - block_pos[:,0:2]
+        block_to_goal =  self.block_goal_pose[0:2] - block_pos[:,0:2]
         # Compute yaw from quaternion with formula directly
         block_yaws = torch.atan2(2.0 * (block_ort[:,-1] * block_ort[:,2] + block_ort[:,0] * block_ort[:,1]), block_ort[:,-1] * block_ort[:,-1] + block_ort[:,0] * block_ort[:,0] - block_ort[:,1] * block_ort[:,1] - block_ort[:,2] * block_ort[:,2])
         goal_yaw = torch.atan2(2.0 * (self.block_ort_goal[-1] * self.block_ort_goal[2] + self.block_ort_goal[0] * self.block_ort_goal[1]), self.block_ort_goal[-1] * self.block_ort_goal[-1] + self.block_ort_goal[0] * self.block_ort_goal[0] - self.block_ort_goal[1] * self.block_ort_goal[1] - self.block_ort_goal[2] * self.block_ort_goal[2])

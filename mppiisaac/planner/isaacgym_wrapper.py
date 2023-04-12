@@ -62,7 +62,7 @@ class ActorWrapper:
     color: List[float] = field(default_factory=lambda: [1.0, 1.0, 1.0])
     fixed: bool = False
     collision: bool = True
-    friction: float = 0.8
+    friction: float = 0.3
     handle: Optional[int] = None
 
 
@@ -252,7 +252,6 @@ class IsaacGymWrapper:
         props = self.gym.get_actor_rigid_shape_properties(env, handle)
         props[0].friction = actor.friction
         props[0].torsion_friction = np.random.uniform(0.001, 0.01) # actor.friction
-        props[0].rolling_friction = actor.friction
         self.gym.set_actor_rigid_shape_properties(env, handle, props)
 
         if actor.type == "robot":

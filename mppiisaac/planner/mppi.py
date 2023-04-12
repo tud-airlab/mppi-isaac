@@ -233,8 +233,8 @@ class MPPIPlanner(ABC):
         eta = torch.sum(exp_)       # tells how many significant samples we have, more or less
         w = 1/eta*exp_
         # print(self.beta)
-        eta_u_bound = 50
-        eta_l_bound = 20
+        eta_u_bound = 10
+        eta_l_bound = 5
         beta_lm = 0.9
         beta_um = 1.2
         # beta update 

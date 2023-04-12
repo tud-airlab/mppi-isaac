@@ -44,14 +44,14 @@ def run_panda_robot(cfg: ExampleConfig):
     )
 
     # Manually add table + block and restart isaacgym
-    obj_index = 5
+    obj_index = 1
     
                 #  l      w     h     mu      m     x    y
-    obj_set =  [[0.100, 0.100, 0.05, 0.150, 0.150, 0.40, 0.],     # Baseline 1
+    obj_set =  [[0.100, 0.100, 0.05, 0.250, 0.100, 0.40, 0.],     # Baseline 1
                 [0.116, 0.116, 0.06, 0.637, 0.016, 0.37, 0.],     # Baseline 2, A
                 [0.168, 0.237, 0.05, 0.232, 0.615, 0.40, 0.],     # Baseline 2, B
                 [0.198, 0.198, 0.06, 0.198, 0.565, 0.42, 0.],     # Baseline 2, C
-                [0.166, 0.228, 0.08, 0.312, 0.587, 0.42, 0.],     # Baseline 2, D
+                [0.166, 0.228, 0.08, 0.312, 0.587, 0.4, 0.],     # Baseline 2, D
                 [0.153, 0.462, 0.05, 0.181, 0.506, 0.40, 0.],]    # Baseline 2, E
     
     obj_ = obj_set[obj_index][:]
@@ -93,6 +93,7 @@ def run_panda_robot(cfg: ExampleConfig):
     planner.add_to_env(additions)
 
     init_pos = [0.0, -0.94, 0., -2.8, 0., 1.8675, 0.]
+    #init_pos = [-0.2, -0.271, 0., -2.26, 0., 1.8675, 0.]
     init_vel = [0., 0., 0., 0., 0., 0., 0.,]
 
     sim.set_dof_state_tensor(torch.tensor([init_pos[0], init_vel[0], init_pos[1], init_vel[1], init_pos[2], init_vel[2],
