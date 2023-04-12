@@ -16,13 +16,21 @@ from mppiisaac.utils.config_store import ExampleConfig
 class Objective(object):
     def __init__(self, cfg, device):
         
-        # Tuning of the weights
-        self.w_robot_to_block_pos= 10#0.5
-        self.w_block_to_goal_pos=  220#8.0 
-        self.w_block_to_goal_ort=  190#2.0
-        self.w_ee_hover=           540#5
-        self.w_ee_align=           3#0.5
-        self.w_push_align=         450#1.0
+        # Tuning of the weights for baseline 2
+        # self.w_robot_to_block_pos= 10
+        # self.w_block_to_goal_pos=  220
+        # self.w_block_to_goal_ort=  190
+        # self.w_ee_hover=           540
+        # self.w_ee_align=           3
+        # self.w_push_align=         450
+
+        # Tuning of the weights for baseline 1 nd eal experiments
+        self.w_robot_to_block_pos= 1#0.5
+        self.w_block_to_goal_pos=  8#8.0 
+        self.w_block_to_goal_ort=  2#2.0
+        self.w_ee_hover=           15#5
+        self.w_ee_align=           0.5#0.5
+        self.w_push_align=         0.5#1.0
 
         # Task configration for comparison with baselines
         self.ee_index = 11
@@ -30,15 +38,15 @@ class Objective(object):
         self.ort_goal_euler = torch.tensor([0, 0, 0], device=cfg.mppi.device)
         self.ee_hover_height = 0.14
 
-        self.block_goal_pose_emdn_1 = torch.tensor([0.5, 0.3, 0.5, 0.0, 0.0, 0.0, 1.0], device=cfg.mppi.device)
-        self.block_goal_pose_emdn_2 = torch.tensor([0.5, 0.3, 0.5, 0, 0, -0.7071068, 0.7071068], device=cfg.mppi.device) # Rotation 90 deg
+        self.block_goal_pose_emdn_0 = torch.tensor([0.5, 0.3, 0.5, 0.0, 0.0, 0.0, 1.0], device=cfg.mppi.device)
+        self.block_goal_pose_emdn_1 = torch.tensor([0.4, 0.3, 0.5, 0, 0, -0.7071068, 0.7071068], device=cfg.mppi.device) # Rotation 90 deg
 
         self.block_goal_pose_ur5_c = torch.tensor([0.65, 0, 0.5, 0, 0, 0, 1], device=cfg.mppi.device)
         self.block_goal_pose_ur5_l= torch.tensor([0.7, 0.2, 0.5,  0, 0, 0.258819, 0.9659258 ], device=cfg.mppi.device) # Rotation 30 deg
         self.block_goal_pose_ur5_r= torch.tensor([0.7, -0.2, 0.5,  0, 0, -0.258819, 0.9659258 ], device=cfg.mppi.device) # Rotation -30 deg
 
         # Select goal according to test
-        self.block_goal_pose = torch.clone(self.block_goal_pose_ur5_r)
+        self.block_goal_pose = torch.clone(self.block_goal_pose_emdn_1)
         self.block_ort_goal = torch.clone(self.block_goal_pose[3:7])
 
         self.success = False
@@ -86,8 +94,9 @@ class Objective(object):
             print("Ey", Ey)
             print("Angle", Etheta)
 
-            # Ex < 0.025 and Ey < 0.01 and Etheta < 0.052:   # Stricter metric
-            if Ex < 0.05 and Ey < 0.025 and Etheta < 0.17:
+            #Ex < 0.05 and Ey < 0.025 and Etheta < 0.17
+            # 
+            if Ex < 0.025 and Ey < 0.01 and Etheta < 0.052:   # Stricter metric:
                 print("Success")
                 self.success = True
 
@@ -98,7 +107,7 @@ class Objective(object):
         
         # Move to cartesian pose after succesful pushing, otherwise push
         if self.success == True:
-            total_cost =  5*torch.abs(ee_height - self.ee_celebration) + 0.5*ee_align
+            total_cost =  5*torch.abs(ee_height - self.ee_celebration) + 0.5*ee_align + robot_to_block_dist
         else:
             total_cost = (
                 self.w_robot_to_block_pos * robot_to_block_dist
