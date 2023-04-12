@@ -12,6 +12,7 @@ import zerorpc
 from mppiisaac.utils.config_store import ExampleConfig
 from isaacgym import gymapi
 import time
+from examples.panda_push_client import Objective
 
 import io
 
@@ -26,7 +27,16 @@ def bytes_to_torch(b: bytes) -> torch.Tensor:
     buff = io.BytesIO(b)
     return torch.load(buff)
 
-
+def reset_trial(sim, init_pos, init_vel):
+    sim.stop_sim()
+    sim.start_sim()
+    sim.gym.viewer_camera_look_at(
+    sim.viewer, None, gymapi.Vec3(1.5, 2, 3), gymapi.Vec3(1.5, 0, 0)
+                )
+    sim.set_dof_state_tensor(torch.tensor([init_pos[0], init_vel[0], init_pos[1], init_vel[1], init_pos[2], init_vel[2],
+                                           init_pos[3], init_vel[3], init_pos[4], init_vel[4], init_pos[5], init_vel[5],
+                                           init_pos[6], init_vel[6]], device="cuda:0"))
+        
 @hydra.main(version_base=None, config_path="../conf", config_name="config_panda_push")
 def run_panda_robot(cfg: ExampleConfig):
     # Note: Workaround to trigger the dataclasses __post_init__ method
@@ -44,7 +54,7 @@ def run_panda_robot(cfg: ExampleConfig):
     )
 
     # Manually add table + block and restart isaacgym
-    obj_index = 1
+    obj_index = 0
     
                 #  l      w     h     mu      m     x    y
     obj_set =  [[0.100, 0.100, 0.05, 0.300, 0.100, 0.37, 0.],     # Baseline 1, pose 1
@@ -83,16 +93,16 @@ def run_panda_robot(cfg: ExampleConfig):
 
     sim.add_to_envs(additions)
 
-    sim.gym.viewer_camera_look_at(
-        sim.viewer, None, gymapi.Vec3(1.5, 2, 3), gymapi.Vec3(1.5, 0, 0)
-    )
-
     planner = zerorpc.Client()
     planner.connect("tcp://127.0.0.1:4242")
     print("Mppi server found!")
 
     planner.add_to_env(additions)
-
+    
+    sim.gym.viewer_camera_look_at(
+        sim.viewer, None, gymapi.Vec3(1.5, 2, 3), gymapi.Vec3(1.5, 0, 0)
+    )
+    
     init_pos = [0.0, -0.94, 0., -2.8, 0., 1.8675, 0.]
     #init_pos = [-0.2, -0.271, 0., -2.26, 0., 1.8675, 0.]
     init_vel = [0., 0., 0., 0., 0., 0., 0.,]
@@ -101,9 +111,19 @@ def run_panda_robot(cfg: ExampleConfig):
                                            init_pos[3], init_vel[3], init_pos[4], init_vel[4], init_pos[5], init_vel[5],
                                            init_pos[6], init_vel[6]], device="cuda:0"))
 
+    # Helpers
     count = 0
+    client_helper = Objective(cfg, cfg.mppi.device)
+    init_time = time.time()
+    block_index = 4
+    data_time = []
+    data_err = []
+    trial = 0 
+    timeout = 45
+    rt_factor_seq = []
+    data_rt = []
 
-    for _ in range(cfg.n_steps):
+    while trial < cfg.n_steps:
         t = time.time()
         # Reset state
         planner.reset_rollout_sim(
@@ -112,7 +132,7 @@ def run_panda_robot(cfg: ExampleConfig):
             torch_to_bytes(sim.rigid_body_state[0]),
         )
         sim.gym.clear_lines(sim.viewer)
-
+        
         # Compute action
         action = bytes_to_torch(planner.command())
         if torch.any(torch.isnan(action)):
@@ -122,23 +142,65 @@ def run_panda_robot(cfg: ExampleConfig):
         # Apply action
         sim.set_dof_velocity_target_tensor(action)
 
-        # Visualize samples
-        # rollouts = bytes_to_torch(planner.get_rollouts())
-        # sim.draw_lines(rollouts)
-
         # Step simulator
         sim.step()
 
+        # Monitoring
+        # Evaluation metrics 
+        # ------------------------------------------------------------------------
+        if count > 10:
+            block_pos = sim.root_state[:, block_index, :3]
+            block_ort = sim.root_state[:, block_index, 3:7]
+
+            Ex, Ey, Etheta = client_helper.compute_metrics(block_pos, block_ort)
+            metric_1 = 1.5*(Ex+Ey)+0.01*Etheta
+            print("Metric Baxter", metric_1)
+            # print("Ex", Ex)
+            # print("Ey", Ey)
+            # print("Angle", Etheta)
+            # Ex < 0.025 and Ey < 0.01 and Etheta < 0.05
+            # Ex < 0.05 and Ey < 0.025 and Etheta < 0.17
+            if Ex < 0.025 and Ey < 0.01 and Etheta < 0.05: 
+                print("Success")
+                final_time = time.time()
+                time_taken = final_time - init_time
+                print("Time to completion", time_taken)
+
+                reset_trial(sim, init_pos, init_vel)
+                
+                
+                init_time = time.time()
+                count = 0
+                data_rt.append(np.sum(rt_factor_seq) / len(rt_factor_seq))
+                data_time.append(time_taken)
+                data_err.append(np.float64(metric_1))
+                trial += 1
+
+            rt_factor_seq.append(cfg.isaacgym.dt/(time.time() - t))
+            # print(f"FPS: {1/(time.time() - t)} RT-factor: {cfg.isaacgym.dt/(time.time() - t)}")
+            
+            count = 0
+        else:
+            count +=1
+
+        if time.time() - init_time >= timeout:
+            reset_trial(sim, init_pos, init_vel)
+            init_time = time.time()
+            count = 0
+            data_time.append(-1)
+            data_err.append(-1)
+            rt_factor_seq.append(-1)
+            trial += 1
+
+        # Visualize samples
+        # rollouts = bytes_to_torch(planner.get_rollouts())
+        # sim.draw_lines(rollouts)
+        
         # Print error of block
         # pos = sim.root_state[0, -1][:2].cpu().numpy()
         # goal = np.array([0.5, 0])
         # print(f"L2: {np.linalg.norm(pos - goal)} FPS: {1/(time.time() - t)} RT-factor: {cfg.isaacgym.dt/(time.time() - t)}")
-        if count > 50:
-            print(f"FPS: {1/(time.time() - t)} RT-factor: {cfg.isaacgym.dt/(time.time() - t)}")
-            count = 0
-        else:
-            count +=1 
-
+    print(data_time, data_err, data_rt)
     return {}
 
 

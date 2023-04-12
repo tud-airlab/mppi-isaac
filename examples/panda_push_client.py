@@ -10,6 +10,7 @@ import torch
 from mppiisaac.priors.fabrics_panda import FabricsPandaPrior
 import zerorpc
 import pytorch3d.transforms
+import time
 
 from mppiisaac.utils.config_store import ExampleConfig
 
@@ -46,13 +47,22 @@ class Objective(object):
         self.block_goal_pose_ur5_r= torch.tensor([0.7, -0.2, 0.5,  0, 0, -0.258819, 0.9659258 ], device=cfg.mppi.device) # Rotation -30 deg
 
         # Select goal according to test
-        self.block_goal_pose = torch.clone(self.block_goal_pose_emdn_1)
+        self.block_goal_pose = torch.clone(self.block_goal_pose_emdn_0)
         self.block_ort_goal = torch.clone(self.block_goal_pose[3:7])
+        self.goal_yaw = torch.atan2(2.0 * (self.block_ort_goal[-1] * self.block_ort_goal[2] + self.block_ort_goal[0] * self.block_ort_goal[1]), self.block_ort_goal[-1] * self.block_ort_goal[-1] + self.block_ort_goal[0] * self.block_ort_goal[0] - self.block_ort_goal[1] * self.block_ort_goal[1] - self.block_ort_goal[2] * self.block_ort_goal[2])
 
         self.success = False
         self.ee_celebration = 0.25
         self.count = 0
 
+    def compute_metrics(self, block_pos, block_ort):
+
+        block_yaws = torch.atan2(2.0 * (block_ort[:,-1] * block_ort[:,2] + block_ort[:,0] * block_ort[:,1]), block_ort[:,-1] * block_ort[:,-1] + block_ort[:,0] * block_ort[:,0] - block_ort[:,1] * block_ort[:,1] - block_ort[:,2] * block_ort[:,2])
+        Ex = torch.abs(self.block_goal_pose[0]-block_pos[-1,0])
+        Ey = torch.abs(self.block_goal_pose[1]-block_pos[-1,1])
+        Etheta = torch.abs(block_yaws[-1] - self.goal_yaw)
+        return Ex, Ey, Etheta
+    
     def compute_cost(self, sim):
         r_pos = sim.rigid_body_state[:, self.ee_index, :3]
         r_ort = sim.rigid_body_state[:, self.ee_index, 3:7]
@@ -68,55 +78,26 @@ class Objective(object):
         block_to_goal =  self.block_goal_pose[0:2] - block_pos[:,0:2]
         # Compute yaw from quaternion with formula directly
         block_yaws = torch.atan2(2.0 * (block_ort[:,-1] * block_ort[:,2] + block_ort[:,0] * block_ort[:,1]), block_ort[:,-1] * block_ort[:,-1] + block_ort[:,0] * block_ort[:,0] - block_ort[:,1] * block_ort[:,1] - block_ort[:,2] * block_ort[:,2])
-        goal_yaw = torch.atan2(2.0 * (self.block_ort_goal[-1] * self.block_ort_goal[2] + self.block_ort_goal[0] * self.block_ort_goal[1]), self.block_ort_goal[-1] * self.block_ort_goal[-1] + self.block_ort_goal[0] * self.block_ort_goal[0] - self.block_ort_goal[1] * self.block_ort_goal[1] - self.block_ort_goal[2] * self.block_ort_goal[2])
-        #block_yaws = pytorch3d.transforms.matrix_to_euler_angles(pytorch3d.transforms.quaternion_to_matrix(block_ort), "ZYX")[:, -1]
+        #self.block_yaws = pytorch3d.transforms.matrix_to_euler_angles(pytorch3d.transforms.quaternion_to_matrix(block_ort), "ZYX")[:, -1]
 
         # Distance costs
         robot_to_block_dist = torch.linalg.norm(robot_to_block[:, 0:2], axis = 1)
         block_to_goal_pos = torch.linalg.norm(block_to_goal, axis = 1)
-        block_to_goal_ort = torch.abs(block_yaws - goal_yaw)
+        block_to_goal_ort = torch.abs(block_yaws - self.goal_yaw)
 
         # Posture costs
         ee_align = torch.linalg.norm(robot_euler[:,0:2] - self.ort_goal_euler[0:2], axis=1)
         ee_hover_dist= torch.abs(ee_height - self.ee_hover_height) 
         push_align = torch.sum(robot_to_block[:,0:2]*block_to_goal, 1)/(robot_to_block_dist*block_to_goal_pos)+1
-
-        # Evaluation metrics 
-        # ------------------------------------------------------------------------
-        if self.count > 300:
-            Ex = torch.abs(self.block_goal_pose[0]-block_pos[-1,0])
-            Ey = torch.abs(self.block_goal_pose[1]-block_pos[-1,1])
-            Etheta = torch.abs(block_yaws[-1] - goal_yaw)
-            
-            metric_1 = 1.5*(Ex+Ey)+0.01*Etheta
-            print("Metric Baxter", metric_1)
-            print("Ex", Ex)
-            print("Ey", Ey)
-            print("Angle", Etheta)
-
-            #Ex < 0.05 and Ey < 0.025 and Etheta < 0.17
-            # 
-            if Ex < 0.025 and Ey < 0.01 and Etheta < 0.052:   # Stricter metric:
-                print("Success")
-                self.success = True
-
-            self.count = 0
-        else:
-            self.count +=1
-        # ---------------------------------------------------------------------------
         
-        # Move to cartesian pose after succesful pushing, otherwise push
-        if self.success == True:
-            total_cost =  5*torch.abs(ee_height - self.ee_celebration) + 0.5*ee_align + robot_to_block_dist
-        else:
-            total_cost = (
-                self.w_robot_to_block_pos * robot_to_block_dist
-                + self.w_block_to_goal_pos * block_to_goal_pos
-                + self.w_block_to_goal_ort * block_to_goal_ort
-                + self.w_ee_hover * ee_hover_dist
-                + self.w_ee_align * ee_align
-                + self.w_push_align * push_align
-            )
+        total_cost = (
+            self.w_robot_to_block_pos * robot_to_block_dist
+            + self.w_block_to_goal_pos * block_to_goal_pos
+            + self.w_block_to_goal_ort * block_to_goal_ort
+            + self.w_ee_hover * ee_hover_dist
+            + self.w_ee_align * ee_align
+            + self.w_push_align * push_align
+        )
 
         return total_cost
 
