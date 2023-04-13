@@ -18,20 +18,20 @@ class Objective(object):
     def __init__(self, cfg, device):
         
         # Tuning of the weights for baseline 2
-        # self.w_robot_to_block_pos= 10
-        # self.w_block_to_goal_pos=  220
-        # self.w_block_to_goal_ort=  190
-        # self.w_ee_hover=           540
-        # self.w_ee_align=           3
-        # self.w_push_align=         450
+        self.w_robot_to_block_pos= 1#1
+        self.w_block_to_goal_pos=  20#5
+        self.w_block_to_goal_ort=  20#5
+        self.w_ee_hover=           55#15
+        self.w_ee_align=           .3#0.5
+        self.w_push_align=         45#0.5
 
         # Tuning of the weights for baseline 1 nd eal experiments
-        self.w_robot_to_block_pos= 1#0.5
-        self.w_block_to_goal_pos=  8#8.0 
-        self.w_block_to_goal_ort=  2#2.0
-        self.w_ee_hover=           15#5
-        self.w_ee_align=           0.5#0.5
-        self.w_push_align=         0.5#1.0
+        # self.w_robot_to_block_pos= 1#0.5
+        # self.w_block_to_goal_pos=  8#8.0 
+        # self.w_block_to_goal_ort=  2#2.0
+        # self.w_ee_hover=           15#5
+        # self.w_ee_align=           0.5#0.5
+        # self.w_push_align=         0.5#1.0
 
         # Task configration for comparison with baselines
         self.ee_index = 11
@@ -47,7 +47,7 @@ class Objective(object):
         self.block_goal_pose_ur5_r= torch.tensor([0.7, -0.2, 0.5,  0, 0, -0.258819, 0.9659258 ], device=cfg.mppi.device) # Rotation -30 deg
 
         # Select goal according to test
-        self.block_goal_pose = torch.clone(self.block_goal_pose_emdn_0)
+        self.block_goal_pose = torch.clone(self.block_goal_pose_ur5_l)
         self.block_ort_goal = torch.clone(self.block_goal_pose[3:7])
         self.goal_yaw = torch.atan2(2.0 * (self.block_ort_goal[-1] * self.block_ort_goal[2] + self.block_ort_goal[0] * self.block_ort_goal[1]), self.block_ort_goal[-1] * self.block_ort_goal[-1] + self.block_ort_goal[0] * self.block_ort_goal[0] - self.block_ort_goal[1] * self.block_ort_goal[1] - self.block_ort_goal[2] * self.block_ort_goal[2])
 

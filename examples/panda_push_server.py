@@ -13,6 +13,7 @@ from mppiisaac.utils.config_store import ExampleConfig
 from isaacgym import gymapi
 import time
 from examples.panda_push_client import Objective
+import sys
 
 import io
 
@@ -54,16 +55,18 @@ def run_panda_robot(cfg: ExampleConfig):
     )
 
     # Manually add table + block and restart isaacgym
-    obj_index = 0
-    
+    obj_index = 3
+    baseline = 2
+    baseline_pose = 'left'
+
                 #  l      w     h     mu      m     x    y
     obj_set =  [[0.100, 0.100, 0.05, 0.300, 0.100, 0.37, 0.],     # Baseline 1, pose 1
                 [0.100, 0.100, 0.05, 0.300, 0.100, 0.40, 0.],     # Baseline 1, pose 2
-                [0.116, 0.116, 0.06, 0.637, 0.016, 0.37, 0.],     # Baseline 2, A
-                [0.168, 0.237, 0.05, 0.232, 0.615, 0.40, 0.],     # Baseline 2, B
-                [0.198, 0.198, 0.06, 0.198, 0.565, 0.42, 0.],     # Baseline 2, C
-                [0.166, 0.228, 0.08, 0.312, 0.587, 0.40, 0.],     # Baseline 2, D
-                [0.153, 0.462, 0.05, 0.181, 0.506, 0.40, 0.],]    # Baseline 2, E
+                [0.116, 0.116, 0.06, 0.637, 0.016, 0.35, 0.],     # Baseline 2, A
+                [0.168, 0.237, 0.05, 0.232, 0.615, 0.38, 0.],     # Baseline 2, B
+                [0.198, 0.198, 0.06, 0.198, 0.565, 0.40, 0.],     # Baseline 2, C
+                [0.166, 0.228, 0.08, 0.312, 0.587, 0.39, 0.],     # Baseline 2, D
+                [0.153, 0.462, 0.05, 0.181, 0.506, 0.37, 0.],]    # Baseline 2, E
     
     obj_ = obj_set[obj_index][:]
     table_dim = [0.8, 1.0, 0.108]
@@ -119,7 +122,7 @@ def run_panda_robot(cfg: ExampleConfig):
     data_time = []
     data_err = []
     trial = 0 
-    timeout = 45
+    timeout = 10
     rt_factor_seq = []
     data_rt = []
 
@@ -154,13 +157,13 @@ def run_panda_robot(cfg: ExampleConfig):
 
             Ex, Ey, Etheta = client_helper.compute_metrics(block_pos, block_ort)
             metric_1 = 1.5*(Ex+Ey)+0.01*Etheta
-            print("Metric Baxter", metric_1)
+            # print("Metric Baxter", metric_1)
             # print("Ex", Ex)
             # print("Ey", Ey)
             # print("Angle", Etheta)
             # Ex < 0.025 and Ey < 0.01 and Etheta < 0.05
             # Ex < 0.05 and Ey < 0.025 and Etheta < 0.17
-            if Ex < 0.025 and Ey < 0.01 and Etheta < 0.05: 
+            if Ex < 0.05 and Ey < 0.025 and Etheta < 0.17: 
                 print("Success")
                 final_time = time.time()
                 time_taken = final_time - init_time
@@ -189,7 +192,7 @@ def run_panda_robot(cfg: ExampleConfig):
             count = 0
             data_time.append(-1)
             data_err.append(-1)
-            rt_factor_seq.append(-1)
+            data_rt.append(-1)
             trial += 1
 
         # Visualize samples
@@ -200,7 +203,20 @@ def run_panda_robot(cfg: ExampleConfig):
         # pos = sim.root_state[0, -1][:2].cpu().numpy()
         # goal = np.array([0.5, 0])
         # print(f"L2: {np.linalg.norm(pos - goal)} FPS: {1/(time.time() - t)} RT-factor: {cfg.isaacgym.dt/(time.time() - t)}")
-    print(data_time, data_err, data_rt)
+    
+    # Print for data collection
+    # original_stdout = sys.stdout # Save a reference to the original standard output
+
+    # with open('data_push_baselines.txt', 'a') as f:
+    #     sys.stdout = f # Change the standard output to the file we created.
+    #     print('Benchmark object {} in baseline {} for pose "{}"'.format(obj_index-2, baseline, baseline_pose))
+    #     print('Time taken:', np.around(data_time, decimals=3))
+    #     print('Placement error:', np.around(data_err, decimals=3))
+    #     print('RT factor:', np.around(data_rt, decimals=3))
+    #     print('\n')
+    #     sys.stdout = original_stdout # Reset the standard output to its original value
+
+    
     return {}
 
 
