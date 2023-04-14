@@ -1,0 +1,13 @@
+defaults:
+  - mppi: heijn_push
+  - isaacgym: push
+
+goal: [2.0, 2.0]
+initial_position: [0.0, 0.0, 0.05]
+render: true
+n_steps: 10
+urdf_file: "heijn/heijn.urdf"
+fix_base: true
+flip_visual: true
+ee_link: "front_link"
+nx: 6
