@@ -7,6 +7,7 @@ import hydra
 from omegaconf import OmegaConf
 import os
 import torch
+import mppiisaac
 from mppiisaac.priors.fabrics_panda import FabricsPandaPrior
 
 from mppiisaac.utils.config_store import ExampleConfig

@@ -18,11 +18,15 @@ class Objective(object):
         self.nav_goal = torch.tensor(cfg.goal, device=cfg.mppi.device)
 
     def compute_cost(self, sim):
-        pos = sim.robot_positions[:, :2]
+        pos = torch.cat((sim.root_state[:, 0, 0:2], sim.root_state[:, 1, 0:2]), axis=1)
+        print(pos[0])
+        print(self.nav_goal)
+
 
         cost = torch.clamp(
             torch.linalg.norm(pos - self.nav_goal, axis=1) - 0.05, min=0, max=1999
         )
+        cost += -0.2*torch.linalg.norm(pos[:, :2] - pos[:, 2:], axis=1)
         return cost * 1.5
 
 
@@ -41,22 +45,24 @@ def initalize_environment(cfg) -> UrdfEnv:
     # urdf_file = os.path.dirname(os.path.abspath(__file__)) + "/../assets/urdf/" + cfg.urdf_file
     robots = [
         JackalRobot(mode="vel"),
+        JackalRobot(mode="vel"),
     ]
     env: UrdfEnv = gym.make("urdf-env-v0", dt=0.02, robots=robots, render=cfg.render)
     # Set the initial position and velocity of the jackal robot
-    env.reset()
-    goal_dict = {
-        "weight": 1.0,
-        "is_primary_goal": True,
-        "indices": [0, 1],
-        "parent_link": 0,
-        "child_link": 1,
-        "desired_position": cfg.goal,
-        "epsilon": 0.05,
-        "type": "staticSubGoal",
-    }
-    goal = StaticSubGoal(name="simpleGoal", content_dict=goal_dict)
-    env.add_goal(goal)
+    print(cfg.initial_actor_positions)
+    env.reset(pos=np.array(cfg.initial_actor_positions))
+    #goal_dict = {
+    #    "weight": 1.0,
+    #    "is_primary_goal": True,
+    #    "indices": [0, 1],
+    #    "parent_link": 0,
+    #    "child_link": 1,
+    #    "desired_position": cfg.goal,
+    #    "epsilon": 0.05,
+    #    "type": "staticSubGoal",
+    #}
+    #goal = StaticSubGoal(name="simpleGoal", content_dict=goal_dict)
+   # env.add_goal(goal)
     return env
 
 
@@ -75,7 +81,7 @@ def set_planner(cfg):
     return planner
 
 
-@hydra.main(version_base=None, config_path="../conf", config_name="config_jackal_robot")
+@hydra.main(version_base=None, config_path="../conf", config_name="config_multi_jackal")
 def run_jackal_robot(cfg: ExampleConfig):
     """
     Set the gym environment, the planner and run jackal robot example.
@@ -96,7 +102,7 @@ def run_jackal_robot(cfg: ExampleConfig):
     env = initalize_environment(cfg)
     planner = set_planner(cfg)
 
-    action = np.zeros(4)
+    action = np.zeros(8)
     ob, *_ = env.step(action)
     
     
@@ -105,10 +111,11 @@ def run_jackal_robot(cfg: ExampleConfig):
 
         #Todo fix joint with zero friction
 
-        ob_robot = ob["robot_0"]
+        ob_robot0 = ob["robot_0"]
+        ob_robot1 = ob["robot_1"]
         action = planner.compute_action(
-            q=ob_robot["joint_state"]["position"],
-            qdot=ob_robot["joint_state"]["velocity"],
+            q=list(ob_robot0["joint_state"]["position"]) + list(ob_robot1["joint_state"]["position"]),
+            qdot=list(ob_robot0["joint_state"]["velocity"]) + list(ob_robot1["joint_state"]["velocity"]),
         )
         (
             ob,

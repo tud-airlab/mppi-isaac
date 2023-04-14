@@ -4,7 +4,7 @@ from dataclasses import dataclass, field
 import torch
 import numpy as np
 from enum import Enum
-from typing import List, Optional
+from typing import List, Optional, Any
 
 
 import pathlib
@@ -64,57 +64,39 @@ class ActorWrapper:
     collision: bool = True
     friction: float = 0.8
     handle: Optional[int] = None
+    flip_visual: bool = False
+    urdf_file: str = None
+    ee_link: str = None
+    gravity: bool = True
+    differential_drive: bool = False
+    wheel_radius: Optional[float] = None
+    wheel_base: Optional[float] = None
+    wheel_count: Optional[float] = None
+    left_wheel_joints: Optional[List[int]] = None
+    right_wheel_joints: Optional[List[int]] = None
 
 
 class IsaacGymWrapper:
     def __init__(
         self,
         cfg: IsaacGymConfig,
-        urdf_file: str,
-        fix_base: bool,
-        flip_visual: bool,
-        num_envs: int = 0,
-        ee_link: str = None,
-        robot_init_pos: List[float] = [0.0, 0.0, 0.0],
-        disable_gravity: bool = False,
-        viewer: bool = False,
+        actors: List[ActorWrapper],
+        init_positions: List[List[float]],
+        num_envs: int,
+        viewer: bool = False
     ):
         self.gym = gymapi.acquire_gym()
+        self.env_cfg = actors
 
-        self.env_cfg = [
-            {
-                "type": "box",
-                "name": "x",
-                "handle": None,
-                "fixed": True,
-                "size": [0.5, 0.05, 0.01],
-                "init_pos": [0.25, 0.0, 0.01],
-                "color": [1, 0.0, 0.2],
-                "collision": False
-            },
-            {
-                "type": "box",
-                "name": "y",
-                "handle": None,
-                "fixed": True,
-                "size": [0.05, 0.5, 0.01],
-                "init_pos": [0.0, 0.25, 0.01],
-                "color": [0.0, 1, 0.2],
-                "collision": False
-            },
-            {"type": "robot", "name": "main_robot", "handle": None, "fixed": fix_base, "init_pos": robot_init_pos},
-        ]
-        self.env_cfg = [ActorWrapper(**a) for a in self.env_cfg]
+        assert len([a for a in self.env_cfg if a.type == 'robot']) == len(init_positions)
+
+        for init_pos, actor_cfg in zip(init_positions, self.env_cfg):
+            actor_cfg.init_pos = init_pos
 
         self.cfg = cfg
         if viewer:
             self.cfg.viewer = viewer
         self.num_envs = num_envs
-        self._urdf_file = urdf_file
-        self._fix_base = fix_base
-        self._flip_visual = flip_visual
-        self._ee_link = ee_link
-        self._disable_gravity = disable_gravity
 
         self.start_sim()
 
@@ -139,9 +121,9 @@ class IsaacGymWrapper:
             asset_options = gymapi.AssetOptions()
             asset_options.fix_base_link = actor_cfg.fixed
             if actor_cfg.type == "robot":
-                asset_file = "urdf/" + self._urdf_file
-                asset_options.flip_visual_attachments = self._flip_visual
-                asset_options.disable_gravity = self._disable_gravity
+                asset_file = "urdf/" + actor_cfg.urdf_file
+                asset_options.flip_visual_attachments = actor_cfg.flip_visual
+                asset_options.disable_gravity = not actor_cfg.gravity
                 actor_asset = self.gym.load_asset(
                     sim=self.sim,
                     rootpath=f"{file_path}/../../assets",
@@ -177,8 +159,10 @@ class IsaacGymWrapper:
             )
 
             for actor_asset, actor_cfg in zip(self.env_actor_assets, self.env_cfg):
-                self.create_actor(env, env_idx, actor_asset, actor_cfg)
+                actor_cfg.handle = self.create_actor(env, env_idx, actor_asset, actor_cfg)
             self.envs.append(env)
+
+        self.ee_link_present = any([a.ee_link for a in self.env_cfg])
 
         self.gym.prepare_sim(self.sim)
 
@@ -198,14 +182,14 @@ class IsaacGymWrapper:
         )
 
         # save buffer of ee states
-        if self._ee_link:
+        if self.ee_link_present:
             self.ee_positions_buffer = []
 
         # helpfull slices
-        self.robot_positions = self.root_state[:, 2, 0:3]  # [x, y, z]
-        self.robot_velocities = self.root_state[:, 2, 7:10]  # [x, y, z]
+        self.robot_positions = self.root_state[:, 0, 0:3]  # [x, y, z]
+        self.robot_velocities = self.root_state[:, 0, 7:10]  # [x, y, z]
         self.obstacle_positions = self.root_state[:, 3:, 0:3]  # [x, y, z]
-        if self._ee_link:
+        if self.ee_link_present:
             self.ee_positions = self.rigid_body_state[:, self.robot_rigid_body_ee_idx, 0:3] # [x, y, z]
 
         self.gym.refresh_actor_root_state_tensor(self.sim)
@@ -248,9 +232,10 @@ class IsaacGymWrapper:
         self.gym.set_actor_rigid_shape_properties(env, handle, props)
 
         if actor.type == "robot":
-            if self._ee_link:
+            # TODO: Currently the robot_rigid_body_ee_idx is only supported for a single robot case.
+            if actor.ee_link:
                 self.robot_rigid_body_ee_idx = self.gym.find_actor_rigid_body_index(
-                    env, handle, self._ee_link, gymapi.IndexDomain.DOMAIN_ENV
+                    env, handle, actor.ee_link, gymapi.IndexDomain.DOMAIN_ENV
                 )
 
             props = self.gym.get_asset_dof_properties(asset)
@@ -276,6 +261,97 @@ class IsaacGymWrapper:
     def set_dof_velocity_target_tensor(self, u):
         self.gym.set_dof_velocity_target_tensor(self.sim, gymtorch.unwrap_tensor(u))
 
+    def _ik(self, actor, u):
+        print(u.size())
+        r = actor.wheel_radius
+        L = actor.wheel_base
+        wheel_sets = actor.wheel_count // 2
+
+        # Diff drive fk
+        u_ik = u.clone()
+        u_ik[:, 0] = (u[:, 0] / r) - ((L * u[:, 1]) / (2 * r))
+        u_ik[:, 1] = (u[:, 0] / r) + ((L * u[:, 1]) / (2 * r))
+
+
+        if wheel_sets > 1:
+            u_ik = u_ik.repeat(1, wheel_sets)
+
+        return u_ik
+
+    def apply_robot_cmd_velocity(self, u_desired):
+        test = list(self.dof_state.size())
+        test[1] = test[1] // 2
+        u = torch.zeros(test, device="cuda:0")
+        print(u_desired.size())
+
+        u_idx = 0
+        for actor in self.env_cfg:
+            if actor.type != 'robot': continue
+            actor_dof_count = self.gym.get_actor_dof_count(self.envs[0], actor.handle)
+            dof_dict = self.gym.get_actor_dof_dict(self.envs[0], actor.handle)
+            for i in range(actor_dof_count):
+                print(i, u_idx)
+                if actor.differential_drive and i >= actor_dof_count - actor.wheel_count:
+                    u_ik = self._ik(actor, u_desired[:, u_idx: u_idx+2])
+                    u[:, u_idx:u_idx + actor.wheel_count] = u_ik
+                    u_idx += 2
+                    break
+                else:
+                    u[:, u_idx] = u_desired[:, u_idx] 
+                    u_idx += 1
+                
+        self.gym.set_dof_velocity_target_tensor(self.sim, gymtorch.unwrap_tensor(u))
+
+    def reset_robot_state(self, q, qdot):
+        '''
+        This function is mainly used for compatibility with gym_urdf_envs pybullet sim.
+        '''
+
+        q_idx = 0
+
+        dof_state = []
+        for actor in self.env_cfg:
+            if actor.type != 'robot': continue
+
+            actor_dof_count = self.gym.get_actor_dof_count(self.envs[0], actor.handle)
+
+            if actor.differential_drive:
+                actor_q_count = actor_dof_count - (actor.wheel_count - 3) 
+            else:
+                actor_q_count = actor_dof_count
+
+            actor_q = q[q_idx: q_idx + actor_q_count]
+            actor_qdot = qdot[q_idx: q_idx + actor_q_count]
+
+            if actor.differential_drive:
+                pos = actor_q[:3]
+                vel = actor_qdot[:3]
+
+                self.set_state_tensor_by_pos_vel(actor.handle, pos, vel)
+
+                # assuming wheels at the back of the dof tensor
+                actor_q = list(actor_q[3:]) + [0] * actor.wheel_count
+                actor_qdot = list(actor_qdot[3:]) + [0] * actor.wheel_count
+
+            for _q, _qdot in zip(actor_q, actor_qdot):
+                dof_state.append(_q)
+                dof_state.append(_qdot)
+
+            q_idx += actor_q_count
+
+        dof_state_tensor = (
+            torch.tensor(dof_state)
+            .type(torch.float32)
+            .to("cuda:0")
+        )  
+
+        dof_state_tensor = dof_state_tensor.repeat(self.num_envs, 1)
+        self.set_dof_state_tensor(dof_state_tensor)
+
+        self.gym.set_actor_root_state_tensor(
+            self.sim, gymtorch.unwrap_tensor(self.root_state)
+        )
+
     def step(self):
         self.gym.simulate(self.sim)
         self.gym.fetch_results(self.sim, True)
@@ -288,7 +364,7 @@ class IsaacGymWrapper:
             self.gym.draw_viewer(self.viewer, self.sim, False)
             # self.gym.sync_frame_time(self.sim)
 
-        if self._ee_link:
+        if self.ee_link_present:
             self.ee_positions_buffer.append(self.ee_positions.clone())
 
     def set_root_state_tensor_by_actor_idx(self, state_tensor, idx):
@@ -299,7 +375,7 @@ class IsaacGymWrapper:
         self.saved_root_state = self.root_state.clone()
 
     def reset_root_state(self):
-        if self._ee_link:
+        if self.ee_link_present:
             self.ee_positions_buffer = []
 
         if self.saved_root_state is not None:
@@ -307,7 +383,7 @@ class IsaacGymWrapper:
                 self.sim, gymtorch.unwrap_tensor(self.saved_root_state)
             )
 
-    def update_root_state_tensor_robot(self, pos, vel):
+    def set_state_tensor_by_pos_vel(self, handle, pos, vel):
         roll = 0
         pitch = 0
         yaw = pos[2]
@@ -321,9 +397,10 @@ class IsaacGymWrapper:
             np.cos(roll / 2) * np.cos(pitch / 2) * np.cos(yaw / 2),
         ]
 
-        self.root_state[:, 2, :2] = torch.tensor(pos[:2], device="cuda:0")
-        self.root_state[:, 2, 3:7] = torch.tensor(orientation, device="cuda:0")
-        self.root_state[:, 2, 7:10] = torch.tensor(vel, device="cuda:0")
+
+        self.root_state[:, handle, :2] = torch.tensor(pos[:2], device="cuda:0")
+        self.root_state[:, handle, 3:7] = torch.tensor(orientation, device="cuda:0")
+        self.root_state[:, handle, 7:10] = torch.tensor(vel, device="cuda:0")
 
     def update_root_state_tensor_by_obstacles(self, obstacles):
         """
