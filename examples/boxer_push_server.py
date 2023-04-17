@@ -7,7 +7,7 @@ import zerorpc
 from mppiisaac.utils.config_store import ExampleConfig
 from isaacgym import gymapi
 import time
-from examples.heijn_push_client import Objective
+from examples.boxer_push_client import Objective
 import sys
 
 import io
@@ -31,8 +31,8 @@ def reset_trial(sim, init_pos, init_vel):
                 )
     sim.set_dof_state_tensor(torch.tensor([init_pos[0], init_vel[0], init_pos[1], init_vel[1], init_pos[2], init_vel[2]], device="cuda:0"))
         
-@hydra.main(version_base=None, config_path="../conf", config_name="config_heijn_push")
-def run_heijn_robot(cfg: ExampleConfig):
+@hydra.main(version_base=None, config_path="../conf", config_name="config_boxer_push")
+def run_boxer_robot(cfg: ExampleConfig):
     # Note: Workaround to trigger the dataclasses __post_init__ method
     cfg = OmegaConf.to_object(cfg)
 
@@ -58,7 +58,7 @@ def run_heijn_robot(cfg: ExampleConfig):
                 [0.168, 0.237, 0.05, 0.232, 0.615, 0.38, 0.0],     # Baseline 2, B
                 [0.198, 0.198, 0.06, 0.198, 0.565, 0.40, 0.0],     # Baseline 2, C
                 [0.166, 0.228, 0.08, 0.312, 0.587, 0.39, 0.0],     # Baseline 2, D
-                [0.153, 0.462, 0.05, 0.181, 0.506, 0.37, 0.0],]    # Baseline 2, E
+                [0.153, 0.462, 0.05, 0.181, 0.506, 0.37, 0.0]]    # Baseline 2, E
     
     obj_ = obj_set[obj_index][:]
 
@@ -66,7 +66,7 @@ def run_heijn_robot(cfg: ExampleConfig):
     obst_1_pos = [1, 1, obst_1_dim[-1]/2]
 
     obst_2_dim = [0.6, 0.8, 0.108]
-    obst_2_pos = [-0.15, 1, obst_2_dim[-1]/2]
+    obst_2_pos = [-1, 1, obst_2_dim[-1]/2]
 
     additions = [
         {
@@ -86,7 +86,6 @@ def run_heijn_robot(cfg: ExampleConfig):
             "size": obst_1_dim,
             "init_pos": obst_1_pos,
             "fixed": True,
-            "color": [255 / 255, 120 / 255, 57 / 255],
             "handle": None,
         },
         {
@@ -95,7 +94,6 @@ def run_heijn_robot(cfg: ExampleConfig):
             "size": obst_2_dim,
             "init_pos": obst_2_pos,
             "fixed": True,
-            "color": [255 / 255, 120 / 255, 57 / 255],
             "handle": None,
         }
     ]
@@ -112,10 +110,10 @@ def run_heijn_robot(cfg: ExampleConfig):
         sim.viewer, None, gymapi.Vec3(1.5, 2, 3), gymapi.Vec3(1.5, 0, 0)
     )
     
-    init_pos = [0.0, 0., 1.]
-    init_vel = [0., 0., 0.]
+    # init_pos = [0.0, 0., 1.]
+    # init_vel = [0., 0., 0.]
 
-    sim.set_dof_state_tensor(torch.tensor([init_pos[0], init_vel[0], init_pos[1], init_vel[1], init_pos[2], init_vel[2]], device="cuda:0"))
+    # sim.set_dof_state_tensor(torch.tensor([init_pos[0], init_vel[0], init_pos[1], init_vel[1], init_pos[2], init_vel[2]], device="cuda:0"))
 
     # Helpers
     count = 0
@@ -146,8 +144,8 @@ def run_heijn_robot(cfg: ExampleConfig):
             action = torch.zeros_like(action)
 
         # Apply action
-        sim.set_dof_velocity_target_tensor(action)
-
+        sim.set_dof_velocity_target_tensor(10*action)
+        print("action", action)
         # Step simulator
         sim.step()
 
@@ -166,7 +164,7 @@ def run_heijn_robot(cfg: ExampleConfig):
             # print("Angle", Etheta)
             # Ex < 0.025 and Ey < 0.01 and Etheta < 0.05
             # Ex < 0.05 and Ey < 0.025 and Etheta < 0.17
-            if Ex < 0.05 and Ey < 0.05 and Etheta < 0.17: 
+            if Ex < 0.05 and Ey < 0.025 and Etheta < 0.17: 
                 print("Success")
                 final_time = time.time()
                 time_taken = final_time - init_time
@@ -209,4 +207,4 @@ def run_heijn_robot(cfg: ExampleConfig):
     return {}
 
 if __name__ == "__main__":
-    res = run_heijn_robot()
+    res = run_boxer_robot()

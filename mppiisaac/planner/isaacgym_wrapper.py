@@ -271,7 +271,7 @@ class IsaacGymWrapper:
             props = self.gym.get_asset_dof_properties(asset)
             props["driveMode"].fill(gymapi.DOF_MODE_VEL)
             props["stiffness"].fill(0.0)
-            props["damping"].fill(1e7)
+            props["damping"].fill(600)
             self.gym.set_actor_dof_properties(env, handle, props)
 
         return handle

@@ -14,8 +14,8 @@ class Objective(object):
         self.w_robot_to_block_pos=  .1
         self.w_block_to_goal_pos=   .5
         self.w_block_to_goal_ort=   .5
-        self.w_push_align=          0.1
-        self.w_collision=           10
+        self.w_push_align=          0.3
+        self.w_collision=           1
         # Task configration for comparison with baselines
         self.ee_index = 4
         self.block_index = 3
@@ -80,8 +80,8 @@ class Objective(object):
 
         return total_cost
 
-@hydra.main(version_base=None, config_path="../conf", config_name="config_heijn_push")
-def run_heijn_robot(cfg: ExampleConfig):
+@hydra.main(version_base=None, config_path="../conf", config_name="config_boxer_push")
+def run_boxer_robot(cfg: ExampleConfig):
     # Note: Workaround to trigger the dataclasses __post_init__ method
     cfg = OmegaConf.to_object(cfg)
 
@@ -92,4 +92,4 @@ def run_heijn_robot(cfg: ExampleConfig):
     planner.run()
 
 if __name__ == "__main__":
-    run_heijn_robot()
+    run_boxer_robot()
