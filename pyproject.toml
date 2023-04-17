@@ -27,6 +27,7 @@ optional = true
 pylint = "^2.16.1"
 black = "^23.1.0"
 urdfenvs = "^0.5.1"
+zerorpc = "^0.6.3"
 
 [build-system]
 requires = ["poetry-core"]
