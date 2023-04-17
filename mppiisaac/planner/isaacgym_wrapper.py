@@ -84,12 +84,14 @@ class IsaacGymWrapper:
         actors: List[ActorWrapper],
         init_positions: List[List[float]],
         num_envs: int,
-        viewer: bool = False
+        viewer: bool = False,
     ):
         self.gym = gymapi.acquire_gym()
         self.env_cfg = actors
 
-        assert len([a for a in self.env_cfg if a.type == 'robot']) == len(init_positions)
+        assert len([a for a in self.env_cfg if a.type == "robot"]) == len(
+            init_positions
+        )
 
         for init_pos, actor_cfg in zip(init_positions, self.env_cfg):
             actor_cfg.init_pos = init_pos
@@ -146,7 +148,9 @@ class IsaacGymWrapper:
                     options=asset_options,
                 )
             else:
-                raise NotImplementedError(f"actor asset of type {actor_cfg.type} is not yet implemented!")
+                raise NotImplementedError(
+                    f"actor asset of type {actor_cfg.type} is not yet implemented!"
+                )
             self.env_actor_assets.append(actor_asset)
 
         # Create envs and fill with assets
@@ -160,7 +164,9 @@ class IsaacGymWrapper:
             )
 
             for actor_asset, actor_cfg in zip(self.env_actor_assets, self.env_cfg):
-                actor_cfg.handle = self.create_actor(env, env_idx, actor_asset, actor_cfg)
+                actor_cfg.handle = self.create_actor(
+                    env, env_idx, actor_asset, actor_cfg
+                )
             self.envs.append(env)
 
         self.ee_link_present = any([a.ee_link for a in self.env_cfg])
@@ -191,7 +197,9 @@ class IsaacGymWrapper:
         self.robot_velocities = self.root_state[:, 0, 7:10]  # [x, y, z]
         self.obstacle_positions = self.root_state[:, 3:, 0:3]  # [x, y, z]
         if self.ee_link_present:
-            self.ee_positions = self.rigid_body_state[:, self.robot_rigid_body_ee_idx, 0:3] # [x, y, z]
+            self.ee_positions = self.rigid_body_state[
+                :, self.robot_rigid_body_ee_idx, 0:3
+            ]  # [x, y, z]
 
         self.gym.refresh_actor_root_state_tensor(self.sim)
         self.gym.refresh_dof_state_tensor(self.sim)
@@ -202,7 +210,7 @@ class IsaacGymWrapper:
         if self.viewer:
             self.gym.destroy_viewer(self.viewer)
         self.gym.destroy_sim(self.sim)
-    
+
     def add_to_envs(self, additions):
         for a in additions:
             self.env_cfg.append(ActorWrapper(**a))
@@ -301,43 +309,50 @@ class IsaacGymWrapper:
         u_desired_idx = 0
         u_dof_idx = 0
         for actor in self.env_cfg:
-            if actor.type != 'robot': continue
+            if actor.type != "robot":
+                continue
             actor_dof_count = self.gym.get_actor_dof_count(self.envs[0], actor.handle)
             dof_dict = self.gym.get_actor_dof_dict(self.envs[0], actor.handle)
             for i in range(actor_dof_count):
-                if actor.differential_drive and i >= actor_dof_count - actor.wheel_count:
-                    u_ik = self._ik(actor, u_desired[:, u_desired_idx: u_desired_idx+2])
-                    u[:, u_dof_idx:u_dof_idx + actor.wheel_count] = u_ik
+                if (
+                    actor.differential_drive
+                    and i >= actor_dof_count - actor.wheel_count
+                ):
+                    u_ik = self._ik(
+                        actor, u_desired[:, u_desired_idx : u_desired_idx + 2]
+                    )
+                    u[:, u_dof_idx : u_dof_idx + actor.wheel_count] = u_ik
                     u_desired_idx += 2
                     u_dof_idx += actor.wheel_count
                     break
                 else:
-                    u[:, u_dof_idx] = u_desired[:, u_desired_idx] 
+                    u[:, u_dof_idx] = u_desired[:, u_desired_idx]
                     u_desired_idx += 1
                     u_dof_idx += 1
-                
+
         self.gym.set_dof_velocity_target_tensor(self.sim, gymtorch.unwrap_tensor(u))
 
     def reset_robot_state(self, q, qdot):
-        '''
+        """
         This function is mainly used for compatibility with gym_urdf_envs pybullet sim.
-        '''
+        """
 
         q_idx = 0
 
         dof_state = []
         for actor in self.env_cfg:
-            if actor.type != 'robot': continue
+            if actor.type != "robot":
+                continue
 
             actor_dof_count = self.gym.get_actor_dof_count(self.envs[0], actor.handle)
 
             if actor.differential_drive:
-                actor_q_count = actor_dof_count - (actor.wheel_count - 3) 
+                actor_q_count = actor_dof_count - (actor.wheel_count - 3)
             else:
                 actor_q_count = actor_dof_count
 
-            actor_q = q[q_idx: q_idx + actor_q_count]
-            actor_qdot = qdot[q_idx: q_idx + actor_q_count]
+            actor_q = q[q_idx : q_idx + actor_q_count]
+            actor_qdot = qdot[q_idx : q_idx + actor_q_count]
 
             if actor.differential_drive:
                 pos = actor_q[:3]
@@ -355,11 +370,7 @@ class IsaacGymWrapper:
 
             q_idx += actor_q_count
 
-        dof_state_tensor = (
-            torch.tensor(dof_state)
-            .type(torch.float32)
-            .to("cuda:0")
-        )  
+        dof_state_tensor = torch.tensor(dof_state).type(torch.float32).to("cuda:0")
 
         dof_state_tensor = dof_state_tensor.repeat(self.num_envs, 1)
         self.set_dof_state_tensor(dof_state_tensor)
@@ -413,7 +424,6 @@ class IsaacGymWrapper:
             np.cos(roll / 2) * np.cos(pitch / 2) * np.cos(yaw / 2),
         ]
 
-
         self.root_state[:, handle, :2] = torch.tensor(pos[:2], device="cuda:0")
         self.root_state[:, handle, 3:7] = torch.tensor(orientation, device="cuda:0")
         self.root_state[:, handle, 7:10] = torch.tensor(vel, device="cuda:0")
@@ -429,16 +439,20 @@ class IsaacGymWrapper:
             pos, vel, o_type, o_size = obst
             name = f"{o_type}{i}"
             try:
-                obst_idx = [idx for idx, actor in enumerate(self.env_cfg) if actor.name == name][0]
+                obst_idx = [
+                    idx for idx, actor in enumerate(self.env_cfg) if actor.name == name
+                ][0]
             except:
                 self.env_cfg.append(
-                    ActorWrapper(**{
-                        "type": o_type,
-                        "name": name,
-                        "handle": None,
-                        "size": o_size,
-                        "fixed": True,
-                    })
+                    ActorWrapper(
+                        **{
+                            "type": o_type,
+                            "name": name,
+                            "handle": None,
+                            "size": o_size,
+                            "fixed": True,
+                        }
+                    )
                 )
                 env_cfg_changed = True
                 continue
@@ -448,9 +462,7 @@ class IsaacGymWrapper:
             )
 
             # Note: reset simulator if size changed, because this cannot be done at runtime.
-            if not all(
-                [a == b for a, b in zip(o_size, self.env_cfg[obst_idx].size)]
-            ):
+            if not all([a == b for a, b in zip(o_size, self.env_cfg[obst_idx].size)]):
                 env_cfg_changed = True
                 self.env_cfg[obst_idx].size = o_size
 
@@ -478,8 +490,16 @@ class IsaacGymWrapper:
 
     def draw_lines(self, lines, env_idx=0):
         # convert list of vertices into line segments
-        line_segments = torch.concat((lines[:-1], lines[1:]), axis=-1).flatten(end_dim=-2).cpu().numpy().astype(np.float32)
+        line_segments = (
+            torch.concat((lines[:-1], lines[1:]), axis=-1)
+            .flatten(end_dim=-2)
+            .cpu()
+            .numpy()
+            .astype(np.float32)
+        )
         num_lines = line_segments.shape[0]
-        colors = np.zeros((num_lines,3), dtype=np.float32)
+        colors = np.zeros((num_lines, 3), dtype=np.float32)
         colors[:, 1] = 255
-        self.gym.add_lines(self.viewer, self.envs[env_idx], num_lines, line_segments, colors)
+        self.gym.add_lines(
+            self.viewer, self.envs[env_idx], num_lines, line_segments, colors
+        )
