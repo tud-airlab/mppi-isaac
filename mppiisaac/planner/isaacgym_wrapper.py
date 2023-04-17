@@ -240,7 +240,8 @@ class IsaacGymWrapper:
         caster_shapes = [
             b.start
             for body_idx, b in enumerate(body_to_shape)
-            if body_names[body_idx] in actor.caster_links
+            if actor.caster_links is not None
+            and body_names[body_idx] in actor.caster_links
         ]
 
         props = self.gym.get_actor_rigid_shape_properties(env, handle)
@@ -248,7 +249,7 @@ class IsaacGymWrapper:
             p.friction = actor.friction
             p.torsion_friction = actor.friction
             p.rolling_friction = actor.friction
-            
+
             if i in caster_shapes:
                 p.friction = 0
                 p.torsion_friction = 0
