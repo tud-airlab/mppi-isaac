@@ -51,27 +51,20 @@ def run_heijn_robot(cfg: ExampleConfig):
     # Manually add table + block and restart isaacgym
     obj_index = 0
                 #  l      w     h     mu      m     x    y
-    obj_set =  [[0.100, 0.100, 0.05, 0.300, 0.100, 2.00, 2.0],     # Baseline 1, pose 1
-                [0.100, 0.100, 0.05, 0.300, 0.100, 0.40, 0.],     # Baseline 1, pose 2
-                [0.116, 0.116, 0.06, 0.637, 0.016, 0.35, 0.],     # Baseline 2, A
-                [0.168, 0.237, 0.05, 0.232, 0.615, 0.38, 0.],     # Baseline 2, B
-                [0.198, 0.198, 0.06, 0.198, 0.565, 0.40, 0.],     # Baseline 2, C
-                [0.166, 0.228, 0.08, 0.312, 0.587, 0.39, 0.],     # Baseline 2, D
-                [0.153, 0.462, 0.05, 0.181, 0.506, 0.37, 0.],]    # Baseline 2, E
+    obj_set =  [[0.300, 0.500, 0.3,  0.300, 1.000, 2.00, 2.0],     # Crate
+                [0.100, 0.100, 0.05, 0.300, 0.100, 2.00, 2.0],     # Baseline 1, pose 1
+                [0.100, 0.100, 0.05, 0.300, 0.100, 0.40, 0.0],     # Baseline 1, pose 2
+                [0.116, 0.116, 0.06, 0.637, 0.016, 0.35, 0.0],     # Baseline 2, A
+                [0.168, 0.237, 0.05, 0.232, 0.615, 0.38, 0.0],     # Baseline 2, B
+                [0.198, 0.198, 0.06, 0.198, 0.565, 0.40, 0.0],     # Baseline 2, C
+                [0.166, 0.228, 0.08, 0.312, 0.587, 0.39, 0.0],     # Baseline 2, D
+                [0.153, 0.462, 0.05, 0.181, 0.506, 0.37, 0.0],]    # Baseline 2, E
     
     obj_ = obj_set[obj_index][:]
     table_dim = [0.8, 1.0, 0.108]
     table_pos = [1, 1, table_dim[-1]/2]
 
     additions = [
-        {
-            "type": "box",
-            "name": "table",
-            "size": table_dim,
-            "init_pos": table_pos,
-            "fixed": True,
-            "handle": None,
-        },
         {
             "type": "box",
             "name": "block_to_push",
@@ -106,7 +99,7 @@ def run_heijn_robot(cfg: ExampleConfig):
     count = 0
     client_helper = Objective(cfg, cfg.mppi.device)
     init_time = time.time()
-    block_index = 4
+    block_index = 3
     data_time = []
     data_err = []
     trial = 0 
@@ -122,7 +115,7 @@ def run_heijn_robot(cfg: ExampleConfig):
             torch_to_bytes(sim.root_state[0]),
             torch_to_bytes(sim.rigid_body_state[0]),
         )
-        sim.gym.clear_lines(sim.viewer)
+        # sim.gym.clear_lines(sim.viewer)
         
         # Compute action
         action = bytes_to_torch(planner.command())
@@ -146,9 +139,9 @@ def run_heijn_robot(cfg: ExampleConfig):
             Ex, Ey, Etheta = client_helper.compute_metrics(block_pos, block_ort)
             metric_1 = 1.5*(Ex+Ey)+0.01*Etheta
             # print("Metric Baxter", metric_1)
-            # print("Ex", Ex)
-            # print("Ey", Ey)
-            # print("Angle", Etheta)
+            print("Ex", Ex)
+            print("Ey", Ey)
+            print("Angle", Etheta)
             # Ex < 0.025 and Ey < 0.01 and Etheta < 0.05
             # Ex < 0.05 and Ey < 0.025 and Etheta < 0.17
             if Ex < 0.05 and Ey < 0.025 and Etheta < 0.17: 
@@ -168,7 +161,7 @@ def run_heijn_robot(cfg: ExampleConfig):
                 trial += 1
 
             rt_factor_seq.append(cfg.isaacgym.dt/(time.time() - t))
-            # print(f"FPS: {1/(time.time() - t)} RT-factor: {cfg.isaacgym.dt/(time.time() - t)}")
+            print(f"FPS: {1/(time.time() - t)} RT-factor: {cfg.isaacgym.dt/(time.time() - t)}")
             
             count = 0
         else:

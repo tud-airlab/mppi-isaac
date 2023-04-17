@@ -88,7 +88,7 @@ class IsaacGymWrapper:
                 "handle": None,
                 "fixed": True,
                 "size": [0.5, 0.05, 0.01],
-                "init_pos": [0.25, 0.0, -0.004],
+                "init_pos": [0.25, 0.0, -0.04],
                 "color": [1, 0.0, 0.2],
                 "collision": False
             },
@@ -98,7 +98,7 @@ class IsaacGymWrapper:
                 "handle": None,
                 "fixed": True,
                 "size": [0.05, 0.5, 0.01],
-                "init_pos": [0.0, 0.25, -0.004],
+                "init_pos": [0.0, 0.25, -0.04],
                 "color": [0.0, 1, 0.2],
                 "collision": False
             },
