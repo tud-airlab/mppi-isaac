@@ -1,0 +1,11 @@
+defaults:
+  - mppi: multi-pointbot
+  - isaacgym: normal
+
+goal: [1.0, 0.0, -1.0, 0.0]
+render: true
+n_steps: 1000
+nx: 12 
+
+actors: ['point_robot', 'point_robot']
+initial_actor_positions: [[-1.0, 0.0, 0.05], [2.0, 0.0, 0.05]]
