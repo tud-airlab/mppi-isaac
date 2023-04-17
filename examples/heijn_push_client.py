@@ -11,11 +11,11 @@ class Objective(object):
     def __init__(self, cfg, device):
         
         # Tuning of the weights for baseline 2
-        self.w_robot_to_block_pos= .1#1
-        self.w_block_to_goal_pos=  .5#5
-        self.w_block_to_goal_ort=  .0#5
-        self.w_push_align=         0.3#0.5
-
+        self.w_robot_to_block_pos=  .1
+        self.w_block_to_goal_pos=   .5
+        self.w_block_to_goal_ort=   .5
+        self.w_push_align=          0.3
+        self.w_collision=           1
         # Task configration for comparison with baselines
         self.ee_index = 4
         self.block_index = 3
@@ -32,6 +32,9 @@ class Objective(object):
 
         self.success = False
         self.count = 0
+
+        # Number of obstacles
+        self.obst_number = 2        # By convention, obstacles are the last actors
 
     def compute_metrics(self, block_pos, block_ort):
 
@@ -56,20 +59,23 @@ class Objective(object):
         block_yaws = torch.atan2(2.0 * (block_ort[:,-1] * block_ort[:,2] + block_ort[:,0] * block_ort[:,1]), block_ort[:,-1] * block_ort[:,-1] + block_ort[:,0] * block_ort[:,0] - block_ort[:,1] * block_ort[:,1] - block_ort[:,2] * block_ort[:,2])
         self.block_yaws = pytorch3d.transforms.matrix_to_euler_angles(pytorch3d.transforms.quaternion_to_matrix(block_ort), "ZYX")[:, -1]
 
-        # # Distance costs
+        # Distance costs
         robot_to_block_dist = torch.linalg.norm(robot_to_block[:, 0:2], axis = 1)
         block_to_goal_pos = torch.linalg.norm(block_to_goal, axis = 1)
         block_to_goal_ort = torch.abs(block_yaws - self.goal_yaw)
 
         push_align = torch.sum(robot_to_block[:,0:2]*block_to_goal, 1)/(robot_to_block_dist*block_to_goal_pos)+1
         
-        coll_cost = 0
+        # Collision avoidance
+        xy_contatcs = torch.sum(torch.abs(torch.cat((sim.net_cf[:, 0].unsqueeze(1), sim.net_cf[:, 1].unsqueeze(1)), 1)),1)
+        coll = torch.sum(xy_contatcs.reshape([sim.num_envs, int(xy_contatcs.size(dim=0)/sim.num_envs)])[:, (sim.num_bodies - self.obst_number):sim.num_bodies], 1)
 
         total_cost = (
             self.w_robot_to_block_pos * robot_to_block_dist
             + self.w_block_to_goal_pos * block_to_goal_pos
             + self.w_block_to_goal_ort * block_to_goal_ort
             + self.w_push_align * push_align
+            + self.w_collision * coll
         )
 
         return total_cost

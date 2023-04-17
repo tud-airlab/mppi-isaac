@@ -212,6 +212,11 @@ class MPPIPlanner(ABC):
         self.step_size_cov = 0.7
         self.kappa = 0.005
 
+        self.eta_u_bound = 10
+        self.eta_l_bound = 5
+        self.beta_lm = 0.9
+        self.beta_um = 1.2
+
     def _dynamics(self, state, u, t=None):
         return self.dynamics(state, u, t=None)
 
@@ -233,15 +238,11 @@ class MPPIPlanner(ABC):
         eta = torch.sum(exp_)       # tells how many significant samples we have, more or less
         w = 1/eta*exp_
         # print(self.beta)
-        eta_u_bound = 10
-        eta_l_bound = 5
-        beta_lm = 0.9
-        beta_um = 1.2
         # beta update 
-        if eta > eta_u_bound:
-            self.beta = self.beta*beta_lm
-        elif eta < eta_l_bound:
-            self.beta = self.beta*beta_um
+        if eta > self.eta_u_bound:
+            self.beta = self.beta*self.beta_lm
+        elif eta < self.eta_l_bound:
+            self.beta = self.beta*self.beta_um
         
         #w = torch.softmax((-1.0/self.beta) * total_costs, dim=0)
         self.total_costs = total_costs

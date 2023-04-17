@@ -61,20 +61,40 @@ def run_heijn_robot(cfg: ExampleConfig):
                 [0.153, 0.462, 0.05, 0.181, 0.506, 0.37, 0.0],]    # Baseline 2, E
     
     obj_ = obj_set[obj_index][:]
-    table_dim = [0.8, 1.0, 0.108]
-    table_pos = [1, 1, table_dim[-1]/2]
+
+    obst_1_dim = [0.6, 0.8, 0.108]
+    obst_1_pos = [1, 1, obst_1_dim[-1]/2]
+
+    obst_2_dim = [0.6, 0.8, 0.108]
+    obst_2_pos = [-1, 1, obst_2_dim[-1]/2]
 
     additions = [
         {
             "type": "box",
             "name": "block_to_push",
             "size": [obj_[0], obj_[1], obj_[2]],
-            "init_pos": [obj_[5], obj_[6], table_dim[-1] + obj_[2] / 2],
+            "init_pos": [obj_[5], obj_[6], obj_[2] / 2],
             "mass": obj_[4],
             "fixed": False,
             "handle": None,
             "color": [4 / 255, 160 / 255, 218 / 255],
             "friction": obj_[3]
+        },
+        {
+            "type": "box",
+            "name": "obst_1",
+            "size": obst_1_dim,
+            "init_pos": obst_1_pos,
+            "fixed": True,
+            "handle": None,
+        },
+        {
+            "type": "box",
+            "name": "obst_2",
+            "size": obst_2_dim,
+            "init_pos": obst_2_pos,
+            "fixed": True,
+            "handle": None,
         }
     ]
 
@@ -141,7 +161,7 @@ def run_heijn_robot(cfg: ExampleConfig):
             # print("Metric Baxter", metric_1)
             print("Ex", Ex)
             print("Ey", Ey)
-            print("Angle", Etheta)
+            # print("Angle", Etheta)
             # Ex < 0.025 and Ey < 0.01 and Etheta < 0.05
             # Ex < 0.05 and Ey < 0.025 and Etheta < 0.17
             if Ex < 0.05 and Ey < 0.025 and Etheta < 0.17: 

@@ -211,6 +211,8 @@ class IsaacGymWrapper:
             self.gym.acquire_net_contact_force_tensor(self.sim)
         )
 
+        self.num_bodies = int(self.net_cf.size(dim=0) / self.num_envs)
+
         # save buffer of ee states
         if self._ee_link:
             self.ee_positions_buffer = []
@@ -295,6 +297,7 @@ class IsaacGymWrapper:
         self.gym.refresh_actor_root_state_tensor(self.sim)
         self.gym.refresh_dof_state_tensor(self.sim)
         self.gym.refresh_rigid_body_state_tensor(self.sim)
+        self.gym.refresh_net_contact_force_tensor(self.sim)
 
         if self.viewer is not None:
             self.gym.step_graphics(self.sim)
