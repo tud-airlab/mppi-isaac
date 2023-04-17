@@ -74,10 +74,10 @@ def run_jackal_robot(cfg: ExampleConfig):
 
         # Apply action
         sim.apply_robot_cmd_velocity(torch.unsqueeze(action, axis=0))
-        #sim.set_dof_velocity_target_tensor(action)
 
         # Step simulator
         sim.step()
+        sim.gym.sync_frame_time(sim.sim)
 
         # Print error
         pos = sim.robot_positions[:, :2]

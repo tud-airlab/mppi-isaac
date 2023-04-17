@@ -1,9 +1,11 @@
 import gym
-from mppiisaac.planner.isaacgym_wrapper import IsaacGymWrapper
+from mppiisaac.planner.isaacgym_wrapper import IsaacGymWrapper, ActorWrapper
 import numpy as np
+import yaml
+from yaml import SafeLoader
 from mppiisaac.planner.mppi_isaac import MPPIisaacPlanner
-from urdfenvs.robots.generic_urdf import GenericUrdfReacher
 import hydra
+import mppiisaac
 from omegaconf import OmegaConf
 import os
 import torch
@@ -31,14 +33,16 @@ def run_panda_robot(cfg: ExampleConfig):
     # Note: Workaround to trigger the dataclasses __post_init__ method
     cfg = OmegaConf.to_object(cfg)
 
+    actors=[]
+    for actor_name in cfg.actors:
+        with open(f'{os.path.dirname(mppiisaac.__file__)}/../conf/actors/{actor_name}.yaml') as f:
+            actors.append(ActorWrapper(**yaml.load(f, Loader=SafeLoader)))
+
     sim = IsaacGymWrapper(
         cfg.isaacgym,
-        cfg.urdf_file,
-        cfg.fix_base,
-        cfg.flip_visual,
+        init_positions=cfg.initial_actor_positions,
+        actors=actors,
         num_envs=1,
-        ee_link=cfg.ee_link,
-        disable_gravity=cfg.disable_gravity,
         viewer=True,
     )
 
@@ -65,10 +69,11 @@ def run_panda_robot(cfg: ExampleConfig):
         action = bytes_to_torch(planner.command())
 
         # Apply action
-        sim.set_dof_velocity_target_tensor(action)
+        sim.apply_robot_cmd_velocity(torch.unsqueeze(action, axis=0))
 
         # Step simulator
         sim.step()
+        sim.gym.sync_frame_time(sim.sim)
     return {}
 
 
