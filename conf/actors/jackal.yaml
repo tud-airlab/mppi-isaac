@@ -5,8 +5,9 @@ fixed: False
 flip_visual: false
 gravity: true
 differential_drive: true
-mass: 40
+mass: 40.00
 wheel_radius: 0.14
 wheel_base: 0.400
 wheel_count: 4
-collision: False
+friction: 0.8
+collision: True

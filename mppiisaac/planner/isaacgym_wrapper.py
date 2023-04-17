@@ -226,9 +226,11 @@ class IsaacGymWrapper:
         props[0].mass = actor.mass
         self.gym.set_actor_rigid_body_properties(env, handle, props)
         props = self.gym.get_actor_rigid_shape_properties(env, handle)
-        props[0].friction = actor.friction
-        props[0].torsion_friction = actor.friction
-        props[0].rolling_friction = actor.friction
+        for p in props:
+            p.friction = actor.friction
+            p.torsion_friction = actor.friction
+            p.rolling_friction = actor.friction
+
         self.gym.set_actor_rigid_shape_properties(env, handle, props)
 
         if actor.type == "robot":
@@ -262,16 +264,14 @@ class IsaacGymWrapper:
         self.gym.set_dof_velocity_target_tensor(self.sim, gymtorch.unwrap_tensor(u))
 
     def _ik(self, actor, u):
-        print(u.size())
         r = actor.wheel_radius
         L = actor.wheel_base
         wheel_sets = actor.wheel_count // 2
 
         # Diff drive fk
         u_ik = u.clone()
-        u_ik[:, 0] = (u[:, 0] / r) - ((L * u[:, 1]) / (2 * r))
-        u_ik[:, 1] = (u[:, 0] / r) + ((L * u[:, 1]) / (2 * r))
-
+        u_ik[:, 1] = (u[:, 0] / r) - ((L * u[:, 1]) / (2 * r))
+        u_ik[:, 0] = (u[:, 0] / r) + ((L * u[:, 1]) / (2 * r))
 
         if wheel_sets > 1:
             u_ik = u_ik.repeat(1, wheel_sets)
@@ -279,26 +279,27 @@ class IsaacGymWrapper:
         return u_ik
 
     def apply_robot_cmd_velocity(self, u_desired):
-        test = list(self.dof_state.size())
-        test[1] = test[1] // 2
-        u = torch.zeros(test, device="cuda:0")
-        print(u_desired.size())
+        vel_dof_shape = list(self.dof_state.size())
+        vel_dof_shape[1] = vel_dof_shape[1] // 2
+        u = torch.zeros(vel_dof_shape, device="cuda:0")
 
-        u_idx = 0
+        u_desired_idx = 0
+        u_dof_idx = 0
         for actor in self.env_cfg:
             if actor.type != 'robot': continue
             actor_dof_count = self.gym.get_actor_dof_count(self.envs[0], actor.handle)
             dof_dict = self.gym.get_actor_dof_dict(self.envs[0], actor.handle)
             for i in range(actor_dof_count):
-                print(i, u_idx)
                 if actor.differential_drive and i >= actor_dof_count - actor.wheel_count:
-                    u_ik = self._ik(actor, u_desired[:, u_idx: u_idx+2])
-                    u[:, u_idx:u_idx + actor.wheel_count] = u_ik
-                    u_idx += 2
+                    u_ik = self._ik(actor, u_desired[:, u_desired_idx: u_desired_idx+2])
+                    u[:, u_dof_idx:u_dof_idx + actor.wheel_count] = u_ik
+                    u_desired_idx += 2
+                    u_dof_idx += actor.wheel_count
                     break
                 else:
-                    u[:, u_idx] = u_desired[:, u_idx] 
-                    u_idx += 1
+                    u[:, u_dof_idx] = u_desired[:, u_desired_idx] 
+                    u_desired_idx += 1
+                    u_dof_idx += 1
                 
         self.gym.set_dof_velocity_target_tensor(self.sim, gymtorch.unwrap_tensor(u))
 

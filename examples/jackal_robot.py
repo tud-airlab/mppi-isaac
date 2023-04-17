@@ -19,7 +19,7 @@ class Objective(object):
 
     def compute_cost(self, sim):
         pos = sim.robot_positions[:, :2]
-
+        err = torch.linalg.norm(pos - self.nav_goal, axis=1)
         cost = torch.clamp(
             torch.linalg.norm(pos - self.nav_goal, axis=1) - 0.05, min=0, max=1999
         )

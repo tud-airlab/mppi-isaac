@@ -19,15 +19,10 @@ class Objective(object):
 
     def compute_cost(self, sim):
         pos = torch.cat((sim.root_state[:, 0, 0:2], sim.root_state[:, 1, 0:2]), axis=1)
-        print(pos[0])
-        print(self.nav_goal)
-
-
         cost = torch.clamp(
             torch.linalg.norm(pos - self.nav_goal, axis=1) - 0.05, min=0, max=1999
         )
-        cost += -0.2*torch.linalg.norm(pos[:, :2] - pos[:, 2:], axis=1)
-        return cost * 1.5
+        return cost
 
 
 def initalize_environment(cfg) -> UrdfEnv:
@@ -49,20 +44,7 @@ def initalize_environment(cfg) -> UrdfEnv:
     ]
     env: UrdfEnv = gym.make("urdf-env-v0", dt=0.02, robots=robots, render=cfg.render)
     # Set the initial position and velocity of the jackal robot
-    print(cfg.initial_actor_positions)
     env.reset(pos=np.array(cfg.initial_actor_positions))
-    #goal_dict = {
-    #    "weight": 1.0,
-    #    "is_primary_goal": True,
-    #    "indices": [0, 1],
-    #    "parent_link": 0,
-    #    "child_link": 1,
-    #    "desired_position": cfg.goal,
-    #    "epsilon": 0.05,
-    #    "type": "staticSubGoal",
-    #}
-    #goal = StaticSubGoal(name="simpleGoal", content_dict=goal_dict)
-   # env.add_goal(goal)
     return env
 
 
