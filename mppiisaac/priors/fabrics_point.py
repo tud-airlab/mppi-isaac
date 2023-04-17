@@ -29,14 +29,15 @@ class FabricsPointPrior(object):
         vel = np.array([dof_state[1], dof_state[3]])
 
         obst_positions = np.array(sim.obstacle_positions[self.env_id].cpu())
+        obst_indices = torch.tensor([i for i, a in enumerate(sim.env_cfg) if a.type in ["sphere", "box"]], device="cuda:0")
 
         x_obsts = []
         radius_obsts = []
         for i in range(self.max_num_obstacles):
             if i < len(obst_positions):
                 x_obsts.append(obst_positions[i][:2])
-                if sim.env_cfg[i+3].type == 'sphere':
-                    radius_obsts.append(sim.env_cfg[i + 3].size[0])
+                if sim.env_cfg[obst_indices[i]].type == 'sphere':
+                    radius_obsts.append(sim.env_cfg[obst_indices[i]].size[0])
                 else:
                     radius_obsts.append(0.2)
             else:

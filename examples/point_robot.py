@@ -3,7 +3,10 @@ import numpy as np
 from urdfenvs.robots.generic_urdf import GenericUrdfReacher
 from urdfenvs.urdf_common.urdf_env import UrdfEnv
 from mppiisaac.planner.mppi_isaac import MPPIisaacPlanner
+import mppiisaac
 import hydra
+import yaml
+from yaml import SafeLoader
 from omegaconf import OmegaConf
 import os
 import torch
@@ -39,9 +42,9 @@ def initalize_environment(cfg) -> UrdfEnv:
     render
         Boolean toggle to set rendering on (True) or off (False).
     """
-    urdf_file = (
-        os.path.dirname(os.path.abspath(__file__)) + "/../assets/urdf/" + cfg.urdf_file
-    )
+    with open(f'{os.path.dirname(mppiisaac.__file__)}/../conf/actors/point_robot.yaml') as f:
+        heijn_cfg = yaml.load(f, Loader=SafeLoader)
+    urdf_file = f'{os.path.dirname(mppiisaac.__file__)}/../assets/urdf/' + heijn_cfg['urdf_file']
     robots = [
         GenericUrdfReacher(urdf=urdf_file, mode="vel"),
     ]
