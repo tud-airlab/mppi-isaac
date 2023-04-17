@@ -74,6 +74,7 @@ class ActorWrapper:
     wheel_count: Optional[float] = None
     left_wheel_joints: Optional[List[int]] = None
     right_wheel_joints: Optional[List[int]] = None
+    caster_links: Optional[List[str]] = None
 
 
 class IsaacGymWrapper:
@@ -225,11 +226,25 @@ class IsaacGymWrapper:
         props = self.gym.get_actor_rigid_body_properties(env, handle)
         props[0].mass = actor.mass
         self.gym.set_actor_rigid_body_properties(env, handle, props)
+
+        body_names = self.gym.get_actor_rigid_body_names(env, handle)
+        body_to_shape = self.gym.get_actor_rigid_body_shape_indices(env, handle)
+        caster_shapes = [
+            b.start
+            for body_idx, b in enumerate(body_to_shape)
+            if body_names[body_idx] in actor.caster_links
+        ]
+
         props = self.gym.get_actor_rigid_shape_properties(env, handle)
-        for p in props:
+        for i, p in enumerate(props):
             p.friction = actor.friction
             p.torsion_friction = actor.friction
             p.rolling_friction = actor.friction
+            
+            if i in caster_shapes:
+                p.friction = 0
+                p.torsion_friction = 0
+                p.rolling_friction = 0
 
         self.gym.set_actor_rigid_shape_properties(env, handle, props)
 
