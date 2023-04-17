@@ -42,6 +42,7 @@ def run_heijn_robot(cfg: ExampleConfig):
         cfg.fix_base,
         cfg.flip_visual,
         num_envs=1,
+        robot_init_pos= cfg.initial_position,
         ee_link=cfg.ee_link,
         disable_gravity=cfg.disable_gravity,
         viewer=True,
