@@ -193,9 +193,16 @@ class IsaacGymWrapper:
             self.ee_positions_buffer = []
 
         # helpfull slices
-        self.robot_positions = self.root_state[:, 0, 0:3]  # [x, y, z]
-        self.robot_velocities = self.root_state[:, 0, 7:10]  # [x, y, z]
-        self.obstacle_positions = self.root_state[:, 3:, 0:3]  # [x, y, z]
+        #self.robot_positions = self.root_state[:, 0, 0:3]  # [x, y, z]
+
+        indices = torch.tensor([i for i, a in enumerate(self.env_cfg) if a.type == "robot"], device="cuda:0")
+        self.robot_root_states = torch.index_select(self.root_state, 1, indices) 
+        self.robot_positions = self.robot_root_states[:, :, 0:3]
+        self.robot_velocities = self.robot_root_states[:, :, 7:10]
+
+        indices = torch.tensor([i for i, a in enumerate(self.env_cfg) if a.type in ["sphere", "box"]], device="cuda:0")
+        self.obstacle_root_states = torch.index_select(self.root_state, 1, indices) 
+        self.obstacle_positions = self.obstacle_root_states[:, :, 0:3]  # [x, y, z]
         if self.ee_link_present:
             self.ee_positions = self.rigid_body_state[
                 :, self.robot_rigid_body_ee_idx, 0:3

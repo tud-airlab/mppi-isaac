@@ -80,7 +80,7 @@ def run_jackal_robot(cfg: ExampleConfig):
         sim.gym.sync_frame_time(sim.sim)
 
         # Print error
-        pos = sim.robot_positions[:, :2]
+        pos = sim.robot_positions[:, 0, :2]
         print(torch.linalg.norm(pos - torch.tensor(cfg.goal, device="cuda:0"), axis=1))
     return {}
 

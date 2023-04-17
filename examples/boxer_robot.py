@@ -18,7 +18,7 @@ class Objective(object):
         self.nav_goal = torch.tensor(cfg.goal, device=cfg.mppi.device)
 
     def compute_cost(self, sim):
-        pos = sim.robot_positions[:, :2]
+        pos = sim.robot_positions[:, 0, :2]
 
         return torch.clamp(
             torch.linalg.norm(pos - self.nav_goal, axis=1) - 0.05, min=0, max=1999
