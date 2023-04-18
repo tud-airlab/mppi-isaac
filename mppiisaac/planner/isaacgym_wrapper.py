@@ -283,6 +283,19 @@ class IsaacGymWrapper:
             props["damping"].fill(600)
             self.gym.set_actor_dof_properties(env, handle, props)
 
+            # provisional workaround for setting caster friction to zero
+            boxer_rigid_body_names = ['base_link_ori', 'base_link', 'chassis_link', 'rotacastor_left_link', 'rotacastor_right_link', 'wheel_left_link', 'wheel_right_link', 'ee_link']
+            body_names = self.gym.get_actor_rigid_body_names(env, handle)
+            if body_names == boxer_rigid_body_names:
+                shape_props = self.gym.get_actor_rigid_shape_properties(env, handle)
+                shape_props[1].friction = 0.
+                shape_props[1].torsion_friction = 0.
+                shape_props[1].rolling_friction = 0.
+                shape_props[2].friction = 0.
+                shape_props[2].torsion_friction = 0.
+                shape_props[2].rolling_friction = 0.
+                self.gym.set_actor_rigid_shape_properties(env, handle, shape_props)
+
         return handle
 
     def add_ground_plane(self):

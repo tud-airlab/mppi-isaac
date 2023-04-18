@@ -71,7 +71,7 @@ def run_boxer_robot(cfg: ExampleConfig):
     additions = [
         {
             "type": "box",
-            "name": "block_to_push",
+            "name": "obj_to_push",
             "size": [obj_[0], obj_[1], obj_[2]],
             "init_pos": [obj_[5], obj_[6], obj_[2] / 2],
             "mass": obj_[4],
@@ -86,6 +86,7 @@ def run_boxer_robot(cfg: ExampleConfig):
             "size": obst_1_dim,
             "init_pos": obst_1_pos,
             "fixed": True,
+            "color": [255 / 255, 120 / 255, 57 / 255],
             "handle": None,
         },
         {
@@ -94,6 +95,7 @@ def run_boxer_robot(cfg: ExampleConfig):
             "size": obst_2_dim,
             "init_pos": obst_2_pos,
             "fixed": True,
+            "color": [255 / 255, 120 / 255, 57 / 255],
             "handle": None,
         }
     ]
@@ -110,11 +112,6 @@ def run_boxer_robot(cfg: ExampleConfig):
         sim.viewer, None, gymapi.Vec3(1.5, 2, 3), gymapi.Vec3(1.5, 0, 0)
     )
     
-    # init_pos = [0.0, 0., 1.]
-    # init_vel = [0., 0., 0.]
-
-    # sim.set_dof_state_tensor(torch.tensor([init_pos[0], init_vel[0], init_pos[1], init_vel[1], init_pos[2], init_vel[2]], device="cuda:0"))
-
     # Helpers
     count = 0
     client_helper = Objective(cfg, cfg.mppi.device)
@@ -123,7 +120,6 @@ def run_boxer_robot(cfg: ExampleConfig):
     data_time = []
     data_err = []
     trial = 0 
-    timeout = 100
     rt_factor_seq = []
     data_rt = []
 
@@ -145,7 +141,7 @@ def run_boxer_robot(cfg: ExampleConfig):
 
         # Apply action
         sim.set_dof_velocity_target_tensor(10*action)
-        print("action", action)
+
         # Step simulator
         sim.step()
 
@@ -164,14 +160,13 @@ def run_boxer_robot(cfg: ExampleConfig):
             # print("Angle", Etheta)
             # Ex < 0.025 and Ey < 0.01 and Etheta < 0.05
             # Ex < 0.05 and Ey < 0.025 and Etheta < 0.17
-            if Ex < 0.05 and Ey < 0.025 and Etheta < 0.17: 
+            if Ex < 0.05 and Ey < 0.05: 
                 print("Success")
                 final_time = time.time()
                 time_taken = final_time - init_time
                 print("Time to completion", time_taken)
 
-                reset_trial(sim, init_pos, init_vel)
-                
+                #reset_trial(sim, init_pos, init_vel)
                 
                 init_time = time.time()
                 count = 0
@@ -179,6 +174,7 @@ def run_boxer_robot(cfg: ExampleConfig):
                 data_time.append(time_taken)
                 data_err.append(np.float64(metric_1))
                 trial += 1
+                return{}
 
             rt_factor_seq.append(cfg.isaacgym.dt/(time.time() - t))
             print(f"FPS: {1/(time.time() - t)} RT-factor: {cfg.isaacgym.dt/(time.time() - t)}")
@@ -186,24 +182,6 @@ def run_boxer_robot(cfg: ExampleConfig):
             count = 0
         else:
             count +=1
-
-        if time.time() - init_time >= timeout:
-            reset_trial(sim, init_pos, init_vel)
-            init_time = time.time()
-            count = 0
-            data_time.append(-1)
-            data_err.append(-1)
-            data_rt.append(-1)
-            trial += 1
-
-        # Visualize samples
-        # rollouts = bytes_to_torch(planner.get_rollouts())
-        # sim.draw_lines(rollouts)
-        
-        # Print error of block
-        # pos = sim.root_state[0, -1][:2].cpu().numpy()
-        # goal = np.array([0.5, 0])
-        # print(f"L2: {np.linalg.norm(pos - goal)} FPS: {1/(time.time() - t)} RT-factor: {cfg.isaacgym.dt/(time.time() - t)}")
     return {}
 
 if __name__ == "__main__":

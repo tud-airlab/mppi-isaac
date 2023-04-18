@@ -51,7 +51,7 @@ def run_omnipanda_robot(cfg: ExampleConfig):
         num_envs=1,
         ee_link=cfg.ee_link,
         disable_gravity=cfg.disable_gravity,
-        viewer=False,
+        viewer=True,
     )
 
     # Manually add table + block and restart isaacgym

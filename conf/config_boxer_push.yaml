@@ -1,9 +1,9 @@
 defaults:
-  - mppi: boxer
+  - mppi: boxer_push
   - isaacgym: push
 
 goal: [2.0, 2.0]
-initial_position: [1.0, 4.0, 0.1]
+initial_position: [0.0, 2.0, 0.1]
 render: true
 n_steps: 1000
 urdf_file: "boxer/boxer.urdf"
