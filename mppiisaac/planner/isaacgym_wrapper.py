@@ -155,7 +155,7 @@ class IsaacGymWrapper:
                     options=asset_options,
                 )
             elif actor_cfg.type == "box":
-                if actor_cfg.name == "block_to_push":
+                if actor_cfg.name == "obj_to_push":
                     # Randomize mass, shape, friction for boxes to be pushed
                     actor_cfg.size[0] += np.random.uniform(-0.005, 0.005)     # Add randomness, 30% uncertainty on the mass and friction and 1cm on size
                     actor_cfg.size[1] += np.random.uniform(-0.005, 0.005)
@@ -171,6 +171,14 @@ class IsaacGymWrapper:
                     options=asset_options,
                 )
             elif actor_cfg.type == "sphere":
+                if actor_cfg.name == "obj_to_push":
+                    # Randomize mass, shape, friction for boxes to be pushed
+                    actor_cfg.size[0] += np.random.uniform(-0.005, 0.005)     # Add randomness, 30% uncertainty on the mass and friction and 1cm on size
+                    actor_cfg.friction += np.random.uniform(-0.3*actor_cfg.friction, 0.3*actor_cfg.friction)
+                    actor_cfg.mass += np.random.uniform(-0.3*actor_cfg.mass, 0.3*actor_cfg.mass)
+                    actor_cfg.color = [np.random.rand(), np.random.rand(), np.random.rand()]
+
+
                 actor_asset = self.gym.create_sphere(
                     sim=self.sim,
                     radius=actor_cfg.size[0],
@@ -260,6 +268,7 @@ class IsaacGymWrapper:
         props = self.gym.get_actor_rigid_shape_properties(env, handle)
         props[0].friction = actor.friction
         props[0].torsion_friction = np.random.uniform(0.001, 0.01) # actor.friction
+        props[0].rolling_friction = 1.
         self.gym.set_actor_rigid_shape_properties(env, handle, props)
 
         if actor.type == "robot":

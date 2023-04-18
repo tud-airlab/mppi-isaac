@@ -51,7 +51,7 @@ def run_heijn_robot(cfg: ExampleConfig):
     # Manually add table + block and restart isaacgym
     obj_index = 0
                 #  l      w     h     mu      m     x    y
-    obj_set =  [[0.300, 0.500, 0.3,  0.300, 1.000, 2.00, 2.0],     # Crate
+    obj_set =  [[0.300, 0.500, 0.3,  0.300, 1.500, 2.00, 2.0],     # Crate
                 [0.100, 0.100, 0.05, 0.300, 0.100, 2.00, 2.0],     # Baseline 1, pose 1
                 [0.100, 0.100, 0.05, 0.300, 0.100, 0.40, 0.0],     # Baseline 1, pose 2
                 [0.116, 0.116, 0.06, 0.637, 0.016, 0.35, 0.0],     # Baseline 2, A
@@ -80,6 +80,17 @@ def run_heijn_robot(cfg: ExampleConfig):
             "color": [4 / 255, 160 / 255, 218 / 255],
             "friction": obj_[3]
         },
+                # {
+        #     "type": "sphere",
+        #     "name": "obj_to_push",
+        #     "size": [0.2], # [obj_[0], obj_[1], obj_[2]],
+        #     "init_pos": [obj_[5], obj_[6], obj_[2] / 2],
+        #     "mass": obj_[4],
+        #     "fixed": False,
+        #     "handle": None,
+        #     "color": [4 / 255, 160 / 255, 218 / 255],
+        #     "friction": obj_[3]
+        # },
         {
             "type": "box",
             "name": "obst_1",
