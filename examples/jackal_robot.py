@@ -18,11 +18,12 @@ class Objective(object):
         self.nav_goal = torch.tensor(cfg.goal, device=cfg.mppi.device)
 
     def compute_cost(self, sim):
-        pos = sim.robot_positions[:, :2]
-
-        return torch.clamp(
+        pos = sim.robot_positions[:, 0, :2]
+        err = torch.linalg.norm(pos - self.nav_goal, axis=1)
+        cost = torch.clamp(
             torch.linalg.norm(pos - self.nav_goal, axis=1) - 0.05, min=0, max=1999
         )
+        return cost * 1.5
 
 
 def initalize_environment(cfg) -> UrdfEnv:
@@ -95,7 +96,7 @@ def run_jackal_robot(cfg: ExampleConfig):
     env = initalize_environment(cfg)
     planner = set_planner(cfg)
 
-    action = np.zeros(int(cfg.nx/2))
+    action = np.zeros(4)
     ob, *_ = env.step(action)
     
     
@@ -113,7 +114,6 @@ def run_jackal_robot(cfg: ExampleConfig):
             ob,
             *_,
         ) = env.step(action)
-        print(action)
     return {}
 
 

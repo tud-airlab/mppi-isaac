@@ -19,6 +19,7 @@ ghalton = "^0.6.2"
 mpscenes = "^0.3.1"
 fabrics = "^0.6.2"
 yourdfpy = "^0.0.52"
+pytorch3d = "^0.3.0"
 
 [tool.poetry.group.dev]
 optional = true
@@ -27,6 +28,7 @@ optional = true
 pylint = "^2.16.1"
 black = "^23.1.0"
 urdfenvs = "^0.5.1"
+zerorpc = "^0.6.3"
 
 [build-system]
 requires = ["poetry-core"]

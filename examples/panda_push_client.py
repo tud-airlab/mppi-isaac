@@ -72,8 +72,8 @@ class Objective(object):
         return error_batch
 
     def compute_cost(self, sim):
-        ee_index = 11
-        block_index = 4
+        ee_index = sim.robot_rigid_body_ee_idx
+        block_index = 2
         r_pos = sim.rigid_body_state[:, ee_index, :3]
         r_ort = sim.rigid_body_state[:, ee_index, 3:7]
         ee_height = r_pos[:, 2]

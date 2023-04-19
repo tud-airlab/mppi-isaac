@@ -1,7 +1,11 @@
-from mppiisaac.planner.isaacgym_wrapper import IsaacGymWrapper
+from mppiisaac.planner.isaacgym_wrapper import IsaacGymWrapper, ActorWrapper
 from mppiisaac.planner.mppi import MPPIPlanner
+import mppiisaac
 from typing import Callable, Optional
 import io
+import os
+import yaml
+from yaml.loader import SafeLoader
 
 from isaacgym import gymtorch
 import torch
@@ -31,15 +35,17 @@ class MPPIisaacPlanner(object):
         self.cfg = cfg
         self.objective = objective
 
+        actors = []
+        for actor_name in cfg.actors:
+            with open(f'{os.path.dirname(mppiisaac.__file__)}/../conf/actors/{actor_name}.yaml') as f:
+                actors.append(ActorWrapper(**yaml.load(f, Loader=SafeLoader)))
+
+        print(actors)
         self.sim = IsaacGymWrapper(
             cfg.isaacgym,
-            cfg.urdf_file,
-            cfg.fix_base,
-            cfg.flip_visual,
-            robot_init_pos=cfg.initial_position,
+            actors=actors,
+            init_positions=cfg.initial_actor_positions,
             num_envs=cfg.mppi.num_samples,
-            ee_link=cfg.ee_link,
-            disable_gravity=cfg.disable_gravity,
         )
 
         if prior:
@@ -58,30 +64,11 @@ class MPPIisaacPlanner(object):
         # Note: place_holder variable to pass to mppi so it doesn't complain, while the real state is actually the isaacgym simulator itself.
         self.state_place_holder = torch.zeros((self.cfg.mppi.num_samples, self.cfg.nx))
 
-    def _ik(self, u):
-        r = self.cfg.wheel_radius
-        L = self.cfg.wheel_base
-        wheel_sets = self.cfg.wheel_count // 2
-
-        # Diff drive fk
-        u_ik = u.clone()
-        u_ik[:, 0] = (u[:, 0] / r) - ((L * u[:, 1]) / (2 * r))
-        u_ik[:, 1] = (u[:, 0] / r) + ((L * u[:, 1]) / (2 * r))
-
-        if wheel_sets > 1:
-            u_ik = u_ik.repeat(1, wheel_sets)
-
-        return u_ik
-
     def dynamics(self, _, u, t=None):
         # Note: normally mppi passes the state as the first parameter in a dynamics call, but using isaacgym the state is already saved in the simulator itself, so we ignore it.
         # Note: t is an unused step dependent dynamics variable
 
-        if self.cfg.differential_drive:
-            u_ik = self._ik(u)
-            self.sim.set_dof_velocity_target_tensor(u_ik)
-        else:
-            self.sim.set_dof_velocity_target_tensor(u)
+        self.sim.apply_robot_cmd_velocity(u)
 
         self.sim.step()
 
@@ -93,46 +80,7 @@ class MPPIisaacPlanner(object):
 
     def compute_action(self, q, qdot, obst=None, obst_tensor=None):
         self.sim.reset_root_state()
-
-        # Deal with non fixed base link robots, that we need to reset the root_state position / velocity of.
-        # Currently only differential drive bases are non fixed. We also have to deal with the kinematic transforms.
-        if self.cfg.differential_drive:
-            pos = q[:3]
-            vel = qdot[:3]
-            self.sim.update_root_state_tensor_robot(pos, vel)
-
-            if len(q) > 3:
-                # Add the dof state of the wheels (assuming 2 wheel here)
-                q = [0] * self.cfg.wheel_count + q[3:]
-                # TODO: reset the dof_state velocity of the wheels based on the measured ground velocity
-                qdot = [0] * self.cfg.wheel_count + q[3:]
-            else:
-                q = [0] * self.cfg.wheel_count
-                qdot = [0] * self.cfg.wheel_count
-
-            reordered_state = []
-            for i in range(int(self.cfg.nx / 2) + (self.cfg.wheel_count - 2)):
-                reordered_state.append(q[i])
-                reordered_state.append(qdot[i])
-            state = (
-                torch.tensor(reordered_state)
-                .type(torch.float32)
-                .to(self.cfg.mppi.device)
-            )  # [x, vx, y, vy]
-
-        else:
-            reordered_state = []
-            for i in range(int(self.cfg.nx / 2)):
-                reordered_state.append(q[i])
-                reordered_state.append(qdot[i])
-            state = (
-                torch.tensor(reordered_state)
-                .type(torch.float32)
-                .to(self.cfg.mppi.device)
-            )  # [x, vx, y, vy]
-
-        state = state.repeat(self.sim.num_envs, 1)
-        self.sim.set_dof_state_tensor(state)
+        self.sim.reset_robot_state(q, qdot)
 
         # NOTE: There are two different ways of updating obstacle root_states
         # Both update based on id in the list of obstacles

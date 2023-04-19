@@ -14,23 +14,17 @@ class ExampleConfig:
     isaacgym: IsaacGymConfig
     goal: List[float]
     nx: int
-    urdf_file: str
-    fix_base: bool
-    flip_visual: bool
-    initial_position: List[float] = field(default_factory=lambda: [0, 0, 0])
-    disable_gravity: bool = False
-    differential_drive: bool = False
-    wheel_base: float = 0
-    wheel_radius: float = 0
-    wheel_count: int = 0
-    ee_link: Optional[str] = None
+    actors: List[str]
+    initial_actor_positions: List[List[float]]
 
 
 cs = ConfigStore.instance()
 cs.store(name="config_point_robot", node=ExampleConfig)
+cs.store(name="config_multi_point_robot", node=ExampleConfig)
 cs.store(name="config_heijn_robot", node=ExampleConfig)
 cs.store(name="config_boxer_robot", node=ExampleConfig)
 cs.store(name="config_jackal_robot", node=ExampleConfig)
+cs.store(name="config_multi_jackal", node=ExampleConfig)
 cs.store(name="config_panda", node=ExampleConfig)
 cs.store(name="config_panda_push", node=ExampleConfig)
 cs.store(name="config_panda_c_space_goal", node=ExampleConfig)
