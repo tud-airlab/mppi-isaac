@@ -243,7 +243,7 @@ class IsaacGymWrapper:
             asset=asset,
             pose=pose,
             name=actor.name,
-            group=env_idx if actor.collision else -1,
+            group=env_idx if actor.collision else env_idx+self.num_envs,
         )
         self.gym.set_rigid_body_color(
             env, handle, 0, gymapi.MESH_VISUAL_AND_COLLISION, gymapi.Vec3(*actor.color)
