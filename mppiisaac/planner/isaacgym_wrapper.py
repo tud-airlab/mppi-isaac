@@ -311,8 +311,8 @@ class IsaacGymWrapper:
 
         # Diff drive fk
         u_ik = u.clone()
-        u_ik[:, 1] = (u[:, 0] / r) - ((L * u[:, 1]) / (2 * r))
-        u_ik[:, 0] = (u[:, 0] / r) + ((L * u[:, 1]) / (2 * r))
+        u_ik[:, 0] = (u[:, 0] / r) - ((L * u[:, 1]) / (2 * r))
+        u_ik[:, 1] = (u[:, 0] / r) + ((L * u[:, 1]) / (2 * r))
 
         if wheel_sets > 1:
             u_ik = u_ik.repeat(1, wheel_sets)

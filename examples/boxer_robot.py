@@ -41,7 +41,7 @@ def initalize_environment(cfg) -> UrdfEnv:
     robots = [
         BoxerRobot(mode="vel"),
     ]
-    env: UrdfEnv = gym.make("urdf-env-v0", dt=0.02, robots=robots, render=cfg.render)
+    env: UrdfEnv = gym.make("urdf-env-v0", dt=cfg.isaacgym.dt, robots=robots, render=cfg.render)
     # Set the initial position and velocity of the boxer robot
     env.reset()
     goal_dict = {
@@ -106,7 +106,6 @@ def run_boxer_robot(cfg: ExampleConfig):
 
         ob_robot = ob["robot_0"]
         pos = ob_robot["joint_state"]["position"]
-        pos[2] = pos[2] - 3.14/2
         action = planner.compute_action(
             q=pos,
             qdot=ob_robot["joint_state"]["velocity"],
