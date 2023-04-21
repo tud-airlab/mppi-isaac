@@ -7,7 +7,7 @@ fixed: false
 flip_visual: false
 differential_drive: true
 wheel_radius: 0.08
-wheel_base: 0.314
+wheel_base: 0.494
 wheel_count: 2
 friction: 1.0
 collision: True

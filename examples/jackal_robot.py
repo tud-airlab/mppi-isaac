@@ -1,9 +1,12 @@
 import gym
 import numpy as np
-from urdfenvs.robots.jackal import JackalRobot
+from urdfenvs.robots.generic_urdf import GenericDiffDriveRobot
 from urdfenvs.urdf_common.urdf_env import UrdfEnv
 from mppiisaac.planner.mppi_isaac import MPPIisaacPlanner
+import mppiisaac
 import hydra
+import yaml
+from yaml import SafeLoader
 from omegaconf import OmegaConf
 import os
 import torch
@@ -11,7 +14,10 @@ from mpscenes.goals.static_sub_goal import StaticSubGoal
 
 from mppiisaac.utils.config_store import ExampleConfig
 
-# MPPI to navigate a simple robot to a goal position
+urdf_file = (
+    os.path.dirname(os.path.abspath(__file__))
+    + "/../assets/urdf/jackal/jackal.urdf"
+)
 
 class Objective(object):
     def __init__(self, cfg, device):
@@ -39,10 +45,27 @@ def initalize_environment(cfg) -> UrdfEnv:
         Boolean toggle to set rendering on (True) or off (False).
     """
     # urdf_file = os.path.dirname(os.path.abspath(__file__)) + "/../assets/urdf/" + cfg.urdf_file
+    with open(f'{os.path.dirname(mppiisaac.__file__)}/../conf/actors/jackal.yaml') as f:
+        jackal_cfg = yaml.load(f, Loader=SafeLoader)
     robots = [
-        JackalRobot(mode="vel"),
+        GenericDiffDriveRobot(
+            urdf=urdf_file,
+            mode="vel",
+            actuated_wheels=[
+                "rear_right_wheel",
+                "rear_left_wheel",
+                "front_right_wheel",
+                "front_left_wheel",
+            ],
+            castor_wheels=[],
+            wheel_radius = jackal_cfg['wheel_radius'],
+            wheel_distance = jackal_cfg['wheel_base'],
+        ),
     ]
-    env: UrdfEnv = gym.make("urdf-env-v0", dt=0.02, robots=robots, render=cfg.render)
+    env = gym.make(
+        "urdf-env-v0",
+        dt=0.01, robots=robots, render=cfg.render
+    )
     # Set the initial position and velocity of the jackal robot
     env.reset()
     goal_dict = {
