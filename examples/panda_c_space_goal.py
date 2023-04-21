@@ -79,18 +79,6 @@ def initalize_environment(cfg):
     env: UrdfEnv = gym.make("urdf-env-v0", dt=0.01, robots=robots, render=cfg.render)
     # Set the initial position and velocity of the panda arm.
     env.reset()
-    goal_dict = {
-        "weight": 1.0,
-        "is_primary_goal": True,
-        "indices": [0, 1, 2],
-        "parent_link": "panda_link0",
-        "child_link": "panda_hand",
-        "desired_position": cfg.goal,
-        "epsilon": 0.05,
-        "type": "staticSubGoal",
-    }
-    goal = StaticSubGoal(name="simpleGoal", content_dict=goal_dict)
-    env.add_goal(goal)
     return env
 
 
@@ -103,8 +91,8 @@ def set_planner(cfg):
     goal_position: np.ndarray
         The goal to the motion planning problem.
     """
-    objective = EndEffectorGoalObjective(cfg, cfg.mppi.device)
-    # objective = JointSpaceGoalObjective(cfg, cfg.mppi.device)
+    #objective = EndEffectorGoalObjective(cfg, cfg.mppi.device)
+    objective = JointSpaceGoalObjective(cfg, cfg.mppi.device)
     if cfg.mppi.use_priors == True:
         prior = FabricsPandaPrior(cfg)
     else:
@@ -114,7 +102,7 @@ def set_planner(cfg):
     return planner
 
 
-@hydra.main(version_base=None, config_path="../conf", config_name="config_panda")
+@hydra.main(version_base=None, config_path="../conf", config_name="config_panda_c_space_goal")
 def run_panda_robot(cfg: ExampleConfig):
     """
     Set the gym environment, the planner and run panda robot example.

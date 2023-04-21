@@ -1,0 +1,7 @@
+type: robot
+name: panda
+urdf_file: "panda_isaac/robots/franka_panda_stick.urdf"
+ee_link: "panda_ee_tip"
+fixed: True
+flip_visual: true
+gravity: false

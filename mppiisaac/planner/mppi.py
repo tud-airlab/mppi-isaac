@@ -180,11 +180,11 @@ class MPPIPlanner(ABC):
             self.noise_sigma = self.noise_sigma.view(-1, 1)
     
         # Halton sampling 
-        self.knot_scale = 4             # From mppi config storm
+        self.knot_scale = 1             # From mppi config storm
         self.seed_val = 0               # From mppi config storm
         self.n_knots = self.T//self.knot_scale
         self.ndims = self.n_knots * self.nu
-        self.degree = 2                 # From sample_lib storm
+        self.degree = 1                 # From sample_lib storm
         self.Z_seq = torch.zeros(1, self.T, self.nu, **self.tensor_args)
         self.cov_action = torch.diagonal(self.noise_sigma, 0)
         self.scale_tril = torch.sqrt(self.cov_action)
@@ -226,9 +226,24 @@ class MPPIPlanner(ABC):
         traj_costs = traj_costs[:,0]
 
         #control_costs = self._control_costs(actions)
-        total_costs = traj_costs #+ self.beta * control_costs
+        total_costs = traj_costs - torch.min(traj_costs) #+ self.beta * control_costs
 
-        w = torch.softmax((-1.0/self.beta) * total_costs, dim=0)
+        # Normalization of the weights
+        exp_ = torch.exp((-1.0/self.beta) * total_costs)
+        eta = torch.sum(exp_)       # tells how many significant samples we have, more or less
+        w = 1/eta*exp_
+        # print(self.beta)
+        eta_u_bound = 50
+        eta_l_bound = 20
+        beta_lm = 0.9
+        beta_um = 1.2
+        # beta update 
+        if eta > eta_u_bound:
+            self.beta = self.beta*beta_lm
+        elif eta < eta_l_bound:
+            self.beta = self.beta*beta_um
+        
+        #w = torch.softmax((-1.0/self.beta) * total_costs, dim=0)
         self.total_costs = total_costs
         return w
 
