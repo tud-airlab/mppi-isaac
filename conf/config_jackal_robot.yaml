@@ -10,6 +10,6 @@ fix_base: false
 flip_visual: false
 nx: 4
 differential_drive: true
-wheel_radius: 0.14
-wheel_base: 0.400
+wheel_radius: 0.098
+wheel_base: 0.45559
 wheel_count: 4
