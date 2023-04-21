@@ -60,7 +60,7 @@ def run_panda_robot(cfg: ExampleConfig):
         },
         {
             "type": "box",
-            "name": "block",
+            "name": "obj_to_push",
             "size": [0.105, 0.063, 0.063],
             "init_pos": [0.55, 0.2, 0.3],
             "mass": 0.250,

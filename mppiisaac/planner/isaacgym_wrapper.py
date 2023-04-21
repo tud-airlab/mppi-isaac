@@ -210,6 +210,7 @@ class IsaacGymWrapper:
     def load_asset(self, actor_cfg):
         asset_options = gymapi.AssetOptions()
         asset_options.fix_base_link = actor_cfg.fixed
+        
         if actor_cfg.type == "robot":
             asset_file = "urdf/" + actor_cfg.urdf_file
             asset_options.flip_visual_attachments = actor_cfg.flip_visual
@@ -223,19 +224,19 @@ class IsaacGymWrapper:
         elif actor_cfg.type == "box":
             noise = (
                 np.random.normal(loc=0, scale=self.cfg.randomization_sigma, size=3)
-                * self.cfg.randomize_envs
+                * self.cfg.randomize_envs * (actor_cfg.name == "block_to_push")
             )
             actor_asset = self.gym.create_box(
                 sim=self.sim,
                 width=actor_cfg.size[0] + noise[0],
                 height=actor_cfg.size[1] + noise[1],
-                depth=actor_cfg.size[2] + noise[2],
+                depth=actor_cfg.size[2], # + noise[2], 
                 options=asset_options,
             )
         elif actor_cfg.type == "sphere":
             noise = (
                 np.random.normal(loc=0, scale=self.cfg.randomization_sigma, size=1)
-                * self.cfg.randomize_envs
+                * self.cfg.randomize_envs * (actor_cfg.name == "block_to_push")
             )
             print(noise)
             actor_asset = self.gym.create_sphere(
@@ -264,11 +265,15 @@ class IsaacGymWrapper:
             name=actor.name,
             group=env_idx if actor.collision else env_idx+self.num_envs,
         )
+
+        if self.cfg.randomize_envs and actor.name == 'obj_to_push':
+            actor.color = np.random.rand(3)
+
         self.gym.set_rigid_body_color(
             env, handle, 0, gymapi.MESH_VISUAL_AND_COLLISION, gymapi.Vec3(*actor.color)
         )
         props = self.gym.get_actor_rigid_body_properties(env, handle)
-        props[0].mass = actor.mass
+        props[0].mass =  actor.mass + (actor.name == "block_to_push") * np.random.uniform(-0.3*actor.mass, 0.3*actor.mass)
         self.gym.set_actor_rigid_body_properties(env, handle, props)
 
         body_names = self.gym.get_actor_rigid_body_names(env, handle)
@@ -282,9 +287,9 @@ class IsaacGymWrapper:
 
         props = self.gym.get_actor_rigid_shape_properties(env, handle)
         for i, p in enumerate(props):
-            p.friction = actor.friction
-            p.torsion_friction = actor.friction
-            p.rolling_friction = actor.friction
+            p.friction = actor.friction + (actor.name == "block_to_push") * np.random.uniform(-0.3*actor.friction, 0.3*actor.friction)
+            p.torsion_friction = np.random.uniform(0.001, 0.01) 
+            p.rolling_friction = actor.friction + (actor.name == "block_to_push") * np.random.uniform(-0.3*actor.friction, 0.3*actor.friction)
 
             if i in caster_shapes:
                 p.friction = 0

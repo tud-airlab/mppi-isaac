@@ -1,0 +1,6 @@
+defaults:
+  - base_isaacgym
+
+dt: 0.04
+randomize_envs: True
+randomization_sigma: 0.005
