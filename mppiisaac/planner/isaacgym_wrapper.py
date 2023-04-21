@@ -21,8 +21,6 @@ class IsaacGymConfig(object):
     viewer: bool = False
     num_obstacles: int = 10
     spacing: float = 6.0
-    randomize_envs: bool = False
-    randomization_sigma: float = 0.1
 
 
 def parse_isaacgym_config(cfg: IsaacGymConfig) -> gymapi.SimParams:
@@ -77,6 +75,9 @@ class ActorWrapper:
     left_wheel_joints: Optional[List[int]] = None
     right_wheel_joints: Optional[List[int]] = None
     caster_links: Optional[List[str]] = None
+    noise_sigma_size: Optional[List[float]] = None
+    noise_percentage_mass: float = 0.0
+    noise_percentage_friction: float = 0.0
 
 
 class IsaacGymWrapper:
@@ -222,23 +223,28 @@ class IsaacGymWrapper:
                 options=asset_options,
             )
         elif actor_cfg.type == "box":
+            if actor_cfg.noise_sigma_size is not None:
+                noise_sigma = np.array(actor_cfg.noise_sigma_size)
+            else:
+                noise_sigma = np.zeros((3, ))
             noise = (
-                np.random.normal(loc=0, scale=self.cfg.randomization_sigma, size=3)
-                * self.cfg.randomize_envs * (actor_cfg.name == "block_to_push")
+                np.random.normal(loc=0, scale=noise_sigma, size=3)
             )
             actor_asset = self.gym.create_box(
                 sim=self.sim,
                 width=actor_cfg.size[0] + noise[0],
                 height=actor_cfg.size[1] + noise[1],
-                depth=actor_cfg.size[2], # + noise[2], 
+                depth=actor_cfg.size[2] + noise[2], 
                 options=asset_options,
             )
         elif actor_cfg.type == "sphere":
+            if actor_cfg.noise_sigma_size is not None:
+                noise_sigma = np.array(actor_cfg.noise_sigma_size)
+            else:
+                noise_sigma = np.zeros((1, ))
             noise = (
-                np.random.normal(loc=0, scale=self.cfg.randomization_sigma, size=1)
-                * self.cfg.randomize_envs * (actor_cfg.name == "block_to_push")
+                np.random.normal(loc=0, scale=noise_sigma, size=1)
             )
-            print(noise)
             actor_asset = self.gym.create_sphere(
                 sim=self.sim,
                 radius=actor_cfg.size[0] + noise[0],
@@ -252,7 +258,7 @@ class IsaacGymWrapper:
         return actor_asset
 
     def create_actor(self, env, env_idx, asset, actor: ActorWrapper) -> int:
-        if self.cfg.randomize_envs and actor.type != 'robot':
+        if actor.noise_sigma_size is not None:
             asset = self.load_asset(actor)
 
         pose = gymapi.Transform()
@@ -266,14 +272,15 @@ class IsaacGymWrapper:
             group=env_idx if actor.collision else env_idx+self.num_envs,
         )
 
-        if self.cfg.randomize_envs and actor.name == 'obj_to_push':
+        if actor.noise_sigma_size:
             actor.color = np.random.rand(3)
 
         self.gym.set_rigid_body_color(
             env, handle, 0, gymapi.MESH_VISUAL_AND_COLLISION, gymapi.Vec3(*actor.color)
         )
         props = self.gym.get_actor_rigid_body_properties(env, handle)
-        props[0].mass =  actor.mass + (actor.name == "block_to_push") * np.random.uniform(-0.3*actor.mass, 0.3*actor.mass)
+        actor_mass_noise = np.random.uniform(-actor.noise_percentage_mass*actor.mass, actor.noise_percentage_mass*actor.mass)
+        props[0].mass =  actor.mass + actor_mass_noise
         self.gym.set_actor_rigid_body_properties(env, handle, props)
 
         body_names = self.gym.get_actor_rigid_body_names(env, handle)
@@ -287,9 +294,10 @@ class IsaacGymWrapper:
 
         props = self.gym.get_actor_rigid_shape_properties(env, handle)
         for i, p in enumerate(props):
-            p.friction = actor.friction + (actor.name == "block_to_push") * np.random.uniform(-0.3*actor.friction, 0.3*actor.friction)
+            actor_friction_noise = np.random.uniform(-actor.noise_percentage_friction*actor.friction, actor.noise_percentage_friction*actor.friction)
+            p.friction = actor.friction + actor_friction_noise
             p.torsion_friction = np.random.uniform(0.001, 0.01) 
-            p.rolling_friction = actor.friction + (actor.name == "block_to_push") * np.random.uniform(-0.3*actor.friction, 0.3*actor.friction)
+            p.rolling_friction = actor.friction + actor_friction_noise
 
             if i in caster_shapes:
                 p.friction = 0

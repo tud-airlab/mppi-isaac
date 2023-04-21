@@ -67,7 +67,10 @@ def run_panda_robot(cfg: ExampleConfig):
             "fixed": False,
             "handle": None,
             "color": [0.2, 0.2, 1.0],
-            "friction": 0.2
+            "friction": 0.2,
+            "noise_sigma_size": [0.005, 0.005, 0.0],
+            "noise_percentage_friction": 0.3,
+            "noise_percentage_mass": 0.3,
         }
     ]
 
