@@ -21,6 +21,8 @@ class IsaacGymConfig(object):
     viewer: bool = False
     num_obstacles: int = 10
     spacing: float = 6.0
+    randomize_envs: bool = False
+    randomization_sigma: float = 0.1
 
 
 def parse_isaacgym_config(cfg: IsaacGymConfig) -> gymapi.SimParams:
@@ -121,37 +123,8 @@ class IsaacGymWrapper:
         # Load / create assets for all actors in the envs
         self.env_actor_assets = []
         for actor_cfg in self.env_cfg:
-            asset_options = gymapi.AssetOptions()
-            asset_options.fix_base_link = actor_cfg.fixed
-            if actor_cfg.type == "robot":
-                asset_file = "urdf/" + actor_cfg.urdf_file
-                asset_options.flip_visual_attachments = actor_cfg.flip_visual
-                asset_options.disable_gravity = not actor_cfg.gravity
-                actor_asset = self.gym.load_asset(
-                    sim=self.sim,
-                    rootpath=f"{file_path}/../../assets",
-                    filename=asset_file,
-                    options=asset_options,
-                )
-            elif actor_cfg.type == "box":
-                actor_asset = self.gym.create_box(
-                    sim=self.sim,
-                    width=actor_cfg.size[0],
-                    height=actor_cfg.size[1],
-                    depth=actor_cfg.size[2],
-                    options=asset_options,
-                )
-            elif actor_cfg.type == "sphere":
-                actor_asset = self.gym.create_sphere(
-                    sim=self.sim,
-                    radius=actor_cfg.size[0],
-                    options=asset_options,
-                )
-            else:
-                raise NotImplementedError(
-                    f"actor asset of type {actor_cfg.type} is not yet implemented!"
-                )
-            self.env_actor_assets.append(actor_asset)
+            asset = self.load_asset(actor_cfg)
+            self.env_actor_assets.append(asset)
 
         # Create envs and fill with assets
         self.envs = []
@@ -234,7 +207,53 @@ class IsaacGymWrapper:
         self.stop_sim()
         self.start_sim()
 
+    def load_asset(self, actor_cfg):
+        asset_options = gymapi.AssetOptions()
+        asset_options.fix_base_link = actor_cfg.fixed
+        if actor_cfg.type == "robot":
+            asset_file = "urdf/" + actor_cfg.urdf_file
+            asset_options.flip_visual_attachments = actor_cfg.flip_visual
+            asset_options.disable_gravity = not actor_cfg.gravity
+            actor_asset = self.gym.load_asset(
+                sim=self.sim,
+                rootpath=f"{file_path}/../../assets",
+                filename=asset_file,
+                options=asset_options,
+            )
+        elif actor_cfg.type == "box":
+            noise = (
+                np.random.normal(loc=0, scale=self.cfg.randomization_sigma, size=3)
+                * self.cfg.randomize_envs
+            )
+            actor_asset = self.gym.create_box(
+                sim=self.sim,
+                width=actor_cfg.size[0] + noise[0],
+                height=actor_cfg.size[1] + noise[1],
+                depth=actor_cfg.size[2] + noise[2],
+                options=asset_options,
+            )
+        elif actor_cfg.type == "sphere":
+            noise = (
+                np.random.normal(loc=0, scale=self.cfg.randomization_sigma, size=1)
+                * self.cfg.randomize_envs
+            )
+            print(noise)
+            actor_asset = self.gym.create_sphere(
+                sim=self.sim,
+                radius=actor_cfg.size[0] + noise[0],
+                options=asset_options,
+            )
+        else:
+            raise NotImplementedError(
+                f"actor asset of type {actor_cfg.type} is not yet implemented!"
+            )
+
+        return actor_asset
+
     def create_actor(self, env, env_idx, asset, actor: ActorWrapper) -> int:
+        if self.cfg.randomize_envs and actor.type != 'robot':
+            asset = self.load_asset(actor)
+
         pose = gymapi.Transform()
         pose.p = gymapi.Vec3(*actor.init_pos)
         pose.r = gymapi.Quat(*actor.init_ori)
