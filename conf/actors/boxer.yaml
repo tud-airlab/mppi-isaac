@@ -1,0 +1,13 @@
+type: robot
+name: boxer
+urdf_file: "boxer/boxer.urdf"
+gravity: true
+fixed: false
+flip_visual: false
+differential_drive: true
+wheel_radius: 0.08
+wheel_base: 0.314
+wheel_count: 2
+friction: 1.0
+collision: True
+caster_links: ['rotacastor_right_link', 'rotacastor_left_link']

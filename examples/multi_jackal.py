@@ -1,11 +1,11 @@
 import gym
 import numpy as np
-from urdfenvs.robots.generic_urdf import GenericDiffDriveRobot
+from urdfenvs.robots.generic_urdf.generic_diff_drive_robot import GenericDiffDriveRobot
 from urdfenvs.urdf_common.urdf_env import UrdfEnv
 from mppiisaac.planner.mppi_isaac import MPPIisaacPlanner
-import mppiisaac
 import hydra
 import yaml
+import mppiisaac
 from yaml import SafeLoader
 from omegaconf import OmegaConf
 import os
@@ -19,17 +19,18 @@ urdf_file = (
     + "/../assets/urdf/jackal/jackal.urdf"
 )
 
+# MPPI to navigate a simple robot to a goal position
+
 class Objective(object):
     def __init__(self, cfg, device):
         self.nav_goal = torch.tensor(cfg.goal, device=cfg.mppi.device)
 
     def compute_cost(self, sim):
-        pos = sim.robot_positions[:, 0, :2]
-        err = torch.linalg.norm(pos - self.nav_goal, axis=1)
+        pos = torch.cat((sim.root_state[:, 0, 0:2], sim.root_state[:, 1, 0:2]), axis=1)
         cost = torch.clamp(
             torch.linalg.norm(pos - self.nav_goal, axis=1) - 0.05, min=0, max=1999
         )
-        return cost * 1.5
+        return cost
 
 
 def initalize_environment(cfg) -> UrdfEnv:
@@ -61,25 +62,23 @@ def initalize_environment(cfg) -> UrdfEnv:
             wheel_radius = jackal_cfg['wheel_radius'],
             wheel_distance = jackal_cfg['wheel_base'],
         ),
+        GenericDiffDriveRobot(
+            urdf=urdf_file,
+            mode="vel",
+            actuated_wheels=[
+                "rear_right_wheel",
+                "rear_left_wheel",
+                "front_right_wheel",
+                "front_left_wheel",
+            ],
+            castor_wheels=[],
+            wheel_radius = jackal_cfg['wheel_radius'],
+            wheel_distance = jackal_cfg['wheel_base'],
+        ),
     ]
-    env = gym.make(
-        "urdf-env-v0",
-        dt=0.01, robots=robots, render=cfg.render
-    )
+    env: UrdfEnv = gym.make("urdf-env-v0", dt=0.02, robots=robots, render=cfg.render)
     # Set the initial position and velocity of the jackal robot
-    env.reset()
-    goal_dict = {
-        "weight": 1.0,
-        "is_primary_goal": True,
-        "indices": [0, 1],
-        "parent_link": 0,
-        "child_link": 1,
-        "desired_position": cfg.goal,
-        "epsilon": 0.05,
-        "type": "staticSubGoal",
-    }
-    goal = StaticSubGoal(name="simpleGoal", content_dict=goal_dict)
-    env.add_goal(goal)
+    env.reset(pos=np.array(cfg.initial_actor_positions))
     return env
 
 
@@ -98,7 +97,7 @@ def set_planner(cfg):
     return planner
 
 
-@hydra.main(version_base=None, config_path="../conf", config_name="config_jackal_robot")
+@hydra.main(version_base=None, config_path="../conf", config_name="config_multi_jackal")
 def run_jackal_robot(cfg: ExampleConfig):
     """
     Set the gym environment, the planner and run jackal robot example.
@@ -119,7 +118,7 @@ def run_jackal_robot(cfg: ExampleConfig):
     env = initalize_environment(cfg)
     planner = set_planner(cfg)
 
-    action = np.zeros(4)
+    action = np.zeros(8)
     ob, *_ = env.step(action)
     
     
@@ -128,10 +127,11 @@ def run_jackal_robot(cfg: ExampleConfig):
 
         #Todo fix joint with zero friction
 
-        ob_robot = ob["robot_0"]
+        ob_robot0 = ob["robot_0"]
+        ob_robot1 = ob["robot_1"]
         action = planner.compute_action(
-            q=ob_robot["joint_state"]["position"],
-            qdot=ob_robot["joint_state"]["velocity"],
+            q=list(ob_robot0["joint_state"]["position"]) + list(ob_robot1["joint_state"]["position"]),
+            qdot=list(ob_robot0["joint_state"]["velocity"]) + list(ob_robot1["joint_state"]["velocity"]),
         )
         (
             ob,

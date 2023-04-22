@@ -1,4 +1,8 @@
-from mppiisaac.planner.isaacgym_wrapper import IsaacGymWrapper
+import gym
+from mppiisaac.planner.isaacgym_wrapper import IsaacGymWrapper, ActorWrapper
+import yaml
+from yaml import SafeLoader
+import mppiisaac
 import numpy as np
 import hydra
 from omegaconf import OmegaConf
@@ -9,7 +13,7 @@ from isaacgym import gymapi
 import time
 from examples.boxer_push_client import Objective
 import sys
-
+import os
 import io
 
 def torch_to_bytes(t: torch.Tensor) -> bytes:
@@ -33,18 +37,20 @@ def reset_trial(sim, init_pos, init_vel):
         
 @hydra.main(version_base=None, config_path="../conf", config_name="config_boxer_push")
 def run_boxer_robot(cfg: ExampleConfig):
-    # Note: Workaround to trigger the dataclasses __post_init__ method
+   # Note: Workaround to trigger the dataclasses __post_init__ method
     cfg = OmegaConf.to_object(cfg)
+
+    actors=[]
+    for actor_name in cfg.actors:
+        with open(f'{os.path.dirname(mppiisaac.__file__)}/../conf/actors/{actor_name}.yaml') as f:
+            actors.append(ActorWrapper(**yaml.load(f, Loader=SafeLoader)))
+
 
     sim = IsaacGymWrapper(
         cfg.isaacgym,
-        cfg.urdf_file,
-        cfg.fix_base,
-        cfg.flip_visual,
+        init_positions=cfg.initial_actor_positions,
+        actors=actors,
         num_envs=1,
-        robot_init_pos= cfg.initial_position,
-        ee_link=cfg.ee_link,
-        disable_gravity=cfg.disable_gravity,
         viewer=True,
     )
 
@@ -116,7 +122,7 @@ def run_boxer_robot(cfg: ExampleConfig):
     count = 0
     client_helper = Objective(cfg, cfg.mppi.device)
     init_time = time.time()
-    block_index = 3
+    block_index = 1
     data_time = []
     data_err = []
     trial = 0 
@@ -140,7 +146,8 @@ def run_boxer_robot(cfg: ExampleConfig):
             action = torch.zeros_like(action)
 
         # Apply action
-        sim.set_dof_velocity_target_tensor(10*action)
+        #sim.set_dof_velocity_target_tensor(10*action)
+        sim.apply_robot_cmd_velocity(torch.unsqueeze(action, axis=0))
 
         # Step simulator
         sim.step()

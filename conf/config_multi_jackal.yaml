@@ -1,0 +1,11 @@
+defaults:
+  - mppi: multi-jackal
+  - isaacgym: normal
+
+goal: [2.0, 0.0, -2.0, 0.0]
+render: true
+n_steps: 1000
+nx: 8
+
+actors: ['jackal', 'jackal', 'xaxis', 'yaxis']
+initial_actor_positions: [[-2.0, 0.0, 0.05], [2.0, 0.0, 0.05]]

@@ -21,13 +21,13 @@ class Objective(object):
         self.w_ee_align=            1 #1
         self.w_collision=           1
         # Task configration for comparison with baselines
-        self.ee_index = 14
-        self.block_index = 3
+        self.ee_index = 12
+        self.block_index = 1
         self.ort_goal_euler = torch.tensor([0, 0, 0], device=cfg.mppi.device)
 
         self.block_goal_pose = torch.tensor([-1, -1, 0.6], device=cfg.mppi.device)
 
-        self.obst_number = 1
+        self.obst_number = 2
         self.success = False
         self.count = 0
 

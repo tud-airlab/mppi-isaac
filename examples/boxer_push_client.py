@@ -18,8 +18,8 @@ class Objective(object):
         self.w_collision=           100
        
         # Task configration for comparison with baselines
-        self.ee_index = 9
-        self.block_index = 3
+        self.ee_index = 7
+        self.block_index = 1
         self.ort_goal_euler = torch.tensor([0, 0, 0], device=cfg.mppi.device)
         self.ee_hover_height = 0.14
 

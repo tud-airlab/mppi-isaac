@@ -1,6 +1,9 @@
 import gym
-from mppiisaac.planner.isaacgym_wrapper import IsaacGymWrapper
+from mppiisaac.planner.isaacgym_wrapper import IsaacGymWrapper, ActorWrapper
 import numpy as np
+import yaml
+import mppiisaac
+from yaml import SafeLoader
 from mppiisaac.planner.mppi_isaac import MPPIisaacPlanner
 from urdfenvs.robots.generic_urdf import GenericUrdfReacher
 import hydra
@@ -43,14 +46,16 @@ def run_panda_robot(cfg: ExampleConfig):
     # Note: Workaround to trigger the dataclasses __post_init__ method
     cfg = OmegaConf.to_object(cfg)
 
+    actors=[]
+    for actor_name in cfg.actors:
+        with open(f'{os.path.dirname(mppiisaac.__file__)}/../conf/actors/{actor_name}.yaml') as f:
+            actors.append(ActorWrapper(**yaml.load(f, Loader=SafeLoader)))
+
     sim = IsaacGymWrapper(
         cfg.isaacgym,
-        cfg.urdf_file,
-        cfg.fix_base,
-        cfg.flip_visual,
+        init_positions=cfg.initial_actor_positions,
+        actors=actors,
         num_envs=1,
-        ee_link=cfg.ee_link,
-        disable_gravity=cfg.disable_gravity,
         viewer=True,
     )
 
@@ -118,11 +123,11 @@ def run_panda_robot(cfg: ExampleConfig):
     count = 0
     client_helper = Objective(cfg, cfg.mppi.device)
     init_time = time.time()
-    block_index = 4
+    block_index = 2
     data_time = []
     data_err = []
     trial = 0 
-    timeout = 10
+    timeout = 1000
     rt_factor_seq = []
     data_rt = []
 

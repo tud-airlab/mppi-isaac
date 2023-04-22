@@ -34,8 +34,8 @@ class Objective(object):
         # self.w_push_align=         0.5#1.0
 
         # Task configration for comparison with baselines
-        self.ee_index = 11
-        self.block_index = 4
+        self.ee_index = 9
+        self.block_index = 2
         self.ort_goal_euler = torch.tensor([0, 0, 0], device=cfg.mppi.device)
         self.ee_hover_height = 0.14
 
@@ -47,7 +47,7 @@ class Objective(object):
         self.block_goal_pose_ur5_r= torch.tensor([0.7, -0.2, 0.5,  0, 0, -0.258819, 0.9659258 ], device=cfg.mppi.device) # Rotation -30 deg
 
         # Select goal according to test
-        self.block_goal_pose = torch.clone(self.block_goal_pose_ur5_l)
+        self.block_goal_pose = torch.clone(self.block_goal_pose_ur5_r)
         self.block_ort_goal = torch.clone(self.block_goal_pose[3:7])
         self.goal_yaw = torch.atan2(2.0 * (self.block_ort_goal[-1] * self.block_ort_goal[2] + self.block_ort_goal[0] * self.block_ort_goal[1]), self.block_ort_goal[-1] * self.block_ort_goal[-1] + self.block_ort_goal[0] * self.block_ort_goal[0] - self.block_ort_goal[1] * self.block_ort_goal[1] - self.block_ort_goal[2] * self.block_ort_goal[2])
 
@@ -70,6 +70,8 @@ class Objective(object):
         block_pos = sim.root_state[:, self.block_index, :3]
         block_ort = sim.root_state[:, self.block_index, 3:7]
 
+        # print(block_pos[-1])
+
         # Distances robot
         robot_to_block = r_pos - block_pos
         robot_euler = pytorch3d.transforms.matrix_to_euler_angles(pytorch3d.transforms.quaternion_to_matrix(r_ort), "ZYX")   
@@ -79,6 +81,7 @@ class Objective(object):
         # Compute yaw from quaternion with formula directly
         block_yaws = torch.atan2(2.0 * (block_ort[:,-1] * block_ort[:,2] + block_ort[:,0] * block_ort[:,1]), block_ort[:,-1] * block_ort[:,-1] + block_ort[:,0] * block_ort[:,0] - block_ort[:,1] * block_ort[:,1] - block_ort[:,2] * block_ort[:,2])
         #self.block_yaws = pytorch3d.transforms.matrix_to_euler_angles(pytorch3d.transforms.quaternion_to_matrix(block_ort), "ZYX")[:, -1]
+
 
         # Distance costs
         robot_to_block_dist = torch.linalg.norm(robot_to_block[:, 0:2], axis = 1)
@@ -90,6 +93,9 @@ class Objective(object):
         ee_hover_dist= torch.abs(ee_height - self.ee_hover_height) 
         push_align = torch.sum(robot_to_block[:,0:2]*block_to_goal, 1)/(robot_to_block_dist*block_to_goal_pos)+1
         
+        # print(push_align[-1])
+
+
         total_cost = (
             self.w_robot_to_block_pos * robot_to_block_dist
             + self.w_block_to_goal_pos * block_to_goal_pos

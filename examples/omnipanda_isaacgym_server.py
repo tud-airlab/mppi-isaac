@@ -1,5 +1,9 @@
 import gym
-from mppiisaac.planner.isaacgym_wrapper import IsaacGymWrapper
+from mppiisaac.planner.isaacgym_wrapper import IsaacGymWrapper, ActorWrapper
+import yaml
+from yaml import SafeLoader
+import mppiisaac
+import os
 import numpy as np
 from mppiisaac.planner.mppi_isaac import MPPIisaacPlanner
 from urdfenvs.robots.generic_urdf import GenericUrdfReacher
@@ -43,14 +47,16 @@ def run_omnipanda_robot(cfg: ExampleConfig):
     # Note: Workaround to trigger the dataclasses __post_init__ method
     cfg = OmegaConf.to_object(cfg)
 
+    actors=[]
+    for actor_name in cfg.actors:
+        with open(f'{os.path.dirname(mppiisaac.__file__)}/../conf/actors/{actor_name}.yaml') as f:
+            actors.append(ActorWrapper(**yaml.load(f, Loader=SafeLoader)))
+
     sim = IsaacGymWrapper(
         cfg.isaacgym,
-        cfg.urdf_file,
-        cfg.fix_base,
-        cfg.flip_visual,
+        init_positions=cfg.initial_actor_positions,
+        actors=actors,
         num_envs=1,
-        ee_link=cfg.ee_link,
-        disable_gravity=cfg.disable_gravity,
         viewer=True,
     )
 
@@ -85,6 +91,15 @@ def run_omnipanda_robot(cfg: ExampleConfig):
             "color": [255 / 255, 120 / 255, 57 / 255],
             "fixed": True,
             "handle": None,
+        },
+        {
+            "type": "box",
+            "name": "table2",
+            "size": table_dim,
+            "init_pos": [5., 0., table_dim[-1]/2],
+            "color": [255 / 255, 120 / 255, 57 / 255],
+            "fixed": True,
+            "handle": None,
         }
     ]
 
@@ -112,7 +127,7 @@ def run_omnipanda_robot(cfg: ExampleConfig):
     count = 0
     client_helper = Objective(cfg, cfg.mppi.device)
     init_time = time.time()
-    block_index = 3
+    block_index = 1
     data_time = []
     data_err = []
     trial = 0 

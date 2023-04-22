@@ -1,0 +1,8 @@
+type: box
+name: x
+handle: None
+fixed: True
+size: [0.5, 0.05, 0.01]
+init_pos: [0.25, 0.0, 0.01]
+color: [1, 0.0, 0.2]
+collision: False

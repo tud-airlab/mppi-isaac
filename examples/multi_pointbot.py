@@ -12,7 +12,6 @@ import os
 import torch
 from mpscenes.goals.static_sub_goal import StaticSubGoal
 from mppiisaac.utils.config_store import ExampleConfig
-from mppiisaac.priors.fabrics_point import FabricsPointPrior
 
 # MPPI to navigate a simple robot to a goal position
 
@@ -23,11 +22,19 @@ class Objective(object):
 
     def compute_cost(self, sim):
         pos = torch.cat(
-            (sim.dof_state[:, 0].unsqueeze(1), sim.dof_state[:, 2].unsqueeze(1)), 1
+            (sim.dof_state[:, 0].unsqueeze(1), sim.dof_state[:, 2].unsqueeze(1), sim.dof_state[:, 6].unsqueeze(1), sim.dof_state[:, 8].unsqueeze(1)), 1
         )
-        return torch.clamp(
+
+        goal_cost = torch.clamp(
             torch.linalg.norm(pos - self.nav_goal, axis=1) - 0.05, min=0, max=1999
         )
+
+        avoidance_cost = 1 / torch.clamp(
+            torch.linalg.norm(pos[:, :2] - pos[:, 2:], axis=1) - 0.05, min=0, max=1999
+        )
+
+        return goal_cost #+ avoidance_cost
+
 
 
 def initalize_environment(cfg) -> UrdfEnv:
@@ -43,26 +50,28 @@ def initalize_environment(cfg) -> UrdfEnv:
         Boolean toggle to set rendering on (True) or off (False).
     """
     with open(f'{os.path.dirname(mppiisaac.__file__)}/../conf/actors/point_robot.yaml') as f:
-        heijn_cfg = yaml.load(f, Loader=SafeLoader)
-    urdf_file = f'{os.path.dirname(mppiisaac.__file__)}/../assets/urdf/' + heijn_cfg['urdf_file']
+        robot_cfg = yaml.load(f, Loader=SafeLoader)
+    urdf_file = f'{os.path.dirname(mppiisaac.__file__)}/../assets/urdf/' + robot_cfg['urdf_file']
     robots = [
+        GenericUrdfReacher(urdf=urdf_file, mode="vel"),
         GenericUrdfReacher(urdf=urdf_file, mode="vel"),
     ]
     env: UrdfEnv = gym.make("urdf-env-v0", dt=0.05, robots=robots, render=cfg.render)
+
+    env.reset(pos=np.array(cfg.initial_actor_positions))
     # Set the initial position and velocity of the point mass.
-    env.reset()
-    goal_dict = {
-        "weight": 1.0,
-        "is_primary_goal": True,
-        "indices": [0, 1],
-        "parent_link": 0,
-        "child_link": 1,
-        "desired_position": cfg.goal,
-        "epsilon": 0.05,
-        "type": "staticSubGoal",
-    }
-    goal = StaticSubGoal(name="simpleGoal", content_dict=goal_dict)
-    env.add_goal(goal)
+    #goal_dict = {
+    #    "weight": 1.0,
+    #    "is_primary_goal": True,
+    #    "indices": [0, 1],
+    #    "parent_link": 0,
+    #    "child_link": 1,
+    #    "desired_position": cfg.goal,
+    #    "epsilon": 0.05,
+    #    "type": "staticSubGoal",
+    #}
+    #goal = StaticSubGoal(name="simpleGoal", content_dict=goal_dict)
+    #env.add_goal(goal)
     return env
 
 
@@ -77,16 +86,13 @@ def set_planner(cfg):
     """
     # urdf = "../assets/point_robot.urdf"
     objective = Objective(cfg, cfg.mppi.device)
-    if cfg.mppi.use_priors == True:
-        prior = FabricsPointPrior(cfg)
-    else:
-        prior = None
+    prior = None
     planner = MPPIisaacPlanner(cfg, objective, prior)
 
     return planner
 
 
-@hydra.main(version_base=None, config_path="../conf", config_name="config_point_robot")
+@hydra.main(version_base=None, config_path="../conf", config_name="config_multi_point_robot")
 def run_point_robot(cfg: ExampleConfig):
     """
     Set the gym environment, the planner and run point robot example.
@@ -111,10 +117,11 @@ def run_point_robot(cfg: ExampleConfig):
 
     for _ in range(cfg.n_steps):
         # Calculate action with the fabric planner, slice the states to drop Z-axis [3] information.
-        ob_robot = ob["robot_0"]
+        ob_robot0 = ob["robot_0"]
+        ob_robot1 = ob["robot_1"]
         action = planner.compute_action(
-            q=ob_robot["joint_state"]["position"],
-            qdot=ob_robot["joint_state"]["velocity"],
+            q=list(ob_robot0["joint_state"]["position"]) + list(ob_robot1["joint_state"]["position"]),
+            qdot=list(ob_robot0["joint_state"]["velocity"]) + list(ob_robot1["joint_state"]["velocity"]),
         )
         (
             ob,

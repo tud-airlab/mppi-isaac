@@ -1,0 +1,6 @@
+type: robot
+name: point_robot
+urdf_file: "point_robot.urdf"
+flip_visual: false
+fixed: true
+collision: True

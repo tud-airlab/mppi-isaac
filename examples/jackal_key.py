@@ -1,35 +1,24 @@
 import gym
 from mppiisaac.planner.isaacgym_wrapper import IsaacGymWrapper, ActorWrapper
-import numpy as np
 import yaml
 from yaml import SafeLoader
+import numpy as np
 from mppiisaac.planner.mppi_isaac import MPPIisaacPlanner
 import hydra
-import mppiisaac
 from omegaconf import OmegaConf
 import os
+import mppiisaac
 import torch
-from mppiisaac.priors.fabrics_panda import FabricsPandaPrior
 import zerorpc
 from mppiisaac.utils.config_store import ExampleConfig
 from isaacgym import gymapi
+import time
 
 import io
 
-def torch_to_bytes(t: torch.Tensor) -> bytes:
-    buff = io.BytesIO()
-    torch.save(t, buff)
-    buff.seek(0)
-    return buff.read()
 
-
-def bytes_to_torch(b: bytes) -> torch.Tensor:
-    buff = io.BytesIO(b)
-    return torch.load(buff)
-
-
-@hydra.main(version_base=None, config_path="../conf", config_name="config_panda")
-def run_panda_robot(cfg: ExampleConfig):
+@hydra.main(version_base=None, config_path="../conf", config_name="config_jackal_robot")
+def run_jackal_robot(cfg: ExampleConfig):
     # Note: Workaround to trigger the dataclasses __post_init__ method
     cfg = OmegaConf.to_object(cfg)
 
@@ -37,6 +26,7 @@ def run_panda_robot(cfg: ExampleConfig):
     for actor_name in cfg.actors:
         with open(f'{os.path.dirname(mppiisaac.__file__)}/../conf/actors/{actor_name}.yaml') as f:
             actors.append(ActorWrapper(**yaml.load(f, Loader=SafeLoader)))
+
 
     sim = IsaacGymWrapper(
         cfg.isaacgym,
@@ -50,23 +40,23 @@ def run_panda_robot(cfg: ExampleConfig):
         sim.viewer, None, gymapi.Vec3(1.5, 2, 3), gymapi.Vec3(1.5, 0, 0)
     )
 
-    planner = zerorpc.Client()
-    planner.connect("tcp://127.0.0.1:4242")
-    print("Mppi server found!")
+    sim.gym.subscribe_viewer_keyboard_event(sim.viewer, gymapi.KEY_A, "left")
+    sim.gym.subscribe_viewer_keyboard_event(sim.viewer, gymapi.KEY_S, "down")
+    sim.gym.subscribe_viewer_keyboard_event(sim.viewer, gymapi.KEY_D, "right")
+    sim.gym.subscribe_viewer_keyboard_event(sim.viewer, gymapi.KEY_W, "up")
 
-    pi = 3.14
-    sim.set_dof_state_tensor(torch.tensor([0, 0, 0, 0, 0, 0, -pi/2, 0, 0, 0, pi/2, 0, pi/4, 0], device="cuda:0"))
-
+    action = torch.tensor([0., 0.], device="cuda:0")
     for _ in range(cfg.n_steps):
-        # Reset state
-        planner.reset_rollout_sim(
-            torch_to_bytes(sim.dof_state[0]),
-            torch_to_bytes(sim.root_state[0]),
-            torch_to_bytes(sim.rigid_body_state[0]),
-        )
-
-        # Compute action
-        action = bytes_to_torch(planner.command())
+        for e in sim.gym.query_viewer_action_events(sim.viewer):
+            if e.action == "up":
+                action[0] = 0.5
+            if e.action == "down":
+                action[0] = -0.2
+                #action[1] = 0.
+            if e.action == "left":
+                action[1] = 5.8
+            if e.action == "right":
+                action[1] = -5.8
 
         # Apply action
         sim.apply_robot_cmd_velocity(torch.unsqueeze(action, axis=0))
@@ -78,4 +68,4 @@ def run_panda_robot(cfg: ExampleConfig):
 
 
 if __name__ == "__main__":
-    res = run_panda_robot()
+    res = run_jackal_robot()
