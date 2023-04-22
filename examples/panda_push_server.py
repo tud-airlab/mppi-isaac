@@ -85,17 +85,24 @@ def run_panda_robot(cfg: ExampleConfig):
             "init_pos": table_pos,
             "fixed": True,
             "handle": None,
+            "color": [0.2, 0.2, 1.0],
+            "noise_sigma_size": [0.005, 0.005, 0.0],
+            "friction": 0.2,
+            "noise_percentage_friction": 0.3,
         },
         {
             "type": "box",
-            "name": "block_to_push",
+            "name": "obj_to_push",
             "size": [obj_[0], obj_[1], obj_[2]],
             "init_pos": [obj_[5], obj_[6], table_dim[-1] + obj_[2] / 2],
             "mass": obj_[4],
             "fixed": False,
             "handle": None,
-            "color": [4 / 255, 160 / 255, 218 / 255],
-            "friction": obj_[3]
+            "color": [0.2, 0.2, 1.0],
+            "friction": obj_[3],
+            "noise_sigma_size": [0.005, 0.005, 0.0],
+            "noise_percentage_friction": 0.3,
+            "noise_percentage_mass": 0.3,
         }
     ]
 
@@ -127,7 +134,7 @@ def run_panda_robot(cfg: ExampleConfig):
     data_time = []
     data_err = []
     trial = 0 
-    timeout = 1000
+    timeout = 10
     rt_factor_seq = []
     data_rt = []
 

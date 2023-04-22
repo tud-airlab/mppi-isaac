@@ -76,16 +76,19 @@ def run_heijn_robot(cfg: ExampleConfig):
     additions = [
         {
             "type": "box",
-            "name": "block_to_push",
+            "name": "obj_to_push",
             "size": [obj_[0], obj_[1], obj_[2]],
             "init_pos": [obj_[5], obj_[6], obj_[2] / 2],
             "mass": obj_[4],
             "fixed": False,
             "handle": None,
-            "color": [4 / 255, 160 / 255, 218 / 255],
-            "friction": obj_[3]
+            "color": [0.2, 0.2, 1.0],
+            "friction": obj_[3],
+            "noise_sigma_size": [0.005, 0.005, 0.0],
+            "noise_percentage_friction": 0.3,
+            "noise_percentage_mass": 0.3,
         },
-                # {
+        # {
         #     "type": "sphere",
         #     "name": "obj_to_push",
         #     "size": [0.2], # [obj_[0], obj_[1], obj_[2]],
@@ -94,7 +97,10 @@ def run_heijn_robot(cfg: ExampleConfig):
         #     "fixed": False,
         #     "handle": None,
         #     "color": [4 / 255, 160 / 255, 218 / 255],
-        #     "friction": obj_[3]
+        #     "friction": obj_[3],
+        #     "noise_sigma_size": [0.005],
+        #     "noise_percentage_friction": 0.3,
+        #     "noise_percentage_mass": 0.3,
         # },
         {
             "type": "box",

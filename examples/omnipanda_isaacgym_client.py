@@ -17,9 +17,9 @@ class Objective(object):
         
         # Tuning of the weights for baseline 2
         self.w_robot_to_block_pos=  20
-        self.w_block_to_goal_pos=   10
+        self.w_block_to_goal_pos=   20
         self.w_ee_align=            1 #1
-        self.w_collision=           1
+        self.w_collision=           0
         # Task configration for comparison with baselines
         self.ee_index = 12
         self.block_index = 1
@@ -58,7 +58,6 @@ class Objective(object):
          # Collision avoidance
         contact_f = torch.sum(torch.abs(torch.cat((sim.net_cf[:, 0].unsqueeze(1), sim.net_cf[:, 1].unsqueeze(1), sim.net_cf[:, 2].unsqueeze(1)), 1)),1)
         coll = torch.sum(contact_f.reshape([sim.num_envs, int(contact_f.size(dim=0)/sim.num_envs)])[:, (sim.num_bodies - self.obst_number):sim.num_bodies], 1)
-
 
         total_cost = (
             self.w_robot_to_block_pos * robot_to_block_dist

@@ -80,8 +80,11 @@ def run_omnipanda_robot(cfg: ExampleConfig):
             "mass": obj_[4],
             "fixed": False,
             "handle": None,
-            "color": [4 / 255, 160 / 255, 218 / 255],
-            "friction": obj_[3]
+            "color": [0.2, 0.2, 1.0],
+            "friction": obj_[3],
+            "noise_sigma_size": [0.002, 0.002, 0.0],
+            "noise_percentage_friction": 0.3,
+            "noise_percentage_mass": 0.3,
         },
         {
             "type": "box",
@@ -91,16 +94,16 @@ def run_omnipanda_robot(cfg: ExampleConfig):
             "color": [255 / 255, 120 / 255, 57 / 255],
             "fixed": True,
             "handle": None,
-        },
-        {
-            "type": "box",
-            "name": "table2",
-            "size": table_dim,
-            "init_pos": [5., 0., table_dim[-1]/2],
-            "color": [255 / 255, 120 / 255, 57 / 255],
-            "fixed": True,
-            "handle": None,
         }
+        # {
+        #     "type": "box",
+        #     "name": "table2",
+        #     "size": table_dim,
+        #     "init_pos": [5., 0., table_dim[-1]/2],
+        #     "color": [255 / 255, 120 / 255, 57 / 255],
+        #     "fixed": True,
+        #     "handle": None,
+        # }
     ]
 
     sim.add_to_envs(additions)
