@@ -60,14 +60,17 @@ def run_panda_robot(cfg: ExampleConfig):
         },
         {
             "type": "box",
-            "name": "block",
+            "name": "obj_to_push",
             "size": [0.105, 0.063, 0.063],
             "init_pos": [0.55, 0.2, 0.3],
             "mass": 0.250,
             "fixed": False,
             "handle": None,
             "color": [0.2, 0.2, 1.0],
-            "friction": 0.2
+            "friction": 0.2,
+            "noise_sigma_size": [0.005, 0.005, 0.0],
+            "noise_percentage_friction": 0.3,
+            "noise_percentage_mass": 0.3,
         }
     ]
 

@@ -1,0 +1,4 @@
+defaults:
+  - base_isaacgym
+
+dt: 0.04

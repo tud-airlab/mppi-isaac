@@ -75,6 +75,9 @@ class ActorWrapper:
     left_wheel_joints: Optional[List[int]] = None
     right_wheel_joints: Optional[List[int]] = None
     caster_links: Optional[List[str]] = None
+    noise_sigma_size: Optional[List[float]] = None
+    noise_percentage_mass: float = 0.0
+    noise_percentage_friction: float = 0.0
 
 
 class IsaacGymWrapper:
@@ -121,37 +124,8 @@ class IsaacGymWrapper:
         # Load / create assets for all actors in the envs
         self.env_actor_assets = []
         for actor_cfg in self.env_cfg:
-            asset_options = gymapi.AssetOptions()
-            asset_options.fix_base_link = actor_cfg.fixed
-            if actor_cfg.type == "robot":
-                asset_file = "urdf/" + actor_cfg.urdf_file
-                asset_options.flip_visual_attachments = actor_cfg.flip_visual
-                asset_options.disable_gravity = not actor_cfg.gravity
-                actor_asset = self.gym.load_asset(
-                    sim=self.sim,
-                    rootpath=f"{file_path}/../../assets",
-                    filename=asset_file,
-                    options=asset_options,
-                )
-            elif actor_cfg.type == "box":
-                actor_asset = self.gym.create_box(
-                    sim=self.sim,
-                    width=actor_cfg.size[0],
-                    height=actor_cfg.size[1],
-                    depth=actor_cfg.size[2],
-                    options=asset_options,
-                )
-            elif actor_cfg.type == "sphere":
-                actor_asset = self.gym.create_sphere(
-                    sim=self.sim,
-                    radius=actor_cfg.size[0],
-                    options=asset_options,
-                )
-            else:
-                raise NotImplementedError(
-                    f"actor asset of type {actor_cfg.type} is not yet implemented!"
-                )
-            self.env_actor_assets.append(actor_asset)
+            asset = self.load_asset(actor_cfg)
+            self.env_actor_assets.append(asset)
 
         # Create envs and fill with assets
         self.envs = []
@@ -234,7 +208,59 @@ class IsaacGymWrapper:
         self.stop_sim()
         self.start_sim()
 
+    def load_asset(self, actor_cfg):
+        asset_options = gymapi.AssetOptions()
+        asset_options.fix_base_link = actor_cfg.fixed
+        
+        if actor_cfg.type == "robot":
+            asset_file = "urdf/" + actor_cfg.urdf_file
+            asset_options.flip_visual_attachments = actor_cfg.flip_visual
+            asset_options.disable_gravity = not actor_cfg.gravity
+            actor_asset = self.gym.load_asset(
+                sim=self.sim,
+                rootpath=f"{file_path}/../../assets",
+                filename=asset_file,
+                options=asset_options,
+            )
+        elif actor_cfg.type == "box":
+            if actor_cfg.noise_sigma_size is not None:
+                noise_sigma = np.array(actor_cfg.noise_sigma_size)
+            else:
+                noise_sigma = np.zeros((3, ))
+            noise = (
+                np.random.normal(loc=0, scale=noise_sigma, size=3)
+            )
+            actor_asset = self.gym.create_box(
+                sim=self.sim,
+                width=actor_cfg.size[0] + noise[0],
+                height=actor_cfg.size[1] + noise[1],
+                depth=actor_cfg.size[2] + noise[2], 
+                options=asset_options,
+            )
+        elif actor_cfg.type == "sphere":
+            if actor_cfg.noise_sigma_size is not None:
+                noise_sigma = np.array(actor_cfg.noise_sigma_size)
+            else:
+                noise_sigma = np.zeros((1, ))
+            noise = (
+                np.random.normal(loc=0, scale=noise_sigma, size=1)
+            )
+            actor_asset = self.gym.create_sphere(
+                sim=self.sim,
+                radius=actor_cfg.size[0] + noise[0],
+                options=asset_options,
+            )
+        else:
+            raise NotImplementedError(
+                f"actor asset of type {actor_cfg.type} is not yet implemented!"
+            )
+
+        return actor_asset
+
     def create_actor(self, env, env_idx, asset, actor: ActorWrapper) -> int:
+        if actor.noise_sigma_size is not None:
+            asset = self.load_asset(actor)
+
         pose = gymapi.Transform()
         pose.p = gymapi.Vec3(*actor.init_pos)
         pose.r = gymapi.Quat(*actor.init_ori)
@@ -245,11 +271,16 @@ class IsaacGymWrapper:
             name=actor.name,
             group=env_idx if actor.collision else env_idx+self.num_envs,
         )
+
+        if actor.noise_sigma_size:
+            actor.color = np.random.rand(3)
+
         self.gym.set_rigid_body_color(
             env, handle, 0, gymapi.MESH_VISUAL_AND_COLLISION, gymapi.Vec3(*actor.color)
         )
         props = self.gym.get_actor_rigid_body_properties(env, handle)
-        props[0].mass = actor.mass
+        actor_mass_noise = np.random.uniform(-actor.noise_percentage_mass*actor.mass, actor.noise_percentage_mass*actor.mass)
+        props[0].mass =  actor.mass + actor_mass_noise
         self.gym.set_actor_rigid_body_properties(env, handle, props)
 
         body_names = self.gym.get_actor_rigid_body_names(env, handle)
@@ -263,9 +294,10 @@ class IsaacGymWrapper:
 
         props = self.gym.get_actor_rigid_shape_properties(env, handle)
         for i, p in enumerate(props):
-            p.friction = actor.friction
-            p.torsion_friction = actor.friction
-            p.rolling_friction = actor.friction
+            actor_friction_noise = np.random.uniform(-actor.noise_percentage_friction*actor.friction, actor.noise_percentage_friction*actor.friction)
+            p.friction = actor.friction + actor_friction_noise
+            p.torsion_friction = np.random.uniform(0.001, 0.01) 
+            p.rolling_friction = actor.friction + actor_friction_noise
 
             if i in caster_shapes:
                 p.friction = 0
