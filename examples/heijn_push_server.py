@@ -134,7 +134,11 @@ def run_heijn_robot(cfg: ExampleConfig):
         sim.viewer, None, gymapi.Vec3(1.5, 2, 3), gymapi.Vec3(1.5, 0, 0)
     )
     
-    init_pos = [0.0, 0., 1.]
+    # Select initial position
+    init_pos1 = [0.0, 0., 1.]
+    init_pos2 = [0.0, 2., 0.]
+
+    init_pos = init_pos1
     init_vel = [0., 0., 0.]
 
     sim.set_dof_state_tensor(torch.tensor([init_pos[0], init_vel[0], init_pos[1], init_vel[1], init_pos[2], init_vel[2]], device="cuda:0"))
@@ -146,12 +150,12 @@ def run_heijn_robot(cfg: ExampleConfig):
     block_index = 1
     data_time = []
     data_err = []
-    trial = 0 
-    timeout = 100
+    n_trials = 0 
+    timeout = 60
     rt_factor_seq = []
     data_rt = []
 
-    while trial < cfg.n_steps:
+    while n_trials < cfg.n_steps:
         t = time.time()
         # Reset state
         planner.reset_rollout_sim(
@@ -202,7 +206,7 @@ def run_heijn_robot(cfg: ExampleConfig):
                 data_rt.append(np.sum(rt_factor_seq) / len(rt_factor_seq))
                 data_time.append(time_taken)
                 data_err.append(np.float64(metric_1))
-                trial += 1
+                n_trials += 1
 
             rt_factor_seq.append(cfg.isaacgym.dt/(time.time() - t))
             print(f"FPS: {1/(time.time() - t)} RT-factor: {cfg.isaacgym.dt/(time.time() - t)}")
@@ -215,10 +219,10 @@ def run_heijn_robot(cfg: ExampleConfig):
             reset_trial(sim, init_pos, init_vel)
             init_time = time.time()
             count = 0
-            data_time.append(-1)
-            data_err.append(-1)
-            data_rt.append(-1)
-            trial += 1
+            # data_time.append(-1)
+            # data_err.append(-1)
+            # data_rt.append(-1)
+            n_trials += 1
 
         # Visualize samples
         # rollouts = bytes_to_torch(planner.get_rollouts())
@@ -228,6 +232,14 @@ def run_heijn_robot(cfg: ExampleConfig):
         # pos = sim.root_state[0, -1][:2].cpu().numpy()
         # goal = np.array([0.5, 0])
         # print(f"L2: {np.linalg.norm(pos - goal)} FPS: {1/(time.time() - t)} RT-factor: {cfg.isaacgym.dt/(time.time() - t)}")
+    
+    if len(data_time) > 0: 
+        print("Num. trials", n_trials)
+        print("Success rate", len(data_time)/n_trials*100)
+        print("Avg. Time", np.mean(np.array(data_time)*np.array(data_rt)))    
+        print("Std. Time", np.std(np.array(data_time)*np.array(data_rt)))
+    else:
+        print("Seccess rate is 0")
     return {}
 
 if __name__ == "__main__":

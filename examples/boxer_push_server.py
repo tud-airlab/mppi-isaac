@@ -135,13 +135,14 @@ def run_boxer_robot(cfg: ExampleConfig):
     client_helper = Objective(cfg, cfg.mppi.device)
     init_time = time.time()
     block_index = 1
+    timeout = 60
     data_time = []
     data_err = []
-    trial = 0 
+    n_trials = 0 
     rt_factor_seq = []
     data_rt = []
 
-    while trial < cfg.n_steps:
+    while n_trials < cfg.n_steps:
         t = time.time()
         # Reset state
         planner.reset_rollout_sim(
@@ -192,7 +193,7 @@ def run_boxer_robot(cfg: ExampleConfig):
                 data_rt.append(np.sum(rt_factor_seq) / len(rt_factor_seq))
                 data_time.append(time_taken)
                 data_err.append(np.float64(metric_1))
-                trial += 1
+                n_trials += 1
                 return{}
 
             rt_factor_seq.append(cfg.isaacgym.dt/(time.time() - t))
@@ -201,6 +202,21 @@ def run_boxer_robot(cfg: ExampleConfig):
             count = 0
         else:
             count +=1
+        
+        if time.time() - init_time >= timeout:
+            # reset_trial(sim, init_pos, init_vel)
+            init_time = time.time()
+            count = 0
+            n_trials += 1
+
+    if len(data_time) > 0: 
+        print("Num. trials", n_trials)
+        print("Success rate", len(data_time)/n_trials*100)
+        print("Avg. Time", np.mean(np.array(data_time)*np.array(data_rt)))    
+        print("Std. Time", np.std(np.array(data_time)*np.array(data_rt)))
+    else:
+        print("Seccess rate is 0")
+
     return {}
 
 if __name__ == "__main__":

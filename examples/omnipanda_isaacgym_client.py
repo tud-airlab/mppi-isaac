@@ -18,8 +18,8 @@ class Objective(object):
         # Tuning of the weights for baseline 2
         self.w_robot_to_block_pos=  20
         self.w_block_to_goal_pos=   20
-        self.w_ee_align=            1 #1
-        self.w_collision=           0
+        self.w_ee_align=            5
+        self.w_collision=           1
         # Task configration for comparison with baselines
         self.ee_index = 12
         self.block_index = 1
@@ -34,7 +34,8 @@ class Objective(object):
     def compute_metrics(self, block_pos):
         Ex = torch.abs(self.block_goal_pose[0]-block_pos[-1,0])
         Ey = torch.abs(self.block_goal_pose[1]-block_pos[-1,1])
-        return Ex, Ey
+        Ez = torch.abs(self.block_goal_pose[2]-block_pos[-1,2])
+        return Ex, Ey, Ez
     
     def compute_cost(self, sim):
         r_pos = sim.rigid_body_state[:, self.ee_index, :3]

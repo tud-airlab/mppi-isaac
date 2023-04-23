@@ -64,8 +64,8 @@ def run_omnipanda_robot(cfg: ExampleConfig):
     obj_index = 0
 
                 #  l     w     h    mu     m    x    y
-    obj_set =  [[0.04, 0.04, 0.04, 0.90, 0.05, 0.37, 0.],     # Cube
-                [0.08, 0.04, 0.04, 0.90, 0.05, 0.37, 0.]]
+    obj_set =  [[0.04, 0.04, 0.04, 0.90, 0.1, 0.37, 0.],     # Cube
+                [0.08, 0.04, 0.04, 0.90, 0.1, 0.37, 0.]]
     
     obj_ = obj_set[obj_index][:]
     table_dim = [0.8, 1.0, 0.50]
@@ -81,10 +81,10 @@ def run_omnipanda_robot(cfg: ExampleConfig):
             "fixed": False,
             "handle": None,
             "color": [0.2, 0.2, 1.0],
-            "friction": obj_[3],
-            "noise_sigma_size": [0.002, 0.002, 0.0],
-            "noise_percentage_friction": 0.3,
-            "noise_percentage_mass": 0.3,
+            # "friction": obj_[3],
+            # "noise_sigma_size": [0.002, 0.002, 0.0],
+            # "noise_percentage_friction": 0.3,
+            # "noise_percentage_mass": 0.3,
         },
         {
             "type": "box",
@@ -94,16 +94,16 @@ def run_omnipanda_robot(cfg: ExampleConfig):
             "color": [255 / 255, 120 / 255, 57 / 255],
             "fixed": True,
             "handle": None,
+        },
+        {
+            "type": "box",
+            "name": "table2",
+            "size": table_dim,
+            "init_pos": [-2.5, -table_pos[1], table_dim[-1]/2],
+            "color": [255 / 255, 120 / 255, 57 / 255],
+            "fixed": True,
+            "handle": None,
         }
-        # {
-        #     "type": "box",
-        #     "name": "table2",
-        #     "size": table_dim,
-        #     "init_pos": [5., 0., table_dim[-1]/2],
-        #     "color": [255 / 255, 120 / 255, 57 / 255],
-        #     "fixed": True,
-        #     "handle": None,
-        # }
     ]
 
     sim.add_to_envs(additions)
@@ -118,7 +118,11 @@ def run_omnipanda_robot(cfg: ExampleConfig):
         sim.viewer, None, gymapi.Vec3(1.5, 2, 3), gymapi.Vec3(1.5, 0, 0)
     )
     
-    init_pos = [-1.0, -1.0, 0.0, 0.0, -0.94, 0., -2.8, 0., 1.8675, 0., 0.02, 0.02]
+    # Select starting pose
+    init_pos1 = [-1.0, -1.0, 0.0, 0.0, -0.94, 0., -2.8, 0., 1.8675, 0., 0.02, 0.02]
+    init_pos2 = [1.0, 1.0, 0.0, 0.0, -0.94, 0., -2.8, 0., 1.8675, 0., 0.02, 0.02]
+
+    init_pos = init_pos1
     init_vel = [0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0.]
 
     sim.set_dof_state_tensor(torch.tensor([init_pos[0], init_vel[0], init_pos[1], init_vel[1], init_pos[2], init_vel[2],
@@ -133,12 +137,12 @@ def run_omnipanda_robot(cfg: ExampleConfig):
     block_index = 1
     data_time = []
     data_err = []
-    trial = 0 
+    n_trials = 0 
     timeout = 60
     rt_factor_seq = []
     data_rt = []
 
-    while trial < cfg.n_steps:
+    while n_trials < cfg.n_steps:
         t = time.time()
         # Reset state
         planner.reset_rollout_sim(
@@ -165,15 +169,14 @@ def run_omnipanda_robot(cfg: ExampleConfig):
         # ------------------------------------------------------------------------
         if count > 10:
             block_pos = sim.root_state[:, block_index, :3]
-            Ex, Ey = client_helper.compute_metrics(block_pos)
+            Ex, Ey, Ez = client_helper.compute_metrics(block_pos)
             metric = Ex+Ey
             # print("Metric Baxter", metric_1)
             print("Ex", Ex)
             print("Ey", Ey)
-            # print("Angle", Etheta)
-            # Ex < 0.025 and Ey < 0.01 and Etheta < 0.05
-            # Ex < 0.05 and Ey < 0.025 and Etheta < 0.17
-            if Ex < 0.05 and Ey < 0.025: 
+            print("Angle", Ez)
+          
+            if Ex < 0.02 and Ey < 0.02 and Ez < 0.02: 
                 print("Success")
                 final_time = time.time()
                 time_taken = final_time - init_time
@@ -187,7 +190,7 @@ def run_omnipanda_robot(cfg: ExampleConfig):
                 data_rt.append(np.sum(rt_factor_seq) / len(rt_factor_seq))
                 data_time.append(time_taken)
                 data_err.append(np.float64(metric))
-                trial += 1
+                n_trials += 1
 
             rt_factor_seq.append(cfg.isaacgym.dt/(time.time() - t))
             print(f"FPS: {1/(time.time() - t)} RT-factor: {cfg.isaacgym.dt/(time.time() - t)}")
@@ -200,20 +203,17 @@ def run_omnipanda_robot(cfg: ExampleConfig):
             reset_trial(sim, init_pos, init_vel)
             init_time = time.time()
             count = 0
-            data_time.append(-1)
-            data_err.append(-1)
-            data_rt.append(-1)
-            trial += 1
+            # data_time.append(-1)
+            # data_err.append(-1)
+            # data_rt.append(-1)
+            n_trials += 1
 
         # Visualize samples
         # rollouts = bytes_to_torch(planner.get_rollouts())
         # sim.draw_lines(rollouts)
-        
-        # Print error of block
-        # pos = sim.root_state[0, -1][:2].cpu().numpy()
-        # goal = np.array([0.5, 0])
-        # print(f"L2: {np.linalg.norm(pos - goal)} FPS: {1/(time.time() - t)} RT-factor: {cfg.isaacgym.dt/(time.time() - t)}")
     
+    # Post processing
+
     # Print for data collection
     # original_stdout = sys.stdout # Save a reference to the original standard output
 
@@ -226,7 +226,13 @@ def run_omnipanda_robot(cfg: ExampleConfig):
     #     print('\n')
     #     sys.stdout = original_stdout # Reset the standard output to its original value
 
-    
+    if len(data_time) > 0: 
+        print("Num. trials", n_trials)
+        print("Success rate", len(data_time)/n_trials*100)
+        print("Avg. Time", np.mean(np.array(data_time)*np.array(data_rt)))    
+        print("Std. Time", np.std(np.array(data_time)*np.array(data_rt)))
+    else:
+        print("Seccess rate is 0")
     return {}
 
 
