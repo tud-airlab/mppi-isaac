@@ -30,11 +30,14 @@ def bytes_to_torch(b: bytes) -> torch.Tensor:
 def reset_trial(sim, init_pos, init_vel):
     sim.stop_sim()
     sim.start_sim()
-    sim.gym.viewer_camera_look_at(
-    sim.viewer, None, gymapi.Vec3(1.5, 2, 3), gymapi.Vec3(1.5, 0, 0)
-                )
+    set_viewer(sim)    
     sim.set_dof_state_tensor(torch.tensor([init_pos[0], init_vel[0], init_pos[1], init_vel[1], init_pos[2], init_vel[2]], device="cuda:0"))
-        
+
+def set_viewer(sim):
+    sim.gym.viewer_camera_look_at(
+        sim.viewer, None, gymapi.Vec3(1., 6.5, 4), gymapi.Vec3(1., 0, 0)        # CAMERA LOCATION, CAMERA POINT OF INTEREST
+    )
+
 @hydra.main(version_base=None, config_path="../conf", config_name="config_boxer_push")
 def run_boxer_robot(cfg: ExampleConfig):
    # Note: Workaround to trigger the dataclasses __post_init__ method
@@ -111,7 +114,7 @@ def run_boxer_robot(cfg: ExampleConfig):
             "type": "box",
             "name": "obst_3",
             "size": obst_2_dim,
-            "init_pos": [10., 0, 1],
+            "init_pos": [1., 0, -1],
             "fixed": True,
             "color": [255 / 255, 120 / 255, 57 / 255],
             "handle": None,
@@ -126,16 +129,14 @@ def run_boxer_robot(cfg: ExampleConfig):
 
     planner.add_to_env(additions)
     
-    sim.gym.viewer_camera_look_at(
-        sim.viewer, None, gymapi.Vec3(1.5, 2, 3), gymapi.Vec3(1.5, 0, 0)
-    )
+    set_viewer(sim)
     
     # Helpers
     count = 0
     client_helper = Objective(cfg, cfg.mppi.device)
     init_time = time.time()
     block_index = 1
-    timeout = 60
+    timeout = 120
     data_time = []
     data_err = []
     n_trials = 0 

@@ -31,12 +31,15 @@ def bytes_to_torch(b: bytes) -> torch.Tensor:
     buff = io.BytesIO(b)
     return torch.load(buff)
 
+def set_viewer(sim):
+    sim.gym.viewer_camera_look_at(
+        sim.viewer, None, gymapi.Vec3(-1., 2, 2), gymapi.Vec3(0.5, 0, 0.5)        # CAMERA LOCATION, CAMERA POINT OF INTEREST
+    )
+
 def reset_trial(sim, init_pos, init_vel):
     sim.stop_sim()
     sim.start_sim()
-    sim.gym.viewer_camera_look_at(
-    sim.viewer, None, gymapi.Vec3(1.5, 2, 3), gymapi.Vec3(1.5, 0, 0)
-                )
+    set_viewer(sim)
     sim.set_dof_state_tensor(torch.tensor([init_pos[0], init_vel[0], init_pos[1], init_vel[1], init_pos[2], init_vel[2],
                                            init_pos[3], init_vel[3], init_pos[4], init_vel[4], init_pos[5], init_vel[5],
                                            init_pos[6], init_vel[6], init_pos[7], init_vel[7], init_pos[8], init_vel[8],
@@ -114,9 +117,7 @@ def run_omnipanda_robot(cfg: ExampleConfig):
 
     planner.add_to_env(additions)
     
-    sim.gym.viewer_camera_look_at(
-        sim.viewer, None, gymapi.Vec3(1.5, 2, 3), gymapi.Vec3(1.5, 0, 0)
-    )
+    set_viewer(sim)
     
     # Select starting pose
     init_pos1 = [-1.0, -1.0, 0.0, 0.0, -0.94, 0., -2.8, 0., 1.8675, 0., 0.02, 0.02]

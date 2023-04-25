@@ -11,10 +11,10 @@ class Objective(object):
     def __init__(self, cfg, device):
         
         # Tuning of the weights for baseline 2
-        self.w_robot_to_block_pos=  0.1
-        self.w_block_to_goal_pos=   1
+        self.w_robot_to_block_pos=  0.5
+        self.w_block_to_goal_pos=   4
         self.w_block_to_goal_ort=   0
-        self.w_push_align=          5
+        self.w_push_align=          2
         self.w_collision=           100
        
         # Task configration for comparison with baselines
@@ -35,7 +35,7 @@ class Objective(object):
         self.count = 0
 
         # Number of obstacles
-        self.obst_number = 2        # By convention, obstacles are the last actors
+        self.obst_number = 3        # By convention, obstacles are the last actors
 
     def compute_metrics(self, block_pos, block_ort):
 
@@ -68,15 +68,15 @@ class Objective(object):
         push_align = torch.sum(robot_to_block[:,0:2]*block_to_goal, 1)/(robot_to_block_dist*block_to_goal_pos)+1
         
         # Collision avoidance
-        # xy_contatcs = torch.sum(torch.abs(torch.cat((sim.net_cf[:, 0].unsqueeze(1), sim.net_cf[:, 1].unsqueeze(1)), 1)),1)
-        # coll = torch.sum(xy_contatcs.reshape([sim.num_envs, int(xy_contatcs.size(dim=0)/sim.num_envs)])[:, (sim.num_bodies - self.obst_number):sim.num_bodies], 1)
+        xy_contatcs = torch.sum(torch.abs(torch.cat((sim.net_cf[:, 0].unsqueeze(1), sim.net_cf[:, 1].unsqueeze(1)), 1)),1)
+        coll = torch.sum(xy_contatcs.reshape([sim.num_envs, int(xy_contatcs.size(dim=0)/sim.num_envs)])[:, (sim.num_bodies - self.obst_number):sim.num_bodies], 1)
 
         total_cost = (
             self.w_robot_to_block_pos * robot_to_block_dist
             + self.w_block_to_goal_pos * block_to_goal_pos
             + self.w_block_to_goal_ort * block_to_goal_ort
             + self.w_push_align * push_align
-            # + self.w_collision * coll
+            + self.w_collision * coll
         )
 
         return total_cost

@@ -27,12 +27,15 @@ def bytes_to_torch(b: bytes) -> torch.Tensor:
     buff = io.BytesIO(b)
     return torch.load(buff)
 
+def set_viewer(sim):
+    sim.gym.viewer_camera_look_at(
+        sim.viewer, None, gymapi.Vec3(1., 5.5, 3), gymapi.Vec3(1., 0, 0)        # CAMERA LOCATION, CAMERA POINT OF INTEREST
+    )
+
 def reset_trial(sim, init_pos, init_vel):
     sim.stop_sim()
     sim.start_sim()
-    sim.gym.viewer_camera_look_at(
-    sim.viewer, None, gymapi.Vec3(1.5, 2, 3), gymapi.Vec3(1.5, 0, 0)
-                )
+    set_viewer(sim)
     sim.set_dof_state_tensor(torch.tensor([init_pos[0], init_vel[0], init_pos[1], init_vel[1], init_pos[2], init_vel[2]], device="cuda:0"))
         
 @hydra.main(version_base=None, config_path="../conf", config_name="config_heijn_push")
@@ -74,34 +77,34 @@ def run_heijn_robot(cfg: ExampleConfig):
     obst_2_pos = [-0.15, 1, obst_2_dim[-1]/2]
 
     additions = [
-        {
-            "type": "box",
-            "name": "obj_to_push",
-            "size": [obj_[0], obj_[1], obj_[2]],
-            "init_pos": [obj_[5], obj_[6], obj_[2] / 2],
-            "mass": obj_[4],
-            "fixed": False,
-            "handle": None,
-            "color": [0.2, 0.2, 1.0],
-            "friction": obj_[3],
-            "noise_sigma_size": [0.005, 0.005, 0.0],
-            "noise_percentage_friction": 0.3,
-            "noise_percentage_mass": 0.3,
-        },
         # {
-        #     "type": "sphere",
+        #     "type": "box",
         #     "name": "obj_to_push",
-        #     "size": [0.2], # [obj_[0], obj_[1], obj_[2]],
+        #     "size": [obj_[0], obj_[1], obj_[2]],
         #     "init_pos": [obj_[5], obj_[6], obj_[2] / 2],
         #     "mass": obj_[4],
         #     "fixed": False,
         #     "handle": None,
-        #     "color": [4 / 255, 160 / 255, 218 / 255],
+        #     "color": [0.2, 0.2, 1.0],
         #     "friction": obj_[3],
-        #     "noise_sigma_size": [0.005],
+        #     "noise_sigma_size": [0.005, 0.005, 0.0],
         #     "noise_percentage_friction": 0.3,
         #     "noise_percentage_mass": 0.3,
         # },
+        {
+            "type": "sphere",
+            "name": "obj_to_push",
+            "size": [0.2], # [obj_[0], obj_[1], obj_[2]],
+            "init_pos": [obj_[5], obj_[6], obj_[2] / 2],
+            "mass": obj_[4],
+            "fixed": False,
+            "handle": None,
+            "color": [4 / 255, 160 / 255, 218 / 255],
+            "friction": obj_[3],
+            "noise_sigma_size": [0.005],
+            "noise_percentage_friction": 0.3,
+            "noise_percentage_mass": 0.3,
+        },
         {
             "type": "box",
             "name": "obst_1",
@@ -119,6 +122,15 @@ def run_heijn_robot(cfg: ExampleConfig):
             "fixed": True,
             "color": [255 / 255, 120 / 255, 57 / 255],
             "handle": None,
+        },
+        {
+            "type": "box",
+            "name": "obst_3",
+            "size": obst_2_dim,
+            "init_pos": [0., 0., -2.],
+            "fixed": True,
+            "color": [255 / 255, 120 / 255, 57 / 255],
+            "handle": None,
         }
     ]
 
@@ -129,16 +141,13 @@ def run_heijn_robot(cfg: ExampleConfig):
     print("Mppi server found!")
 
     planner.add_to_env(additions)
-    
-    sim.gym.viewer_camera_look_at(
-        sim.viewer, None, gymapi.Vec3(1.5, 2, 3), gymapi.Vec3(1.5, 0, 0)
-    )
-    
-    # Select initial position
-    init_pos1 = [0.0, 0., 1.]
-    init_pos2 = [0.0, 2., 0.]
+    set_viewer(sim)
 
-    init_pos = init_pos1
+    # Select initial position
+    init_pos1 = [0.0, 2., 0.]
+    init_pos2 = [0.0, 0., 3.14/2]
+
+    init_pos = init_pos2
     init_vel = [0., 0., 0.]
 
     sim.set_dof_state_tensor(torch.tensor([init_pos[0], init_vel[0], init_pos[1], init_vel[1], init_pos[2], init_vel[2]], device="cuda:0"))
@@ -199,7 +208,6 @@ def run_heijn_robot(cfg: ExampleConfig):
                 print("Time to completion", time_taken)
 
                 reset_trial(sim, init_pos, init_vel)
-                
                 
                 init_time = time.time()
                 count = 0

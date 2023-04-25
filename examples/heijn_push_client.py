@@ -11,20 +11,20 @@ class Objective(object):
     def __init__(self, cfg, device):
         
         # Tuning of the weights for box
-        self.w_robot_to_block_pos=  .1
-        self.w_block_to_goal_pos=   .5
-        self.w_block_to_goal_ort=   .5
-        self.w_push_align=          0.1
-        self.w_collision=           10
-        self.w_vel=                 0.
+        # self.w_robot_to_block_pos=  .05
+        # self.w_block_to_goal_pos=   2.3
+        # self.w_block_to_goal_ort=   3.0
+        # self.w_push_align=          0.2
+        # self.w_collision=           10
+        # self.w_vel=                 0.
 
         # Tuning for Sphere
-        # self.w_robot_to_block_pos=  5.
-        # self.w_block_to_goal_pos=   5.
-        # self.w_block_to_goal_ort=   0
-        # self.w_push_align=          2
-        # self.w_collision=           .1
-        # self.w_vel=                 .4
+        self.w_robot_to_block_pos=  0.5
+        self.w_block_to_goal_pos=   6.
+        self.w_block_to_goal_ort=   0
+        self.w_push_align=          1.2
+        self.w_collision=           .1
+        self.w_vel=                 .3
         
         # Task configration for comparison with baselines
         self.ee_index = 4
@@ -36,7 +36,7 @@ class Objective(object):
         self.block_goal_sphere = torch.tensor([0.5, 1., 0.5, 0, 0, -0.7071068, 0.7071068], device=cfg.mppi.device) # Rotation 90 deg
 
         # Select goal according to test
-        self.block_goal_pose = torch.clone(self.block_goal_box)
+        self.block_goal_pose = torch.clone(self.block_goal_sphere)
         self.block_ort_goal = torch.clone(self.block_goal_pose[3:7])
         self.goal_yaw = torch.atan2(2.0 * (self.block_ort_goal[-1] * self.block_ort_goal[2] + self.block_ort_goal[0] * self.block_ort_goal[1]), self.block_ort_goal[-1] * self.block_ort_goal[-1] + self.block_ort_goal[0] * self.block_ort_goal[0] - self.block_ort_goal[1] * self.block_ort_goal[1] - self.block_ort_goal[2] * self.block_ort_goal[2])
 
@@ -44,7 +44,7 @@ class Objective(object):
         self.count = 0
 
         # Number of obstacles
-        self.obst_number = 2        # By convention, obstacles are the last actors
+        self.obst_number = 3        # By convention, obstacles are the last actors
 
     def compute_metrics(self, block_pos, block_ort):
 
