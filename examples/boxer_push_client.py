@@ -11,11 +11,11 @@ class Objective(object):
     def __init__(self, cfg, device):
         
         # Tuning of the weights for baseline 2
-        self.w_robot_to_block_pos=  0.5
-        self.w_block_to_goal_pos=   4
-        self.w_block_to_goal_ort=   0
-        self.w_push_align=          2
-        self.w_collision=           100
+        self.w_robot_to_block_pos=  .1
+        self.w_block_to_goal_pos=   1
+        self.w_block_to_goal_ort=   0.3
+        self.w_push_align=          0.6
+        self.w_collision=           1000
        
         # Task configration for comparison with baselines
         self.ee_index = 7

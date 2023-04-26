@@ -7,8 +7,8 @@ num_samples: 300
 horizon: 12               # At least 12 for Halton Sampling
 device: "cuda:0"
 lambda_: 0.01
-u_min: [-1., -2.5]
-u_max: [1., 2.5]
+u_min: [-1.2, -3.5]
+u_max: [1.2, 3.5]
 noise_sigma: [[2., 0.], [0., 8.]]
 update_cov: False
 rollout_var_discount: 0.95

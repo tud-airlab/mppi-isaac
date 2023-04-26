@@ -8,4 +8,4 @@ n_steps: 2
 nx: 24
 
 actors: ['omnipanda']
-initial_actor_positions: [[-1.0, -1.0, 0.0]]
+initial_actor_positions: [[0.0, 0.0, 0.0]]
