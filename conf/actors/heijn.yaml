@@ -1,0 +1,8 @@
+
+type: robot
+name: heijn
+urdf_file: "heijn/heijn.urdf"
+gravity: true
+fixed: true
+flip_visual: true
+collision: True

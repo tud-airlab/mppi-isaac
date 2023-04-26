@@ -48,14 +48,15 @@ class FabricsPandaPrior(object):
         vel = np.array(dofs[1::2])
 
         obst_positions = np.array(sim.obstacle_positions[self.env_id].cpu())
+        obst_indices = torch.tensor([i for i, a in enumerate(sim.env_cfg) if a.type in ["sphere", "box"]], device="cuda:0")
 
         x_obsts = []
         radius_obsts = []
         for i in range(self.max_num_obstacles):
             if i < len(obst_positions):
                 x_obsts.append(obst_positions[i])
-                if 'type' in sim.env_cfg[i + 3].keys() and sim.env_cfg[i+3]['type'] == 'sphere':
-                    radius_obsts.append(sim.env_cfg[i + 3]["size"][0])
+                if sim.env_cfg[obst_indices[i]].type == 'sphere':
+                    radius_obsts.append(sim.env_cfg[obst_indices[i]].size[0])
                 else:
                     radius_obsts.append(0.2)
             else:
@@ -143,9 +144,12 @@ def test(cfg: ExampleConfig):
         cfg.fix_base,
         cfg.flip_visual,
         num_envs=1,
+        robot_init_pos=cfg.initial_position,
+        ee_link=cfg.ee_link,
+        disable_gravity=cfg.disable_gravity,
     )
 
-    sim.env_cfg.append(
+    sim.add_to_envs([
         {
             "type": "sphere",
             "name": "sphere0",
@@ -153,7 +157,7 @@ def test(cfg: ExampleConfig):
             "size": [0.1],
             "fixed": True,
         }
-    )
+    ])
     sim.stop_sim()
     sim.start_sim()
 

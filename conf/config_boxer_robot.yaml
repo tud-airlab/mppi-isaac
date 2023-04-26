@@ -5,11 +5,8 @@ defaults:
 goal: [2.0, 2.0]
 render: true
 n_steps: 1000
-urdf_file: "boxer/boxer.urdf"
-fix_base: false
-flip_visual: false
 nx: 4
-differential_drive: true
-wheel_radius: 0.08
-wheel_base: 0.314
-wheel_count: 2
+
+actors: ['boxer']
+initial_actor_positions: [[0.0, 0.0, 0.05]]
+

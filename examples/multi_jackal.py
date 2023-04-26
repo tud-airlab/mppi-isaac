@@ -3,9 +3,9 @@ import numpy as np
 from urdfenvs.robots.generic_urdf.generic_diff_drive_robot import GenericDiffDriveRobot
 from urdfenvs.urdf_common.urdf_env import UrdfEnv
 from mppiisaac.planner.mppi_isaac import MPPIisaacPlanner
-import mppiisaac
 import hydra
 import yaml
+import mppiisaac
 from yaml import SafeLoader
 from omegaconf import OmegaConf
 import os
@@ -14,24 +14,23 @@ from mpscenes.goals.static_sub_goal import StaticSubGoal
 
 from mppiisaac.utils.config_store import ExampleConfig
 
-# MPPI to navigate a simple robot to a goal position
-
 urdf_file = (
     os.path.dirname(os.path.abspath(__file__))
-    + "/../assets/urdf/boxer/boxer_bullet.urdf"
+    + "/../assets/urdf/jackal/jackal.urdf"
 )
 
+# MPPI to navigate a simple robot to a goal position
 
 class Objective(object):
     def __init__(self, cfg, device):
         self.nav_goal = torch.tensor(cfg.goal, device=cfg.mppi.device)
 
     def compute_cost(self, sim):
-        pos = sim.robot_positions[:, 0, :2]
-
-        return torch.clamp(
+        pos = torch.cat((sim.root_state[:, 0, 0:2], sim.root_state[:, 1, 0:2]), axis=1)
+        cost = torch.clamp(
             torch.linalg.norm(pos - self.nav_goal, axis=1) - 0.05, min=0, max=1999
         )
+        return cost
 
 
 def initalize_environment(cfg) -> UrdfEnv:
@@ -46,40 +45,46 @@ def initalize_environment(cfg) -> UrdfEnv:
     render
         Boolean toggle to set rendering on (True) or off (False).
     """
-    with open(f'{os.path.dirname(mppiisaac.__file__)}/../conf/actors/boxer.yaml') as f:
-        boxer_cfg = yaml.load(f, Loader=SafeLoader)
+    # urdf_file = os.path.dirname(os.path.abspath(__file__)) + "/../assets/urdf/" + cfg.urdf_file
+    with open(f'{os.path.dirname(mppiisaac.__file__)}/../conf/actors/jackal.yaml') as f:
+        jackal_cfg = yaml.load(f, Loader=SafeLoader)
     robots = [
         GenericDiffDriveRobot(
             urdf=urdf_file,
             mode="vel",
-            actuated_wheels=["wheel_right_joint", "wheel_left_joint"],
-            castor_wheels=["rotacastor_right_joint", "rotacastor_left_joint"],
-            spawn_offset=np.array([0.0, 0.0, 0.05]),
-            wheel_radius = boxer_cfg['wheel_radius'],
-            wheel_distance = boxer_cfg['wheel_base'],
+            actuated_wheels=[
+                "rear_right_wheel",
+                "rear_left_wheel",
+                "front_right_wheel",
+                "front_left_wheel",
+            ],
+            castor_wheels=[],
+            wheel_radius = jackal_cfg['wheel_radius'],
+            wheel_distance = jackal_cfg['wheel_base'],
+        ),
+        GenericDiffDriveRobot(
+            urdf=urdf_file,
+            mode="vel",
+            actuated_wheels=[
+                "rear_right_wheel",
+                "rear_left_wheel",
+                "front_right_wheel",
+                "front_left_wheel",
+            ],
+            castor_wheels=[],
+            wheel_radius = jackal_cfg['wheel_radius'],
+            wheel_distance = jackal_cfg['wheel_base'],
         ),
     ]
-    env: UrdfEnv = gym.make("urdf-env-v0", dt=cfg.isaacgym.dt, robots=robots, render=cfg.render)
-    # Set the initial position and velocity of the boxer robot
-    env.reset()
-    goal_dict = {
-        "weight": 1.0,
-        "is_primary_goal": True,
-        "indices": [0, 1],
-        "parent_link": 0,
-        "child_link": 2,
-        "desired_position": cfg.goal,
-        "epsilon": 0.05,
-        "type": "staticSubGoal",
-    }
-    goal = StaticSubGoal(name="simpleGoal", content_dict=goal_dict)
-    env.add_goal(goal)
+    env: UrdfEnv = gym.make("urdf-env-v0", dt=0.02, robots=robots, render=cfg.render)
+    # Set the initial position and velocity of the jackal robot
+    env.reset(pos=np.array(cfg.initial_actor_positions))
     return env
 
 
 def set_planner(cfg):
     """
-    Initializes the mppi planner for boxer robot.
+    Initializes the mppi planner for jackal robot.
 
     Params
     ----------
@@ -92,10 +97,10 @@ def set_planner(cfg):
     return planner
 
 
-@hydra.main(version_base=None, config_path="../conf", config_name="config_boxer_robot")
-def run_boxer_robot(cfg: ExampleConfig):
+@hydra.main(version_base=None, config_path="../conf", config_name="config_multi_jackal")
+def run_jackal_robot(cfg: ExampleConfig):
     """
-    Set the gym environment, the planner and run boxer robot example.
+    Set the gym environment, the planner and run jackal robot example.
     The initial zero action step is needed to initialize the sensor in the
     urdf environment.
 
@@ -113,7 +118,7 @@ def run_boxer_robot(cfg: ExampleConfig):
     env = initalize_environment(cfg)
     planner = set_planner(cfg)
 
-    action = np.zeros(int(cfg.nx/2))
+    action = np.zeros(8)
     ob, *_ = env.step(action)
     
     
@@ -122,18 +127,18 @@ def run_boxer_robot(cfg: ExampleConfig):
 
         #Todo fix joint with zero friction
 
-        ob_robot = ob["robot_0"]
+        ob_robot0 = ob["robot_0"]
+        ob_robot1 = ob["robot_1"]
         action = planner.compute_action(
-            q=ob_robot["joint_state"]["position"],
-            qdot=ob_robot["joint_state"]["velocity"],
+            q=list(ob_robot0["joint_state"]["position"]) + list(ob_robot1["joint_state"]["position"]),
+            qdot=list(ob_robot0["joint_state"]["velocity"]) + list(ob_robot1["joint_state"]["velocity"]),
         )
         (
             ob,
             *_,
         ) = env.step(action)
-        print(action)
     return {}
 
 
 if __name__ == "__main__":
-    res = run_boxer_robot()
+    res = run_jackal_robot()

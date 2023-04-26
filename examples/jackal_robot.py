@@ -3,7 +3,10 @@ import numpy as np
 from urdfenvs.robots.generic_urdf import GenericDiffDriveRobot
 from urdfenvs.urdf_common.urdf_env import UrdfEnv
 from mppiisaac.planner.mppi_isaac import MPPIisaacPlanner
+import mppiisaac
 import hydra
+import yaml
+from yaml import SafeLoader
 from omegaconf import OmegaConf
 import os
 import torch
@@ -21,11 +24,12 @@ class Objective(object):
         self.nav_goal = torch.tensor(cfg.goal, device=cfg.mppi.device)
 
     def compute_cost(self, sim):
-        pos = sim.robot_positions[:, :2]
-
-        return torch.clamp(
+        pos = sim.robot_positions[:, 0, :2]
+        err = torch.linalg.norm(pos - self.nav_goal, axis=1)
+        cost = torch.clamp(
             torch.linalg.norm(pos - self.nav_goal, axis=1) - 0.05, min=0, max=1999
         )
+        return cost * 1.5
 
 
 def initalize_environment(cfg) -> UrdfEnv:
@@ -41,9 +45,11 @@ def initalize_environment(cfg) -> UrdfEnv:
         Boolean toggle to set rendering on (True) or off (False).
     """
     # urdf_file = os.path.dirname(os.path.abspath(__file__)) + "/../assets/urdf/" + cfg.urdf_file
+    with open(f'{os.path.dirname(mppiisaac.__file__)}/../conf/actors/jackal.yaml') as f:
+        jackal_cfg = yaml.load(f, Loader=SafeLoader)
     robots = [
         GenericDiffDriveRobot(
-            urdf="jackal.urdf",
+            urdf=urdf_file,
             mode="vel",
             actuated_wheels=[
                 "rear_right_wheel",
@@ -52,13 +58,13 @@ def initalize_environment(cfg) -> UrdfEnv:
                 "front_left_wheel",
             ],
             castor_wheels=[],
-            wheel_radius = 0.098,
-            wheel_distance = 2 * 0.187795 + 0.08,
+            wheel_radius = jackal_cfg['wheel_radius'],
+            wheel_distance = jackal_cfg['wheel_base'],
         ),
     ]
     env = gym.make(
         "urdf-env-v0",
-        dt=0.01, robots=robots, render=render
+        dt=0.01, robots=robots, render=cfg.render
     )
     # Set the initial position and velocity of the jackal robot
     env.reset()
@@ -113,7 +119,7 @@ def run_jackal_robot(cfg: ExampleConfig):
     env = initalize_environment(cfg)
     planner = set_planner(cfg)
 
-    action = np.zeros(int(cfg.nx/2))
+    action = np.zeros(4)
     ob, *_ = env.step(action)
     
     

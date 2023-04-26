@@ -1,5 +1,4 @@
 defaults:
   - base_isaacgym
 
-dt: 0.01
-substeps: 1
+dt: 0.04

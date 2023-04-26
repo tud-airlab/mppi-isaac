@@ -5,7 +5,7 @@ defaults:
 goal: [2.0, 2.0]
 render: true
 n_steps: 1000
-urdf_file: "point_robot.urdf"
-fix_base: true
-flip_visual: false
 nx: 6
+
+actors: ['point_robot']
+initial_actor_positions: [[0.0, 0.0, 0.05]]
