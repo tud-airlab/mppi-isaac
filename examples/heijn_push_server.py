@@ -59,7 +59,7 @@ def run_heijn_robot(cfg: ExampleConfig):
     # Manually add table + block and restart isaacgym
     obj_index = 0
                 #  l      w     h     mu      m     x    y
-    obj_set =  [[0.300, 0.500, 0.3,  0.300, 1.500, 2.00, 2.0],     # Crate
+    obj_set =  [[0.300, 0.500, 0.3,  0.300, 1.000, 2.00, 2.0],     # Crate
                 [0.100, 0.100, 0.05, 0.300, 0.100, 2.00, 2.0],     # Baseline 1, pose 1
                 [0.100, 0.100, 0.05, 0.300, 0.100, 0.40, 0.0],     # Baseline 1, pose 2
                 [0.116, 0.116, 0.06, 0.637, 0.016, 0.35, 0.0],     # Baseline 2, A
@@ -76,35 +76,37 @@ def run_heijn_robot(cfg: ExampleConfig):
     obst_2_dim = [0.6, 0.8, 0.108]
     obst_2_pos = [-0.15, 1, obst_2_dim[-1]/2]
 
+    goal_pos = [0., 0.]
+    
     additions = [
-        # {
-        #     "type": "box",
-        #     "name": "obj_to_push",
-        #     "size": [obj_[0], obj_[1], obj_[2]],
-        #     "init_pos": [obj_[5], obj_[6], obj_[2] / 2],
-        #     "mass": obj_[4],
-        #     "fixed": False,
-        #     "handle": None,
-        #     "color": [0.2, 0.2, 1.0],
-        #     "friction": obj_[3],
-        #     "noise_sigma_size": [0.005, 0.005, 0.0],
-        #     "noise_percentage_friction": 0.3,
-        #     "noise_percentage_mass": 0.3,
-        # },
         {
-            "type": "sphere",
+            "type": "box",
             "name": "obj_to_push",
-            "size": [0.2], # [obj_[0], obj_[1], obj_[2]],
+            "size": [obj_[0], obj_[1], obj_[2]],
             "init_pos": [obj_[5], obj_[6], obj_[2] / 2],
             "mass": obj_[4],
             "fixed": False,
             "handle": None,
-            "color": [4 / 255, 160 / 255, 218 / 255],
+            "color": [0.2, 0.2, 1.0],
             "friction": obj_[3],
-            "noise_sigma_size": [0.005],
+            "noise_sigma_size": [0.005, 0.005, 0.0],
             "noise_percentage_friction": 0.3,
             "noise_percentage_mass": 0.3,
         },
+        # {
+        #     "type": "sphere",
+        #     "name": "obj_to_push",
+        #     "size": [0.2], # [obj_[0], obj_[1], obj_[2]],
+        #     "init_pos": [obj_[5], obj_[6], obj_[2] / 2],
+        #     "mass": obj_[4],
+        #     "fixed": False,
+        #     "handle": None,
+        #     "color": [4 / 255, 160 / 255, 218 / 255],
+        #     "friction": obj_[3],
+        #     "noise_sigma_size": [0.005],
+        #     "noise_percentage_friction": 0.3,
+        #     "noise_percentage_mass": 0.3,
+        # },
         {
             "type": "box",
             "name": "obst_1",
@@ -123,14 +125,16 @@ def run_heijn_robot(cfg: ExampleConfig):
             "color": [255 / 255, 120 / 255, 57 / 255],
             "handle": None,
         },
+        # Add goal, 
         {
             "type": "box",
-            "name": "obst_3",
-            "size": obst_2_dim,
-            "init_pos": [0., 0., -2.],
+            "name": "goal",
+            "size": [obj_[0], obj_[1], obj_[2]],
+            "init_pos": [goal_pos[0], goal_pos[1], -obj_[2]/2 + 0.005],
             "fixed": True,
-            "color": [255 / 255, 120 / 255, 57 / 255],
+            "color": [119 / 255, 221 / 255, 119 / 255],
             "handle": None,
+            "collision": False,
         }
     ]
 
@@ -216,7 +220,6 @@ def run_heijn_robot(cfg: ExampleConfig):
                 data_err.append(np.float64(metric_1))
                 n_trials += 1
 
-            rt_factor_seq.append(cfg.isaacgym.dt/(time.time() - t))
             print(f"FPS: {1/(time.time() - t)} RT-factor: {cfg.isaacgym.dt/(time.time() - t)}")
             
             count = 0
@@ -240,7 +243,8 @@ def run_heijn_robot(cfg: ExampleConfig):
         # pos = sim.root_state[0, -1][:2].cpu().numpy()
         # goal = np.array([0.5, 0])
         # print(f"L2: {np.linalg.norm(pos - goal)} FPS: {1/(time.time() - t)} RT-factor: {cfg.isaacgym.dt/(time.time() - t)}")
-    
+        rt_factor_seq.append(cfg.isaacgym.dt/(time.time() - t))
+
     if len(data_time) > 0: 
         print("Num. trials", n_trials)
         print("Success rate", len(data_time)/n_trials*100)

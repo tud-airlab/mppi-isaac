@@ -76,7 +76,7 @@ def run_boxer_robot(cfg: ExampleConfig):
 
     obst_2_dim = [0.6, 0.8, 0.108]
     obst_2_pos = [-1, 1, obst_2_dim[-1]/2]
-
+    goal_pos = [0. , 0.]
     additions = [
         {
             "type": "box",
@@ -110,14 +110,16 @@ def run_boxer_robot(cfg: ExampleConfig):
             "color": [255 / 255, 120 / 255, 57 / 255],
             "handle": None,
         },
+        # Add goal, 
         {
             "type": "box",
-            "name": "obst_3",
-            "size": obst_2_dim,
-            "init_pos": [1., 0, -1],
+            "name": "goal",
+            "size": [obj_[0], obj_[1], obj_[2]],
+            "init_pos": [goal_pos[0], goal_pos[1], -obj_[2]/2 + 0.005],
             "fixed": True,
-            "color": [255 / 255, 120 / 255, 57 / 255],
+            "color": [119 / 255, 221 / 255, 119 / 255],
             "handle": None,
+            "collision": False,
         }
     ]
 

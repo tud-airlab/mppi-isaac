@@ -67,12 +67,13 @@ def run_omnipanda_robot(cfg: ExampleConfig):
     obj_index = 0
 
                 #  l     w     h    mu     m    x    y
-    obj_set =  [[0.04, 0.04, 0.04, 0.90, 0.1, 0.37, 0.],     # Cube
-                [0.08, 0.04, 0.04, 0.90, 0.1, 0.37, 0.]]
+    obj_set =  [[0.04, 0.04, 0.04, 0.90, 0.1, 0.37, 0.],    # Cube
+                [0.08, 0.04, 0.04, 0.90, 0.1, 0.37, 0.]]    # Other
     
     obj_ = obj_set[obj_index][:]
     table_dim = [0.8, 1.0, 0.50]
     table_pos = [0.5, 0., table_dim[-1]/2]
+    goal_pos = [-1., -1., 0.6]
 
     additions = [
         {
@@ -98,14 +99,16 @@ def run_omnipanda_robot(cfg: ExampleConfig):
             "fixed": True,
             "handle": None,
         },
+        # Add goal, 
         {
             "type": "box",
-            "name": "table2",
-            "size": table_dim,
-            "init_pos": [-2.5, -table_pos[1], table_dim[-1]/2],
-            "color": [255 / 255, 120 / 255, 57 / 255],
+            "name": "goal",
+            "size": [obj_[0], obj_[1], obj_[2]],
+            "init_pos": [goal_pos[0], goal_pos[1], goal_pos[2]],
             "fixed": True,
+            "color": [119 / 255, 221 / 255, 119 / 255],
             "handle": None,
+            "collision": False,
         }
     ]
 
