@@ -11,4 +11,4 @@ weights:
   wu: 1.0
   wvel: 1.0
   wx: 1.5
-  wobst: 0.02
+  wobst: 0.2

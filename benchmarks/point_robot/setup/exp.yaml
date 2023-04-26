@@ -1,4 +1,4 @@
-T: 300
+T: 800
 dynamic: False
 dt: 0.05
 root_link : "world"

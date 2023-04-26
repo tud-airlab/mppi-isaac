@@ -59,6 +59,24 @@ class Objective(object):
 
         return nav_cost * self.w_nav + obs_cost * self.w_obs
 
+class EndEffectorGoalObjective(object):
+    def __init__(self, goal, device):
+        self.nav_goal = torch.tensor(goal, device=device)
+        self.ort_goal = torch.tensor([1, 0, 0, 0], device=device)
+
+    def compute_cost(self, sim):
+        pos = sim.rigid_body_state[:, sim.robot_rigid_body_ee_idx, :3]
+        ort = sim.rigid_body_state[:, sim.robot_rigid_body_ee_idx, 3:7]
+        # dof_states = gym.acquire_dof_state_tensor(sim)
+
+        reach_cost = torch.linalg.norm(pos - self.nav_goal, axis=1)
+        align_cost = torch.linalg.norm(ort - self.ort_goal, axis=1)
+        return 10 * reach_cost + align_cost
+        # return torch.clamp(
+        #     torch.linalg.norm(pos - self.nav_goal, axis=1) - 0.05, min=0, max=1999
+        # )
+
+
 
 
 
@@ -69,6 +87,7 @@ class MPPIPlanner(Planner):
         self.cfg = kwargs['config']
         initial_actor_position = exp.initState()[0].tolist() 
         initial_actor_position[2] += 0.05
+        initial_actor_position = [0.0, 0.0, 0.05]
         self.cfg['initial_actor_positions'] = [initial_actor_position]
         self._config = OmegaConf.create(kwargs)
 
@@ -80,7 +99,7 @@ class MPPIPlanner(Planner):
     def setGoal(self, motionPlanningGoal):
         cfg = OmegaConf.create(self.cfg)
         goal_position = motionPlanningGoal.sub_goals()[0].position()
-        objective = Objective(goal_position, cfg.mppi.device)
+        objective = EndEffectorGoalObjective(goal_position, cfg.mppi.device)
         if not hasattr(self, '_planner'):
             self._planner = MPPIisaacPlanner(cfg, objective)
 
