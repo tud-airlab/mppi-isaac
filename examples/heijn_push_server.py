@@ -55,19 +55,23 @@ def run_heijn_robot(cfg: ExampleConfig):
         num_envs=1,
         viewer=True,
     )
-
-    # Manually add table + block and restart isaacgym
-    obj_index = 0
-                #  l      w     h     mu      m     x    y
-    obj_set =  [[0.300, 0.500, 0.3,  0.300, 1.000, 2.00, 2.0],     # Crate
-                [0.100, 0.100, 0.05, 0.300, 0.100, 2.00, 2.0],     # Baseline 1, pose 1
-                [0.100, 0.100, 0.05, 0.300, 0.100, 0.40, 0.0],     # Baseline 1, pose 2
-                [0.116, 0.116, 0.06, 0.637, 0.016, 0.35, 0.0],     # Baseline 2, A
-                [0.168, 0.237, 0.05, 0.232, 0.615, 0.38, 0.0],     # Baseline 2, B
-                [0.198, 0.198, 0.06, 0.198, 0.565, 0.40, 0.0],     # Baseline 2, C
-                [0.166, 0.228, 0.08, 0.312, 0.587, 0.39, 0.0],     # Baseline 2, D
-                [0.153, 0.462, 0.05, 0.181, 0.506, 0.37, 0.0],]    # Baseline 2, E
     
+    # Experiment setup
+    # ----------------------------------------------
+    # Select initial position
+    init_pos1 = [0.0, 2., 0.]       
+    init_pos2 = [0.0, 0., 3.14/2]
+
+    init_pos = init_pos1
+    init_vel = [0., 0., 0.]
+
+    # Select object 
+    obj_index = 0       # 0 = Crate, 1 = Sphere
+    #------------------------------------------------
+
+                #  l      w      h      mu      m     x      y
+    obj_set =  [[0.300, 0.500, 0.300, 0.300, 1.00, 2.00, 2.00],   # Crate
+                [0.200, 0.200, 0.200, 0.300, 1.00, 2.00, 2.00]]   # Sphere
     obj_ = obj_set[obj_index][:]
 
     obst_1_dim = [0.6, 0.8, 0.108]
@@ -75,11 +79,10 @@ def run_heijn_robot(cfg: ExampleConfig):
 
     obst_2_dim = [0.6, 0.8, 0.108]
     obst_2_pos = [-0.15, 1, obst_2_dim[-1]/2]
-
-    goal_pos = [0., 0.]
     
-    additions = [
-        {
+    if obj_index == 0:
+        goal_pos_ghost = [0., 0.]
+        object_dict = [{
             "type": "box",
             "name": "obj_to_push",
             "size": [obj_[0], obj_[1], obj_[2]],
@@ -92,21 +95,26 @@ def run_heijn_robot(cfg: ExampleConfig):
             "noise_sigma_size": [0.005, 0.005, 0.0],
             "noise_percentage_friction": 0.3,
             "noise_percentage_mass": 0.3,
-        },
-        # {
-        #     "type": "sphere",
-        #     "name": "obj_to_push",
-        #     "size": [0.2], # [obj_[0], obj_[1], obj_[2]],
-        #     "init_pos": [obj_[5], obj_[6], obj_[2] / 2],
-        #     "mass": obj_[4],
-        #     "fixed": False,
-        #     "handle": None,
-        #     "color": [4 / 255, 160 / 255, 218 / 255],
-        #     "friction": obj_[3],
-        #     "noise_sigma_size": [0.005],
-        #     "noise_percentage_friction": 0.3,
-        #     "noise_percentage_mass": 0.3,
-        # },
+        }]
+    else:
+        goal_pos_ghost = [0.5, 1.]
+        object_dict = [{
+            "type": "sphere",
+            "name": "obj_to_push",
+            "size": [obj_[0]],
+            "init_pos": [obj_[5], obj_[6], obj_[2] / 2],
+            "mass": obj_[4],
+            "fixed": False,
+            "handle": None,
+            "color": [4 / 255, 160 / 255, 218 / 255],
+            "friction": obj_[3],
+            "noise_sigma_size": [0.005],
+            "noise_percentage_friction": 0.3,
+            "noise_percentage_mass": 0.3,
+        }]
+
+    additions = [
+        object_dict[0], 
         {
             "type": "box",
             "name": "obst_1",
@@ -130,7 +138,7 @@ def run_heijn_robot(cfg: ExampleConfig):
             "type": "box",
             "name": "goal",
             "size": [obj_[0], obj_[1], obj_[2]],
-            "init_pos": [goal_pos[0], goal_pos[1], -obj_[2]/2 + 0.005],
+            "init_pos": [goal_pos_ghost[0], goal_pos_ghost[1], -obj_[2]/2 + 0.005],
             "fixed": True,
             "color": [119 / 255, 221 / 255, 119 / 255],
             "handle": None,
@@ -147,13 +155,6 @@ def run_heijn_robot(cfg: ExampleConfig):
     planner.add_to_env(additions)
     set_viewer(sim)
 
-    # Select initial position
-    init_pos1 = [0.0, 2., 0.]
-    init_pos2 = [0.0, 0., 3.14/2]
-
-    init_pos = init_pos2
-    init_vel = [0., 0., 0.]
-
     sim.set_dof_state_tensor(torch.tensor([init_pos[0], init_vel[0], init_pos[1], init_vel[1], init_pos[2], init_vel[2]], device="cuda:0"))
 
     # Helpers
@@ -162,9 +163,8 @@ def run_heijn_robot(cfg: ExampleConfig):
     init_time = time.time()
     block_index = 1
     data_time = []
-    data_err = []
     n_trials = 0 
-    timeout = 60
+    timeout = 45
     rt_factor_seq = []
     data_rt = []
 
@@ -198,14 +198,19 @@ def run_heijn_robot(cfg: ExampleConfig):
             block_ort = sim.root_state[:, block_index, 3:7]
 
             Ex, Ey, Etheta = client_helper.compute_metrics(block_pos, block_ort)
-            metric_1 = 1.5*(Ex+Ey)+0.01*Etheta
-            # print("Metric Baxter", metric_1)
-            print("Ex", Ex)
-            print("Ey", Ey)
-            # print("Angle", Etheta)
-            # Ex < 0.025 and Ey < 0.01 and Etheta < 0.05
-            # Ex < 0.05 and Ey < 0.025 and Etheta < 0.17
-            if Ex < 0.05 and Ey < 0.05 and Etheta < 0.17: 
+            print(Ex, Ey, Etheta)
+
+            # Neglect sphere orientation error for tests
+            if obj_index == 1:  
+                Etheta_max = 10
+                Ex_max = obj_[0]
+                Ey_max = obj_[0]
+            else: 
+                Ex_max = 0.05
+                Ey_max = 0.05
+                Etheta_max = 0.20
+
+            if Ex < Ex_max and Ey < Ey_max and Etheta < Etheta_max: 
                 print("Success")
                 final_time = time.time()
                 time_taken = final_time - init_time
@@ -217,10 +222,9 @@ def run_heijn_robot(cfg: ExampleConfig):
                 count = 0
                 data_rt.append(np.sum(rt_factor_seq) / len(rt_factor_seq))
                 data_time.append(time_taken)
-                data_err.append(np.float64(metric_1))
                 n_trials += 1
 
-            print(f"FPS: {1/(time.time() - t)} RT-factor: {cfg.isaacgym.dt/(time.time() - t)}")
+            # print(f"FPS: {1/(time.time() - t)} RT-factor: {cfg.isaacgym.dt/(time.time() - t)}")
             
             count = 0
         else:
@@ -230,19 +234,12 @@ def run_heijn_robot(cfg: ExampleConfig):
             reset_trial(sim, init_pos, init_vel)
             init_time = time.time()
             count = 0
-            # data_time.append(-1)
-            # data_err.append(-1)
-            # data_rt.append(-1)
             n_trials += 1
 
         # Visualize samples
         # rollouts = bytes_to_torch(planner.get_rollouts())
         # sim.draw_lines(rollouts)
         
-        # Print error of block
-        # pos = sim.root_state[0, -1][:2].cpu().numpy()
-        # goal = np.array([0.5, 0])
-        # print(f"L2: {np.linalg.norm(pos - goal)} FPS: {1/(time.time() - t)} RT-factor: {cfg.isaacgym.dt/(time.time() - t)}")
         rt_factor_seq.append(cfg.isaacgym.dt/(time.time() - t))
 
     if len(data_time) > 0: 

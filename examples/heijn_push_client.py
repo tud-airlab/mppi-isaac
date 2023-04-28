@@ -19,18 +19,17 @@ class Objective(object):
         self.w_vel=                 0.
 
         # Tuning for Sphere
-        # self.w_robot_to_block_pos=  0.2
-        # self.w_block_to_goal_pos=   1.
-        # self.w_block_to_goal_ort=   0
+        # self.w_robot_to_block_pos=  .2
+        # self.w_block_to_goal_pos=   2.
+        # self.w_block_to_goal_ort=   0.0
         # self.w_push_align=          0.6
-        # self.w_collision=           .01
-        # self.w_vel=                 .0
-        
+        # self.w_collision=           0.01
+        # self.w_vel=                 0.
+
         # Task configration for comparison with baselines
         self.ee_index = 4
         self.block_index = 1
         self.ort_goal_euler = torch.tensor([0, 0, 0], device=cfg.mppi.device)
-        self.ee_hover_height = 0.14
 
         self.block_goal_box = torch.tensor([0., 0., 0.5, 0.0, 0.0, 0.0, 1.0], device=cfg.mppi.device)
         self.block_goal_sphere = torch.tensor([0.5, 1., 0.5, 0, 0, -0.7071068, 0.7071068], device=cfg.mppi.device) # Rotation 90 deg
