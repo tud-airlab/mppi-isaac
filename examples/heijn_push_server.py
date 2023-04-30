@@ -97,7 +97,7 @@ def run_heijn_robot(cfg: ExampleConfig):
             "noise_percentage_mass": 0.3,
         }]
     else:
-        goal_pos_ghost = [0.5, 1.]
+        goal_pos_ghost = [0.42, 1.]
         object_dict = [{
             "type": "sphere",
             "name": "obj_to_push",
@@ -208,14 +208,13 @@ def run_heijn_robot(cfg: ExampleConfig):
             else: 
                 Ex_max = 0.05
                 Ey_max = 0.05
-                Etheta_max = 0.20
+                Etheta_max = 0.17
 
             if Ex < Ex_max and Ey < Ey_max and Etheta < Etheta_max: 
                 print("Success")
                 final_time = time.time()
                 time_taken = final_time - init_time
                 print("Time to completion", time_taken)
-
                 reset_trial(sim, init_pos, init_vel)
                 
                 init_time = time.time()

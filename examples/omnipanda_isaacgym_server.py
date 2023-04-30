@@ -33,7 +33,7 @@ def bytes_to_torch(b: bytes) -> torch.Tensor:
 
 def set_viewer(sim):
     sim.gym.viewer_camera_look_at(
-        sim.viewer, None, gymapi.Vec3(-1., 2, 2), gymapi.Vec3(0.5, 0, 0.5)        # CAMERA LOCATION, CAMERA POINT OF INTEREST
+        sim.viewer, None, gymapi.Vec3(-3., 2, 2), gymapi.Vec3(0.5, 0, 0.5)        # CAMERA LOCATION, CAMERA POINT OF INTEREST
     )
 
 def reset_trial(sim, init_pos, init_vel):
@@ -67,8 +67,8 @@ def run_omnipanda_robot(cfg: ExampleConfig):
     obj_index = 0
 
                 #  l     w     h    mu     m    x    y
-    obj_set =  [[0.04, 0.04, 0.04, 0.90, 0.1, 0.37, 0.],    # Cube
-                [0.08, 0.04, 0.04, 0.90, 0.1, 0.37, 0.]]    # Other
+    obj_set =  [[0.04, 0.04, 0.04, 0.90, 0.05, 0.37, 0.],    # Cube
+                [0.03, 0.03, 0.04, 0.90, 0.2, 0.37, 0.]]    # Other
     
     obj_ = obj_set[obj_index][:]
     table_dim = [0.8, 1.0, 0.50]
@@ -85,10 +85,10 @@ def run_omnipanda_robot(cfg: ExampleConfig):
             "fixed": False,
             "handle": None,
             "color": [0.2, 0.2, 1.0],
-            # "friction": obj_[3],
-            # "noise_sigma_size": [0.002, 0.002, 0.0],
-            # "noise_percentage_friction": 0.3,
-            # "noise_percentage_mass": 0.3,
+            "friction": obj_[3],
+            "noise_sigma_size": [0.001, 0.001, 0.0],
+            "noise_percentage_friction": 0.3,
+            "noise_percentage_mass": 0.3,
         },
         {
             "type": "box",
@@ -123,8 +123,8 @@ def run_omnipanda_robot(cfg: ExampleConfig):
     set_viewer(sim)
     
     # Select starting pose
-    init_pos1 = [-1.0, -1.0, 0.0, 0.0, -0.94, 0., -2.8, 0., 1.8675, 0., 0.02, 0.02]
-    init_pos2 = [1.0, 1.0, 0.0, 0.0, -0.94, 0., -2.8, 0., 1.8675, 0., 0.02, 0.02]
+    init_pos1 = [-1.0, -1.0, 0.0, 1.5, -0.94, 0., -2.8, 0., 1.8675, 0., 0.04, 0.03]
+    init_pos2 = [-1.0, 1.0, 0.0, 0.0, -0.94, 0., -2.8, 0., 1.8675, 0., 0.04, 0.03]
 
     init_pos = init_pos1
     init_vel = [0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0.]
@@ -185,9 +185,7 @@ def run_omnipanda_robot(cfg: ExampleConfig):
                 final_time = time.time()
                 time_taken = final_time - init_time
                 print("Time to completion", time_taken)
-
-                reset_trial(sim, init_pos, init_vel)
-                
+                reset_trial(sim, init_pos, init_vel)                
                 
                 init_time = time.time()
                 count = 0

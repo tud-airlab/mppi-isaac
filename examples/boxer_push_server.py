@@ -183,12 +183,11 @@ def run_boxer_robot(cfg: ExampleConfig):
             # print("Angle", Etheta)
             # Ex < 0.025 and Ey < 0.01 and Etheta < 0.05
             # Ex < 0.05 and Ey < 0.025 and Etheta < 0.17
-            if Ex < 0.05 and Ey < 0.05: 
+            if Ex < 0.05 and Ey < 0.05 and Etheta < 0.17: 
                 print("Success")
                 final_time = time.time()
                 time_taken = final_time - init_time
                 print("Time to completion", time_taken)
-
                 #reset_trial(sim, init_pos, init_vel)
                 
                 init_time = time.time()

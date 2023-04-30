@@ -20,10 +20,10 @@ class Objective(object):
 
         # Tuning for Sphere
         # self.w_robot_to_block_pos=  .2
-        # self.w_block_to_goal_pos=   2.
+        # self.w_block_to_goal_pos=   0.1
         # self.w_block_to_goal_ort=   0.0
-        # self.w_push_align=          0.6
-        # self.w_collision=           0.01
+        # self.w_push_align=          1.
+        # self.w_collision=           0.001
         # self.w_vel=                 0.
 
         # Task configration for comparison with baselines
@@ -32,7 +32,7 @@ class Objective(object):
         self.ort_goal_euler = torch.tensor([0, 0, 0], device=cfg.mppi.device)
 
         self.block_goal_box = torch.tensor([0., 0., 0.5, 0.0, 0.0, 0.0, 1.0], device=cfg.mppi.device)
-        self.block_goal_sphere = torch.tensor([0.5, 1., 0.5, 0, 0, -0.7071068, 0.7071068], device=cfg.mppi.device) # Rotation 90 deg
+        self.block_goal_sphere = torch.tensor([0.42, 1., 0.5, 0, 0, -0.7071068, 0.7071068], device=cfg.mppi.device) # Rotation 90 deg
 
         # Select goal according to test
         self.block_goal_pose = torch.clone(self.block_goal_box)
