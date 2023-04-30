@@ -62,7 +62,7 @@ class MPPIConfig(object):
     noise_sigma: Optional[List[List[float]]] = None
     noise_mu: Optional[List[float]] = None
     device: str = "cuda:0"
-    lambda_: float = 1.0
+    lambda_: float = 0.0
     update_lambda: bool = False
     update_cov: bool = False
     u_min: Optional[List[float]] = None
@@ -189,7 +189,7 @@ class MPPIPlanner(ABC):
         self.cov_action = torch.diagonal(self.noise_sigma, 0)
         self.scale_tril = torch.sqrt(self.cov_action)
         self.squash_fn = 'clamp'
-        self.step_size_mean = 0.98      # From storm
+        self.step_size_mean = 1. # 0.98     # From storm
 
         # Discount
         self.gamma = cfg.rollout_var_discount 
@@ -281,16 +281,13 @@ class MPPIPlanner(ABC):
         """
             Given a state, returns the best action sequence
         """
-        # shift command 1 time step
-        self.U = torch.roll(self.U, -1, dims=0)
-
+        
         if not torch.is_tensor(state):
             state = torch.tensor(state)
         self.state = state.to(dtype=self.tensor_args['dtype'], device=self.tensor_args['device'])
 
         if self.mppi_mode == 'simple':
             self.U = torch.roll(self.U, -1, dims=0)
-
             cost_total = self._compute_total_cost_batch_simple()
 
             beta = torch.min(cost_total)
@@ -305,10 +302,9 @@ class MPPIPlanner(ABC):
 
         elif self.mppi_mode == 'halton-spline':
             # shift command 1 time step
+            saved_action = self.mean_action[-1]
             self.mean_action = torch.roll(self.mean_action, -1, dims=0)
-            # Set first sequence to zero, otherwise it takes the last of the sequence
-            self.mean_action[0].zero_()
-
+            self.mean_action[-1] = saved_action
             cost_total = self._compute_total_cost_batch_halton()
               
             action = torch.clone(self.mean_action)
@@ -514,7 +510,7 @@ class MPPIPlanner(ABC):
 
         # Action perturbation cost
         perturbation_cost = torch.sum(self.mean_action * action_cost, dim=(1, 2))
-        self.cost_total += perturbation_cost
+        # self.cost_total += perturbation_cost
         return self.cost_total
 
     
