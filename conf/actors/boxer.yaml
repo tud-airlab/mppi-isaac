@@ -2,7 +2,6 @@ type: robot
 name: boxer
 urdf_file: "boxer/boxer.urdf"
 gravity: true
-mass: 100.00
 fixed: false
 flip_visual: false
 differential_drive: true

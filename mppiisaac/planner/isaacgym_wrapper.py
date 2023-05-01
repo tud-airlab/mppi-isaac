@@ -62,7 +62,7 @@ class ActorWrapper:
     color: List[float] = field(default_factory=lambda: [1.0, 1.0, 1.0])
     fixed: bool = False
     collision: bool = True
-    friction: float = 0.8
+    friction: float = 1.
     handle: Optional[int] = None
     flip_visual: bool = False
     urdf_file: str = None
@@ -161,6 +161,8 @@ class IsaacGymWrapper:
         self.net_cf = gymtorch.wrap_tensor(
             self.gym.acquire_net_contact_force_tensor(self.sim)
         )
+
+        self.num_bodies = int(self.net_cf.size(dim=0) / self.num_envs)
 
         # save buffer of ee states
         if self.ee_link_present:
@@ -316,17 +318,16 @@ class IsaacGymWrapper:
             props = self.gym.get_asset_dof_properties(asset)
             props["driveMode"].fill(gymapi.DOF_MODE_VEL)
             props["stiffness"].fill(0.0)
-            props["damping"].fill(1e7)
+            props["damping"].fill(600)
             self.gym.set_actor_dof_properties(env, handle, props)
-
         return handle
 
     def add_ground_plane(self):
         plane_params = gymapi.PlaneParams()
         plane_params.normal = gymapi.Vec3(0, 0, 1)  # z-up!
         plane_params.distance = 0
-        plane_params.static_friction = 1
-        plane_params.dynamic_friction = 1
+        plane_params.static_friction = 1.0
+        plane_params.dynamic_friction = 1.0
         plane_params.restitution = 0
         self.gym.add_ground(self.sim, plane_params)
 
@@ -435,6 +436,7 @@ class IsaacGymWrapper:
         self.gym.refresh_actor_root_state_tensor(self.sim)
         self.gym.refresh_dof_state_tensor(self.sim)
         self.gym.refresh_rigid_body_state_tensor(self.sim)
+        self.gym.refresh_net_contact_force_tensor(self.sim)
 
         if self.viewer is not None:
             self.gym.step_graphics(self.sim)

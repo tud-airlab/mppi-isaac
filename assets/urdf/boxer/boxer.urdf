@@ -204,7 +204,7 @@ to be that way. -->
     </visual>
   </link>
   <joint name="ee_joint" type="fixed">
-    <origin rpy="0 0 0" xyz="0 -0.4 0"/>
+    <origin rpy="0 0 0" xyz="0 -0.3 0.1"/>
     <parent link="base_link"/>
     <child link="ee_link"/>
   </joint>
