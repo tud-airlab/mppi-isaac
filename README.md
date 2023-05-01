@@ -9,9 +9,11 @@ You can extend the repository with your robots and tasks since it is designed to
 
 # Installation
 
+*NOTE: To use the GPU pipeline (default) you need an NVIDIA graphics card. If you do not have one, you can use the CPU pipeline, with less samples.*
+
 This project requires the source code of IsaacGym inside the folder
 `thirdparties`. Download it from https://developer.nvidia.com/isaac-gym, extract it, and place
-it in `mppi-isaac/thirdparty`. Then you can proceed with the installation descibed below.
+it in `mppi-isaac/thirdparty`. Then you can proceed with the installation descibed below. 
 
 ## Virtual environment (advised)
 You can install the necesary dependancies using [poetry](https://python-poetry.org/docs/) virtual environment. After installing poetry, move in `mppi-isaac` and run
@@ -24,17 +26,17 @@ Access the virtual environment using
 ```bash
 poetry shell
 ```
-## System-level installation
-Alternatively, you can also install at the system level using pip, eben though we advise using the virtual environment:
-```bash
-pip install .
-```
 
-## Test the installation
+### **Test the installation**
 Test that everything is properly set-up, use pytest
 ```bash
 cd examples
 poetry run pytest
+```
+## System-level installation
+Alternatively, you can also install at the system level using pip, eben though we advise using the virtual environment:
+```bash
+pip install .
 ```
 
 ## Troubleshooting

@@ -12,8 +12,8 @@ class Objective(object):
         
         # Tuning of the weights for baseline 2
         self.w_robot_to_block_pos=  .1
-        self.w_block_to_goal_pos=   1
-        self.w_block_to_goal_ort=   2
+        self.w_block_to_goal_pos=   2
+        self.w_block_to_goal_ort=   3
         self.w_push_align=          0.6
         self.w_collision=           100
        
