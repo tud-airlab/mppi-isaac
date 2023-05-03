@@ -62,7 +62,23 @@ def run_panda_robot(cfg: ExampleConfig):
     # Manually add table + block and restart isaacgym
     obj_index = 3
     baseline = 2
-    baseline_pose = 'left'
+    baseline2_pose = 'right'
+    baseline1_pose = 0
+
+    # Define goal to pop
+    if baseline == 2:
+        if baseline2_pose == 'left':
+            goal_pose = [0.7, 0.2, 0.5,  0, 0, 0.258819, 0.9659258 ]
+        if baseline2_pose == 'center':
+            goal_pose = [0.65, 0, 0.5, 0, 0, 0, 1]
+        if baseline2_pose == 'right':
+            goal_pose = [0.7, -0.2, 0.5,  0, 0, -0.258819, 0.9659258 ]
+    else:
+        if baseline1_pose == 0:
+            goal_pose = [0.5, 0.3, 0.5, 0.0, 0.0, 0.0, 1.0]
+        else:
+            goal_pose = [0.4, 0.3, 0.5, 0, 0, -0.7071068, 0.7071068]
+
 
                 #  l      w     h     mu      m     x    y
     obj_set =  [[0.100, 0.100, 0.05, 0.300, 0.100, 0.37, 0.],     # Baseline 1, pose 1
@@ -80,18 +96,6 @@ def run_panda_robot(cfg: ExampleConfig):
     additions = [
         {
             "type": "box",
-            "name": "table",
-            "size": table_dim,
-            "init_pos": table_pos,
-            "fixed": True,
-            "handle": None,
-            "color": [0.2, 0.2, 1.0],
-            "noise_sigma_size": [0.005, 0.005, 0.0],
-            "friction": 0.2,
-            "noise_percentage_friction": 0.3,
-        },
-        {
-            "type": "box",
             "name": "obj_to_push",
             "size": [obj_[0], obj_[1], obj_[2]],
             "init_pos": [obj_[5], obj_[6], table_dim[-1] + obj_[2] / 2],
@@ -103,6 +107,30 @@ def run_panda_robot(cfg: ExampleConfig):
             "noise_sigma_size": [0.005, 0.005, 0.0],
             "noise_percentage_friction": 0.3,
             "noise_percentage_mass": 0.3,
+        },
+        {
+            "type": "box",
+            "name": "table",
+            "size": table_dim,
+            "init_pos": table_pos,
+            "fixed": True,
+            "handle": None,
+            "color": [0.2, 0.2, 1.0],
+            "noise_sigma_size": [0.005, 0.005, 0.0],
+            "friction": 0.2,
+            "noise_percentage_friction": 0.3,
+        },
+        # Add goal, 
+        {
+            "type": "box",
+            "name": "goal",
+            "size": [obj_[0], obj_[1], 0.005],
+            "init_pos": [goal_pose[0], goal_pose[1], table_dim[-1]],
+            "init_ori": [goal_pose[3], goal_pose[4], goal_pose[5], goal_pose[6]],
+            "fixed": True,
+            "color": [119 / 255, 221 / 255, 119 / 255],
+            "handle": None,
+            "collision": False,
         }
     ]
 
@@ -134,7 +162,7 @@ def run_panda_robot(cfg: ExampleConfig):
     data_time = []
     data_err = []
     trial = 0 
-    timeout = 10
+    timeout = 30
     rt_factor_seq = []
     data_rt = []
 
