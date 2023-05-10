@@ -60,8 +60,8 @@ def run_panda_robot(cfg: ExampleConfig):
     )
 
     # Manually add table + block and restart isaacgym
-    obj_index = 5
-    baseline = 2
+    obj_index = 0
+    baseline = 1
     baseline2_pose = 'right'
     baseline1_pose = 0
 
@@ -81,8 +81,8 @@ def run_panda_robot(cfg: ExampleConfig):
 
 
                 #  l      w     h     mu      m     x    y
-    obj_set =  [[0.100, 0.100, 0.05, 0.600, 0.050, 0.38, 0.],     # Baseline 1, pose 1
-                [0.105, 0.063, 0.063, 0.60, 0.050, 0.40, 0.],     # Hageslag
+    obj_set =  [[0.100, 0.100, 0.05, 0.200, 0.250, 0.4, 0.],     # Baseline 1, pose 1
+                [0.105, 0.063, 0.063, 0.20, 0.250, 0.40, 0.],     # Hageslag
                 [0.116, 0.116, 0.06, 0.637, 0.016, 0.38, 0.],     # Baseline 2, A
                 [0.168, 0.237, 0.05, 0.232, 0.615, 0.40, 0.],     # Baseline 2, B
                 [0.198, 0.198, 0.06, 0.198, 0.565, 0.40, 0.],     # Baseline 2, C
