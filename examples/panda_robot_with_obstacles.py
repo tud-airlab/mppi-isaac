@@ -98,7 +98,7 @@ def initalize_environment(cfg):
     # sense both
     sensor = FullSensor(
         goal_mask=["position"],
-        obstacle_mask=["position", "velocity", "type", "size"],
+        obstacle_mask=["position", "velocity", "size"],
         variance=0.0,
     )
     env.add_sensor(sensor, [0])

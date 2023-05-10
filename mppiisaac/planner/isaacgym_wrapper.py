@@ -488,7 +488,7 @@ class IsaacGymWrapper:
         for i, obst in enumerate(list(obstacles.values())):
             pos = obst['position']
             vel = obst['velocity']
-            o_type = obst['type']
+            o_type = 'sphere'
             o_size = obst['size']
             name = f"{o_type}{i}"
             try:

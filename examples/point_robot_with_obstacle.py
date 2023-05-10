@@ -81,17 +81,18 @@ def initalize_environment(cfg) -> UrdfEnv:
     sphereObst = SphereObstacle(name="simpleSphere", content_dict=obst1Dict)
     env.add_obstacle(sphereObst)
 
-    obst2Dict = {
-        "type": "box",
-        "geometry": {
-            "position": [1.0, 2.0, 0.0],
-            "width": 0.3,
-            "height": 0.2,
-            "length": 1.0,
-        },
-    }
-    boxObst = BoxObstacle(name="simpleBox", content_dict=obst2Dict)
-    env.add_obstacle(boxObst)
+    # TODO: Allow for non-sphere obstacles. Wait for update of urdfenvs.
+    # obst2Dict = {
+        # "type": "box",
+        # "geometry": {
+            # "position": [1.0, 2.0, 0.0],
+            # "width": 0.3,
+            # "height": 0.2,
+            # "length": 1.0,
+        # },
+    # }
+    # boxObst = BoxObstacle(name="simpleBox", content_dict=obst2Dict)
+    # env.add_obstacle(boxObst)
     goal_dict = {
         "weight": 1.0,
         "is_primary_goal": True,
@@ -108,7 +109,7 @@ def initalize_environment(cfg) -> UrdfEnv:
     # sense both
     sensor = FullSensor(
         goal_mask=["position"],
-        obstacle_mask=["position", "velocity", "type", "size"],
+        obstacle_mask=["position", "velocity", "size"],
         variance=0.0,
     )
     env.add_sensor(sensor, [0])
