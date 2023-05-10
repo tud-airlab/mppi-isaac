@@ -3,7 +3,7 @@ dt: 0.01
 urdf_file_name: "panda.urdf"
 base_type: "holonomic"
 root_link : "panda_link0"
-control_mode: 'acc'
+control_mode: 'vel'
 ee_links:
   - "panda_link7"
 robot_type: panda
@@ -23,13 +23,13 @@ goal:
       - -0.4
       - 0.3
     low:
-      - -0.4
+      - 0.1
       - -0.4
       - 0.1
     high: 
       - 0.7
       - 0.0
-      - 1.1
+      - 0.9
     type: staticSubGoal
     epsilon: 0.05
 initState:
@@ -91,18 +91,18 @@ obstacles:
     type: sphere
     high:
       position:
+        - 0.7
+        - 0.7
         - 1.0
-        - 1.0
-        - 1.0
-      radius:
-        0.3
-    low:
-      position:
-        - 0.0
-        - -1.0
-        - 0.0
       radius:
         0.1
+    low:
+      position:
+        - 0.15
+        - -0.7
+        - 0.0
+      radius:
+        0.05
 randomObstacles:
   number: 5
 
