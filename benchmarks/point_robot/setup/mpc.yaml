@@ -1,0 +1,14 @@
+time_horizon: 10
+time_step: 0.5
+interval: 10
+n: 3
+number_obstacles: 5
+name: forcesprompc
+model_name: po1nt_robot
+slack: False
+weights:
+  ws: 1e10
+  wu: 1.0
+  wvel: 1.0
+  wx: 1.5
+  wobst: 0.2

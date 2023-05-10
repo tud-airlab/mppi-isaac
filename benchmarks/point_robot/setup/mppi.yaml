@@ -1,0 +1,60 @@
+name: mppi
+config:
+  render: true
+  n_steps: 1000
+  mppi:
+    num_samples: 100
+    horizon: 12
+    mppi_mode: halton-spline
+    sampling_method: halton
+    noise_sigma:
+    - - 1.0
+      - 0.0
+      - 0.0
+    - - 0.0
+      - 1.0
+      - 0.0
+    - - 0.0
+      - 0.0
+      - 1.0
+    noise_mu: null
+    device: cuda:0
+    lambda_: 0.1
+    update_lambda: false
+    update_cov: false
+    u_min:
+    - -2
+    u_max:
+    - 2
+    u_init: 0.0
+    U_init: null
+    u_scale: 1.0
+    u_per_command: 1
+    rollout_var_discount: 0.99
+    sample_null_action: true
+    noise_abs_cost: false
+    filter_u: true
+    use_priors: true
+  isaacgym:
+    dt: 0.05
+    substeps: 1
+    use_gpu_pipeline: true
+    num_client_threads: 0
+    viewer: false
+    num_obstacles: 10
+    spacing: 6.0
+  goal:
+  - 2.0
+  - 2.0
+  nx: 6
+  urdf_file: point_robot.urdf
+  fix_base: true
+  flip_visual: false
+  disable_gravity: false
+  differential_drive: false
+  wheel_base: 0.0
+  wheel_radius: 0.0
+  wheel_count: 0
+  ee_link: null
+  actors:
+    - 'point_robot'

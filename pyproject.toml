@@ -20,6 +20,8 @@ mpscenes = "^0.3.1"
 fabrics = "^0.6.2"
 yourdfpy = "^0.0.52"
 pytorch3d = "^0.3.0"
+urdfenvs = "^0.7.1"
+casadi = "3.5.5"
 
 [tool.poetry.group.dev]
 optional = true
@@ -27,7 +29,12 @@ optional = true
 [tool.poetry.group.dev.dependencies]
 pylint = "^2.16.1"
 black = "^23.1.0"
-urdfenvs = "^0.6.0"
+
+[tool.poetry.group.benchmark]
+optional = true
+
+[tool.poetry.group.benchmark.dependencies]
+plannerbenchmark = {version = "^1.1.1", extras = ["mpc"]}
 
 [build-system]
 requires = ["poetry-core"]
