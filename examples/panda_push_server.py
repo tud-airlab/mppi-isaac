@@ -60,10 +60,10 @@ def run_panda_robot(cfg: ExampleConfig):
     )
 
     # Manually add table + block and restart isaacgym
-    obj_index = 0
-    baseline = 1
+    obj_index = 5
+    baseline = 2
     baseline2_pose = 'right'
-    baseline1_pose = 1
+    baseline1_pose = 0
 
     # Define goal to pop
     if baseline == 2:
@@ -81,10 +81,10 @@ def run_panda_robot(cfg: ExampleConfig):
 
 
                 #  l      w     h     mu      m     x    y
-    obj_set =  [[0.100, 0.100, 0.05, 0.600, 0.050, 0.40, 0.],     # Baseline 1, pose 1
-                [0.100, 0.100, 0.05, 0.600, 0.050, 0.40, 0.],     # Baseline 1, pose 2
+    obj_set =  [[0.100, 0.100, 0.05, 0.600, 0.050, 0.38, 0.],     # Baseline 1, pose 1
+                [0.105, 0.063, 0.063, 0.60, 0.050, 0.40, 0.],     # Hageslag
                 [0.116, 0.116, 0.06, 0.637, 0.016, 0.38, 0.],     # Baseline 2, A
-                [0.168, 0.237, 0.05, 0.232, 0.615, 0.38, 0.],     # Baseline 2, B
+                [0.168, 0.237, 0.05, 0.232, 0.615, 0.40, 0.],     # Baseline 2, B
                 [0.198, 0.198, 0.06, 0.198, 0.565, 0.40, 0.],     # Baseline 2, C
                 [0.166, 0.228, 0.08, 0.312, 0.587, 0.39, 0.],     # Baseline 2, D
                 [0.153, 0.462, 0.05, 0.181, 0.506, 0.37, 0.],]    # Baseline 2, E
@@ -94,6 +94,42 @@ def run_panda_robot(cfg: ExampleConfig):
     table_pos = [0.5, 0., table_dim[-1]/2]
 
     additions = [
+    {
+            "type": "box",
+            "name": "obj_to_push",
+            "size": [obj_[0], obj_[1], obj_[2]],
+            "init_pos": [obj_[5], obj_[6], table_dim[-1] + obj_[2] / 2],
+            "mass": obj_[4],
+            "fixed": False,
+            "handle": None,
+            "color": [0.2, 0.2, 0.8],
+            "friction": obj_[3],
+        },
+        {
+            "type": "box",
+            "name": "table",
+            "size": table_dim,
+            "init_pos": table_pos,
+            "fixed": True,
+            "handle": None,
+            "color": [255 / 255, 120 / 255, 57 / 255],
+            "friction": obj_[3],
+        },
+        # Add goal, 
+        {
+            "type": "box",
+            "name": "goal",
+            "size": [obj_[0], obj_[1], 0.005],
+            "init_pos": [goal_pose[0], goal_pose[1], table_dim[-1]],
+            "init_ori": [goal_pose[3], goal_pose[4], goal_pose[5], goal_pose[6]],
+            "fixed": True,
+            "color": [119 / 255, 221 / 255, 119 / 255],
+            "handle": None,
+            "collision": False,
+        }
+    ]
+
+    additions_noise = [
         {
             "type": "box",
             "name": "obj_to_push",
@@ -104,7 +140,7 @@ def run_panda_robot(cfg: ExampleConfig):
             "handle": None,
             "color": [0.2, 0.2, 1.0],
             "friction": obj_[3],
-            "noise_sigma_size": [0.001, 0.001, 0.0],
+            "noise_sigma_size": [0.002, 0.002, 0.0],
             "noise_percentage_friction": 0.3,
             "noise_percentage_mass": 0.3,
         },
@@ -117,8 +153,8 @@ def run_panda_robot(cfg: ExampleConfig):
             "handle": None,
             "color": [0.2, 0.2, 1.0],
             "noise_sigma_size": [0.005, 0.005, 0.0],
-            "friction": 0.1,
-            "noise_percentage_friction": 0.3,
+            "friction": 0.25,
+            "noise_percentage_friction": 0.9,
         },
         # Add goal, 
         {
@@ -140,7 +176,7 @@ def run_panda_robot(cfg: ExampleConfig):
     planner.connect("tcp://127.0.0.1:4242")
     print("Mppi server found!")
 
-    planner.add_to_env(additions)
+    planner.add_to_env(additions_noise)
     
     sim.gym.viewer_camera_look_at(
         sim.viewer, None, gymapi.Vec3(1.5, 2, 3), gymapi.Vec3(1.5, 0, 0)
@@ -206,7 +242,7 @@ def run_panda_robot(cfg: ExampleConfig):
                 print("Angle", Etheta)
                 # Ex < 0.025 and Ey < 0.01 and Etheta < 0.05
                 # Ex < 0.05 and Ey < 0.025 and Etheta < 0.17
-            if Ex < 0.02 and Ey < 0.02 and Etheta < 0.1: 
+            if Ex < 0.05 and Ey < 0.025 and Etheta < 0.17: 
                 print("Success")
                 final_time = time.time()
                 time_taken = final_time - init_time

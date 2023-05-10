@@ -18,22 +18,30 @@ class Objective(object):
     def __init__(self, cfg, device):
         
         # Tuning of the weights for baseline 1 nd eal experiments
-        self.w_robot_to_block_pos= 1#2
-        self.w_block_to_goal_pos=  6#6.0 
-        self.w_block_to_goal_ort=  2#2.0
-        self.w_ee_hover=           8#5
-        self.w_ee_align=           0.5#0.5
-        self.w_push_align=         0.3#0.4
-        self.w_collision=          0.0
-        
-        # Tuning of the weights for baseline 2
-        # self.w_robot_to_block_pos= 3#1
-        # self.w_block_to_goal_pos=  20#5
-        # self.w_block_to_goal_ort=  20#5
-        # self.w_ee_hover=           55#15
+        # self.w_robot_to_block_pos= 1#2
+        # self.w_block_to_goal_pos=  6#6.0 
+        # self.w_block_to_goal_ort=  2#2.0
+        # self.w_ee_hover=           8#5
         # self.w_ee_align=           0.5#0.5
-        # self.w_push_align=         15#0.5
-        # self.w_collision=          0.001
+        # self.w_push_align=         0.3#0.4
+        # self.w_collision=          0.0
+
+        # self.w_robot_to_block_pos= 5#2
+        # self.w_block_to_goal_pos=  25#12.0 
+        # self.w_block_to_goal_ort=  21#10.0
+        # self.w_ee_hover=           30#5
+        # self.w_ee_align=           .3#0.2
+        # self.w_push_align=         45#4.2
+        # self.w_collision=          0.0
+
+        self.w_robot_to_block_pos= 5#2
+        self.w_block_to_goal_pos=  25#12.0 
+        self.w_block_to_goal_ort=  21#10.0
+        self.w_ee_hover=           30#5
+        self.w_ee_align=           .3#0.2
+        self.w_push_align=         45#4.2
+        self.w_collision=          0.0
+
     
         # Task configration for comparison with baselines
         self.ee_index = 9
@@ -49,7 +57,7 @@ class Objective(object):
         self.block_goal_pose_ur5_r= torch.tensor([0.7, -0.2, 0.5,  0, 0, -0.258819, 0.9659258 ], device=cfg.mppi.device) # Rotation -30 deg
 
         # Select goal according to test
-        self.block_goal_pose = torch.clone(self.block_goal_pose_emdn_1)
+        self.block_goal_pose = torch.clone(self.block_goal_pose_ur5_r)
         self.block_ort_goal = torch.clone(self.block_goal_pose[3:7])
         self.goal_yaw = torch.atan2(2.0 * (self.block_ort_goal[-1] * self.block_ort_goal[2] + self.block_ort_goal[0] * self.block_ort_goal[1]), self.block_ort_goal[-1] * self.block_ort_goal[-1] + self.block_ort_goal[0] * self.block_ort_goal[0] - self.block_ort_goal[1] * self.block_ort_goal[1] - self.block_ort_goal[2] * self.block_ort_goal[2])
 
@@ -87,7 +95,7 @@ class Objective(object):
 
 
         # Distance costs
-        robot_to_block_dist = torch.linalg.norm(robot_to_block, axis = 1)
+        robot_to_block_dist = torch.linalg.norm(robot_to_block[:, 0:2], axis = 1)
         block_to_goal_pos = torch.linalg.norm(block_to_goal, axis = 1)
         block_to_goal_ort = torch.abs(block_yaws - self.goal_yaw)
 
@@ -104,7 +112,7 @@ class Objective(object):
         coll = xyz_contatcs[:,self.obst_index]
 
         total_cost = (
-            self.w_robot_to_block_pos * robot_to_block_dist
+            self.w_robot_to_block_pos * robot_to_block_dist 
             + self.w_block_to_goal_pos * block_to_goal_pos
             + self.w_block_to_goal_ort * block_to_goal_ort
             + self.w_ee_hover * ee_hover_dist
