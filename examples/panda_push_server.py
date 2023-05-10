@@ -63,7 +63,7 @@ def run_panda_robot(cfg: ExampleConfig):
     obj_index = 0
     baseline = 1
     baseline2_pose = 'right'
-    baseline1_pose = 0
+    baseline1_pose = 1
 
     # Define goal to pop
     if baseline == 2:
@@ -81,9 +81,9 @@ def run_panda_robot(cfg: ExampleConfig):
 
 
                 #  l      w     h     mu      m     x    y
-    obj_set =  [[0.100, 0.100, 0.05, 0.600, 0.100, 0.40, 0.],     # Baseline 1, pose 1
-                [0.100, 0.100, 0.05, 0.600, 0.100, 0.40, 0.],     # Baseline 1, pose 2
-                [0.116, 0.116, 0.06, 0.637, 0.016, 0.35, 0.],     # Baseline 2, A
+    obj_set =  [[0.100, 0.100, 0.05, 0.600, 0.050, 0.40, 0.],     # Baseline 1, pose 1
+                [0.100, 0.100, 0.05, 0.600, 0.050, 0.40, 0.],     # Baseline 1, pose 2
+                [0.116, 0.116, 0.06, 0.637, 0.016, 0.38, 0.],     # Baseline 2, A
                 [0.168, 0.237, 0.05, 0.232, 0.615, 0.38, 0.],     # Baseline 2, B
                 [0.198, 0.198, 0.06, 0.198, 0.565, 0.40, 0.],     # Baseline 2, C
                 [0.166, 0.228, 0.08, 0.312, 0.587, 0.39, 0.],     # Baseline 2, D
@@ -105,8 +105,8 @@ def run_panda_robot(cfg: ExampleConfig):
             "color": [0.2, 0.2, 1.0],
             "friction": obj_[3],
             "noise_sigma_size": [0.001, 0.001, 0.0],
-            "noise_percentage_friction": 0.5,
-            "noise_percentage_mass": 0.5,
+            "noise_percentage_friction": 0.3,
+            "noise_percentage_mass": 0.3,
         },
         {
             "type": "box",

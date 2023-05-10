@@ -49,7 +49,7 @@ class Objective(object):
         self.block_goal_pose_ur5_r= torch.tensor([0.7, -0.2, 0.5,  0, 0, -0.258819, 0.9659258 ], device=cfg.mppi.device) # Rotation -30 deg
 
         # Select goal according to test
-        self.block_goal_pose = torch.clone(self.block_goal_pose_emdn_0)
+        self.block_goal_pose = torch.clone(self.block_goal_pose_emdn_1)
         self.block_ort_goal = torch.clone(self.block_goal_pose[3:7])
         self.goal_yaw = torch.atan2(2.0 * (self.block_ort_goal[-1] * self.block_ort_goal[2] + self.block_ort_goal[0] * self.block_ort_goal[1]), self.block_ort_goal[-1] * self.block_ort_goal[-1] + self.block_ort_goal[0] * self.block_ort_goal[0] - self.block_ort_goal[1] * self.block_ort_goal[1] - self.block_ort_goal[2] * self.block_ort_goal[2])
 
