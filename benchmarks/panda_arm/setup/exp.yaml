@@ -31,7 +31,7 @@ goal:
       - 0.0
       - 0.9
     type: staticSubGoal
-    epsilon: 0.05
+    epsilon: 0.10
 initState:
   q0: 
     - 1.0
@@ -66,7 +66,7 @@ limits:
     - 2.8973
     - 3.7525
     - 2.8973
-r_body: 0.15
+r_body: 0.12
 selfCollision:
   pairs:
     - ["panda_link0", "panda_link6"]

@@ -4,8 +4,8 @@ robot_type: simPanda
 n: 7
 m_base: 0.5
 obst:
-  exp: 1.0
-  lam: 5.0
+  exp: 2.0
+  lam: 2.0
 selfCol:
   exp: 3.0
   lam: 2.0
@@ -17,7 +17,7 @@ limits:
 speed:
   ex_factor: 1.0
 damper:
-  r_d: 0.25
+  r_d: 0.15
   b:
     - 0.01
     - 5.0
