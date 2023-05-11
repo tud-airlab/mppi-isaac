@@ -60,10 +60,10 @@ def run_panda_robot(cfg: ExampleConfig):
     )
 
     # Manually add table + block and restart isaacgym
-    obj_index = 0
-    baseline = 1
-    baseline2_pose = 'right'
-    baseline1_pose = 0
+    obj_index = 2
+    baseline = 2
+    baseline2_pose = 'left'
+    baseline1_pose = 1
 
     # Define goal to pop
     if baseline == 2:
@@ -82,7 +82,7 @@ def run_panda_robot(cfg: ExampleConfig):
 
                 #  l      w     h     mu      m     x    y
     obj_set =  [[0.100, 0.100, 0.05, 0.200, 0.250, 0.4, 0.],     # Baseline 1, pose 1
-                [0.105, 0.063, 0.063, 0.20, 0.250, 0.40, 0.],     # Hageslag
+                [0.105, 0.063, 0.063, 0.20, 0.250, 0.42, 0.],     # Hageslag
                 [0.116, 0.116, 0.06, 0.637, 0.016, 0.38, 0.],     # Baseline 2, A
                 [0.168, 0.237, 0.05, 0.232, 0.615, 0.40, 0.],     # Baseline 2, B
                 [0.198, 0.198, 0.06, 0.198, 0.565, 0.40, 0.],     # Baseline 2, C
@@ -242,6 +242,7 @@ def run_panda_robot(cfg: ExampleConfig):
                 print("Angle", Etheta)
                 # Ex < 0.025 and Ey < 0.01 and Etheta < 0.05
                 # Ex < 0.05 and Ey < 0.025 and Etheta < 0.17
+                # Ex < 0.02 and Ey < 0.02 and Etheta < 0.1  -- Success for baseline 1
             if Ex < 0.05 and Ey < 0.025 and Etheta < 0.17: 
                 print("Success")
                 final_time = time.time()
@@ -280,14 +281,35 @@ def run_panda_robot(cfg: ExampleConfig):
         # goal = np.array([0.5, 0])
         # print(f"L2: {np.linalg.norm(pos - goal)} FPS: {1/(time.time() - t)} RT-factor: {cfg.isaacgym.dt/(time.time() - t)}")
 
+    # To array
+    data_time = np.array(data_time)
+    data_rt = np.array(data_rt)
+    actual_time = data_time*data_rt
+    data_err = np.array(data_err)
+
     if len(data_time) > 0: 
         print("Num. trials", n_trials)
         print("Success rate", len(data_time)/n_trials*100)
-        print("Avg. Time", np.mean(np.array(data_time)*np.array(data_rt)))    
-        print("Std. Time", np.std(np.array(data_time)*np.array(data_rt)))
+        print("Avg. Time", np.mean(actual_time))    
+        print("Std. Time", np.std(actual_time))
+        if baseline == 1:
+            print("Avg. error", np.mean(data_err))
+            print("Std. error", np.std(data_err))
     else:
         print("Seccess rate is 0")
     
+    # Print for data collection
+    # original_stdout = sys.stdout # Save a reference to the original standard output
+    # obj_letters = ["A", "B", "C", "D", "E"]
+    # with open('data_push_baselines.txt', 'a') as f:
+    #     sys.stdout = f # Change the standard output to the file we created.
+    #     print('Benchmark object {} in baseline {} for pose "{}"'.format(obj_letters[obj_index-2], baseline, baseline2_pose))
+    #     print("Num. trials", n_trials)
+    #     print("Num. success", len(data_err))
+    #     print('Time taken:', repr(actual_time))
+    #     print('\n')
+    #     sys.stdout = original_stdout # Reset the standard output to its original value
+
     return {}
 
 
