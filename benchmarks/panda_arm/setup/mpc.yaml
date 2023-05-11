@@ -1,0 +1,13 @@
+time_horizon: 30
+time_step: 0.1
+interval: 10
+n: 7
+number_obstacles: 5
+slack: true
+name: forcesprompc
+model_name: panda
+weights:
+  ws: 1e10
+  wu: 1.0
+  wvel: 1.0
+  wx: 10.0

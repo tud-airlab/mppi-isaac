@@ -1,0 +1,25 @@
+interval: 1
+name: fabric
+robot_type: simPanda
+n: 7
+m_base: 1.0
+obst:
+  exp: 1.0
+  lam: 1.0
+selfCol:
+  exp: 3.0
+  lam: 2.0
+attractor:
+  k_psi: 2.0
+limits:
+  exp: 1.0
+  lam: 1.0
+speed:
+  ex_factor: 1.0
+damper:
+  r_d: 0.05
+  b:
+    - 0.01
+    - 3.5
+dynamic: False
+

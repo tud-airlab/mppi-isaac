@@ -1,0 +1,86 @@
+T: 800
+dynamic: False
+dt: 0.05
+root_link : "world"
+base_type: "holonomic"
+urdf_file_name : "point_robot.urdf"
+ee_links: 
+  - 'base_link'
+control_mode: 'vel'
+n: 3
+goal:
+  subgoal0:
+    is_primary_goal: True
+    weight: 1
+    indices:
+      - 0
+      - 1
+    parent_link: "world_link"
+    child_link: "base_link"
+    desired_position:
+      - 4.5
+      - 0.2
+    low:
+      - -5.0
+      - -5.0
+    high: 
+      - 5.0
+      - 5.0
+    type: staticSubGoal
+    epsilon: 0.1
+initState:
+  q0:
+    - 0.1
+    - 0.0
+    - 0.0
+  q0dot:
+    - 0.0
+    - 0.0
+    - 0.0
+limits:
+  low:
+    - -5.0
+    - -5.0
+    - -5.0
+  high:
+    - 5.0
+    - 5.0
+    - 5.0
+r_body: 0.2
+randomObstacles:
+  number: 3
+obstacles:
+  obst0:
+    type: sphere
+    geometry:
+      position: 
+        - 2.0
+        - 0.4
+        - 0.0
+      radius: 0.7
+    low:
+      position:
+        - 1.0
+        - -1.0
+        - 0.0
+      radius: 0.1
+    high:
+      position:
+        - 3.0
+        - 1.0
+        - 0.0
+      radius: 0.5
+  obst1:
+    type: sphere
+    geometry:
+      position: 
+        - 20.4
+        - 0.4
+        - 0.0
+      radius: 1.0
+selfCollision:
+  pairs:
+collision_links:
+  - 'base_link'
+    
+

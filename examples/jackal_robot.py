@@ -137,6 +137,7 @@ def run_jackal_robot(cfg: ExampleConfig):
             ob,
             *_,
         ) = env.step(action)
+        print(action)
     return {}
 
 

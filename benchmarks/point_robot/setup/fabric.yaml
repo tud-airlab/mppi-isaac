@@ -1,0 +1,24 @@
+interval: 1
+name: fabric
+n: 3
+m_base: 0.2
+obst:
+  exp: 1.0
+  lam: 1.0
+selfCol:
+  exp: 1.0
+  lam: 2.0
+attractor:
+  k_psi: 1.0
+speed:
+  ex_factor: 5.0
+limits:
+  lam: 10.0
+  exp: 3.0
+damper:
+  r_d: 0.80
+  b: 
+   - 0.1
+   - 6.5
+dynamic: False
+

@@ -68,7 +68,7 @@ def initalize_environment(cfg) -> UrdfEnv:
     robots = [
         GenericUrdfReacher(urdf=urdf_file, mode="vel"),
     ]
-    env: UrdfEnv = gym.make("urdf-env-v0", dt=0.05, robots=robots, render=cfg.render)
+    env: UrdfEnv = gym.make("urdf-env-v0", dt=0.05, robots=robots, render=cfg.render, observation_checking=False)
 
     # Set the initial position and velocity of the point mass.
     env.reset()
@@ -81,17 +81,18 @@ def initalize_environment(cfg) -> UrdfEnv:
     sphereObst = SphereObstacle(name="simpleSphere", content_dict=obst1Dict)
     env.add_obstacle(sphereObst)
 
-    obst2Dict = {
-        "type": "box",
-        "geometry": {
-            "position": [1.0, 2.0, 0.0],
-            "width": 0.3,
-            "height": 0.2,
-            "length": 1.0,
-        },
-    }
-    boxObst = BoxObstacle(name="simpleBox", content_dict=obst2Dict)
-    env.add_obstacle(boxObst)
+    # TODO: Allow for non-sphere obstacles. Wait for update of urdfenvs.
+    # obst2Dict = {
+        # "type": "box",
+        # "geometry": {
+            # "position": [1.0, 2.0, 0.0],
+            # "width": 0.3,
+            # "height": 0.2,
+            # "length": 1.0,
+        # },
+    # }
+    # boxObst = BoxObstacle(name="simpleBox", content_dict=obst2Dict)
+    # env.add_obstacle(boxObst)
     goal_dict = {
         "weight": 1.0,
         "is_primary_goal": True,
@@ -107,9 +108,12 @@ def initalize_environment(cfg) -> UrdfEnv:
 
     # sense both
     sensor = FullSensor(
-        goal_mask=["position"], obstacle_mask=["position", "velocity", "type", "size"]
+        goal_mask=["position"],
+        obstacle_mask=["position", "velocity", "size"],
+        variance=0.0,
     )
     env.add_sensor(sensor, [0])
+    env.set_spaces()
 
     return env
 
@@ -150,6 +154,7 @@ def run_point_robot(cfg: ExampleConfig):
     """
     # Note: Workaround to trigger the dataclasses __post_init__ method
     cfg = OmegaConf.to_object(cfg)
+    OmegaConf.save(config=cfg, f='test.yaml')
 
     env = initalize_environment(cfg)
     planner = set_planner(cfg)

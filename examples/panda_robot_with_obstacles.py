@@ -63,7 +63,7 @@ def initalize_environment(cfg):
     robots = [
         GenericUrdfReacher(urdf=urdf_file, mode="vel"),
     ]
-    env: UrdfEnv = gym.make("urdf-env-v0", dt=0.01, robots=robots, render=cfg.render)
+    env: UrdfEnv = gym.make("urdf-env-v0", dt=0.01, robots=robots, render=cfg.render, observation_checking=False)
 
     # Set the initial position and velocity of the panda arm.
     env.reset()
@@ -97,9 +97,12 @@ def initalize_environment(cfg):
 
     # sense both
     sensor = FullSensor(
-        goal_mask=["position"], obstacle_mask=["position", "velocity", "type", "size"]
+        goal_mask=["position"],
+        obstacle_mask=["position", "velocity", "size"],
+        variance=0.0,
     )
     env.add_sensor(sensor, [0])
+    env.set_spaces()
     return env
 
 
