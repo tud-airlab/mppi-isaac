@@ -63,6 +63,9 @@ class MPPIisaacPlanner(object):
 
         # Note: place_holder variable to pass to mppi so it doesn't complain, while the real state is actually the isaacgym simulator itself.
         self.state_place_holder = torch.zeros((self.cfg.mppi.num_samples, self.cfg.nx))
+    
+    def update_objective(self, objective):
+        self.objective = objective
 
     def dynamics(self, _, u, t=None):
         # Note: normally mppi passes the state as the first parameter in a dynamics call, but using isaacgym the state is already saved in the simulator itself, so we ignore it.
