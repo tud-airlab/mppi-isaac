@@ -21,7 +21,7 @@ noise_sigma: [[0.5, 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0.],
               [0., 0., 0., 0., 0., 0., 0., 0., 0., 0.8, 0., 0.],
               [0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0.1, 0.],
               [0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0.1],]
-rollout_var_discount: 0.8
+rollout_var_discount: 0.95
 update_cov: False
 sample_null_action: True
 filter_u: False
