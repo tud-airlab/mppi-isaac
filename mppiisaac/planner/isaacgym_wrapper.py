@@ -143,6 +143,21 @@ class IsaacGymWrapper:
                 )
             self.envs.append(env)
 
+        # Always add dummy obst at the end
+        self.env_cfg.append(
+            ActorWrapper(
+                **{
+                    "type": "sphere",
+                    "name": "dummy",
+                    "handle": None,
+                    "size": [0.1],
+                    "fixed": True,
+                    "init_pos": [0, 0, -10],
+                    "collision": False
+                }
+            )
+        )
+
         self.ee_link_present = any([a.ee_link for a in self.env_cfg])
 
         self.gym.prepare_sim(self.sim)
@@ -171,7 +186,9 @@ class IsaacGymWrapper:
         # helpfull slices
         self.robot_indices = torch.tensor([i for i, a in enumerate(self.env_cfg) if a.type == "robot"], device="cuda:0")
 
-        self.obstacle_indices = torch.tensor([i for i, a in enumerate(self.env_cfg) if a.type in ["sphere", "box"]], device="cuda:0")
+        print(self.env_cfg)
+
+        self.obstacle_indices = torch.tensor([i for i, a in enumerate(self.env_cfg) if (a.type in ["sphere", "box"] and a.name != "dummy")], device="cuda:0")
 
         if self.ee_link_present:
             self.ee_positions = self.rigid_body_state[
