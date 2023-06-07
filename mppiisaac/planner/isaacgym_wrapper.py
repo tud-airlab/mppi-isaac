@@ -121,6 +121,22 @@ class IsaacGymWrapper:
 
         self.add_ground_plane()
 
+        # Always add dummy obst at the end
+        self.env_cfg.append(
+           ActorWrapper(
+               **{
+                   "type": "sphere",
+                   "name": "dummy",
+                   "handle": None,
+                   "size": [0.1],
+                   "fixed": True,
+                   "init_pos": [0, 0, -10],
+                   "collision": False
+               }
+           )
+        )
+
+
         # Load / create assets for all actors in the envs
         self.env_actor_assets = []
         for actor_cfg in self.env_cfg:
@@ -142,21 +158,6 @@ class IsaacGymWrapper:
                     env, env_idx, actor_asset, actor_cfg
                 )
             self.envs.append(env)
-
-        # Always add dummy obst at the end
-        self.env_cfg.append(
-            ActorWrapper(
-                **{
-                    "type": "sphere",
-                    "name": "dummy",
-                    "handle": None,
-                    "size": [0.1],
-                    "fixed": True,
-                    "init_pos": [0, 0, -10],
-                    "collision": False
-                }
-            )
-        )
 
         self.ee_link_present = any([a.ee_link for a in self.env_cfg])
 
@@ -551,10 +552,12 @@ class IsaacGymWrapper:
         )
 
     def update_root_state_tensor_by_obstacles_tensor(self, obst_tensor):
-        for i, o_tensor in enumerate(obst_tensor):
-            if self.env_cfg[i + 3].fixed:
-                continue
-            self.root_state[:, i + 3] = o_tensor.repeat(self.num_envs, 1)
+        for o_tensor in obst_tensor:
+            obst_idx = [
+                idx for idx, actor in enumerate(self.env_cfg) if (actor.type != 'robot' and not actor.fixed)
+            ][0]
+
+            self.root_state[:, obst_idx] = o_tensor.repeat(self.num_envs, 1)
 
         self.gym.set_actor_root_state_tensor(
             self.sim, gymtorch.unwrap_tensor(self.root_state)
