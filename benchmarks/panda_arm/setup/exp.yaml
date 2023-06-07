@@ -1,5 +1,5 @@
-T: 2000
-dt: 0.01
+T: 150
+dt: 0.04
 urdf_file_name: "panda.urdf"
 base_type: "holonomic"
 root_link : "panda_link0"

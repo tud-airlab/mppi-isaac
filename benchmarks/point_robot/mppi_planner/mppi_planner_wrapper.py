@@ -30,7 +30,7 @@ class Objective(object):
         xy_contatcs = torch.sum(torch.abs(torch.cat((sim.net_cf[:, 0].unsqueeze(1), sim.net_cf[:, 1].unsqueeze(1)), 1)),1)
         coll = torch.sum(xy_contatcs.reshape([sim.num_envs, int(xy_contatcs.size(dim=0)/sim.num_envs)])[:, 1:sim.num_bodies], 1) # skip the first, it is the robot
 
-        return nav_cost * self.w_nav +  obs_cost * self.w_obs + coll * self.w_coll
+        return nav_cost * self.w_nav + coll * self.w_coll # + obs_cost * self.w_obs
 
 class MPPIPlanner(Planner):
 

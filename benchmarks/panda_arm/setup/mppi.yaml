@@ -86,8 +86,8 @@ config:
   goal:
   - 2.0
   - 2.0
-  nx: 6
-  urdf_file: point_robot.urdf
+  nx: 14
+  urdf_file: panda_isaac/robot/franka_panda.urdf
   fix_base: true
   flip_visual: false
   disable_gravity: false
