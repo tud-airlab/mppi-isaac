@@ -103,7 +103,7 @@ class IsaacGymWrapper:
         if viewer:
             self.cfg.viewer = viewer
         self.num_envs = num_envs
-
+        self.restarted = 1
         self.start_sim()
 
     def start_sim(self):
@@ -122,20 +122,23 @@ class IsaacGymWrapper:
         self.add_ground_plane()
 
         # Always add dummy obst at the end
-        self.env_cfg.append(
-           ActorWrapper(
-               **{
-                   "type": "sphere",
-                   "name": "dummy",
-                   "handle": None,
-                   "size": [0.1],
-                   "fixed": True,
-                   "init_pos": [0, 0, -10],
-                   "collision": False
-               }
-           )
-        )
-
+        if self.restarted == 2:
+            self.env_cfg.append(
+            ActorWrapper(
+                **{
+                    "type": "sphere",
+                    "name": "dummy",
+                    "handle": None,
+                    "size": [0.1],
+                    "fixed": True,
+                    "init_pos": [0, 0, -10],
+                    "collision": False
+                }
+            )
+            )
+            self.restarted += 1
+        else:
+            self.restarted += 1
 
         # Load / create assets for all actors in the envs
         self.env_actor_assets = []
@@ -220,6 +223,8 @@ class IsaacGymWrapper:
     def stop_sim(self):
         if self.viewer:
             self.gym.destroy_viewer(self.viewer)
+        for env_idx in range(self.num_envs):
+            self.gym.destroy_env(self.envs[env_idx])
         self.gym.destroy_sim(self.sim)
 
     def add_to_envs(self, additions):

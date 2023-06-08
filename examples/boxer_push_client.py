@@ -69,7 +69,7 @@ class Objective(object):
         
         # Collision avoidance
         xy_contatcs = torch.sum(torch.abs(torch.cat((sim.net_cf[:, 0].unsqueeze(1), sim.net_cf[:, 1].unsqueeze(1)), 1)),1)
-        coll = torch.sum(xy_contatcs.reshape([sim.num_envs, int(xy_contatcs.size(dim=0)/sim.num_envs)])[:, (sim.num_bodies - self.obst_number):sim.num_bodies], 1)
+        coll = torch.sum(xy_contatcs.reshape([sim.num_envs, int(xy_contatcs.size(dim=0)/sim.num_envs)])[:, (sim.num_bodies - 1 - self.obst_number):sim.num_bodies], 1)
 
         total_cost = (
             self.w_robot_to_block_pos * robot_to_block_dist

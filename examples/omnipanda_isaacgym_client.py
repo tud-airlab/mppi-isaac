@@ -58,7 +58,7 @@ class Objective(object):
        
          # Collision avoidance
         contact_f = torch.sum(torch.abs(torch.cat((sim.net_cf[:, 0].unsqueeze(1), sim.net_cf[:, 1].unsqueeze(1), sim.net_cf[:, 2].unsqueeze(1)), 1)),1)
-        coll = torch.sum(contact_f.reshape([sim.num_envs, int(contact_f.size(dim=0)/sim.num_envs)])[:, (sim.num_bodies - self.obst_number):sim.num_bodies], 1)
+        coll = torch.sum(contact_f.reshape([sim.num_envs, int(contact_f.size(dim=0)/sim.num_envs)])[:, (sim.num_bodies - 1 - self.obst_number):sim.num_bodies], 1) # Consider obstacles
 
         total_cost = (
             self.w_robot_to_block_pos * robot_to_block_dist
