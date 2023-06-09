@@ -63,9 +63,9 @@ config:
     update_lambda: false
     update_cov: false
     u_min:
-    - -1.8
+    - -1.5
     u_max:
-    - 1.8
+    - 1.5
     u_init: 0.0
     U_init: null
     u_scale: 1.0

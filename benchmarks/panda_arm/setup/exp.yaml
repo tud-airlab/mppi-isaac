@@ -1,4 +1,4 @@
-T: 150
+T: 1000
 dt: 0.04
 urdf_file_name: "panda.urdf"
 base_type: "holonomic"

@@ -10,9 +10,9 @@ class Objective(object):
     def __init__(self, goal, device):
         self.nav_goal = torch.tensor(goal, device=device)
         self.ort_goal = torch.tensor([1, 0, 0, 0], device=device)
-        self.w_coll = 0.5
-        self.w_pos = 1.5
-        self.w_ort = 0.
+        self.w_coll = 10.
+        self.w_pos = 1.
+        self.w_ort = 0.0
 
     def compute_cost(self, sim):
         pos = sim.rigid_body_state[:, sim.robot_rigid_body_ee_idx, :3]

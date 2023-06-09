@@ -42,7 +42,7 @@ config:
     num_client_threads: 0
     viewer: false
     num_obstacles: 10
-    spacing: 6.0
+    spacing: 12.0
   goal:
   - 2.0
   - 2.0

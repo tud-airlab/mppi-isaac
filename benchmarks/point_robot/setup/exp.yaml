@@ -18,14 +18,14 @@ goal:
     parent_link: "world_link"
     child_link: "base_link"
     desired_position:
-      - 1.
-      - 0.
+      - 4.5
+      - 0.2
     low:
-      - 5.0
-      - -2.0
+      - -5.0
+      - -5.0
     high: 
-      - 7.0
-      - 2.0
+      - 5.0
+      - 5.0
     type: staticSubGoal
     epsilon: 0.15
 initState:
