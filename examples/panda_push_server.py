@@ -60,7 +60,7 @@ def run_panda_robot(cfg: ExampleConfig):
     )
 
     # Manually add table + block and restart isaacgym
-    obj_index = 2
+    obj_index = -1
     baseline = 2
     baseline2_pose = 'left'
     baseline1_pose = 1
@@ -87,7 +87,8 @@ def run_panda_robot(cfg: ExampleConfig):
                 [0.168, 0.237, 0.05, 0.232, 0.615, 0.40, 0.],     # Baseline 2, B
                 [0.198, 0.198, 0.06, 0.198, 0.565, 0.40, 0.],     # Baseline 2, C
                 [0.166, 0.228, 0.08, 0.312, 0.587, 0.39, 0.],     # Baseline 2, D
-                [0.153, 0.462, 0.05, 0.181, 0.506, 0.37, 0.],]    # Baseline 2, E
+                [0.153, 0.462, 0.05, 0.181, 0.506, 0.37, 0.],     # Baseline 2, E
+                [0.162, 0.086, 0.068, 0.300, 0.25, 0.38, 0.]]
     
     obj_ = obj_set[obj_index][:]
     table_dim = [0.8, 1.0, 0.108]
@@ -243,7 +244,7 @@ def run_panda_robot(cfg: ExampleConfig):
                 # Ex < 0.025 and Ey < 0.01 and Etheta < 0.05
                 # Ex < 0.05 and Ey < 0.025 and Etheta < 0.17
                 # Ex < 0.02 and Ey < 0.02 and Etheta < 0.1  -- Success for baseline 1
-            if Ex < 0.05 and Ey < 0.025 and Etheta < 0.17: 
+            if Ex < 0.02 and Ey < 0.02 and Etheta < 0.1: 
                 print("Success")
                 final_time = time.time()
                 time_taken = final_time - init_time
