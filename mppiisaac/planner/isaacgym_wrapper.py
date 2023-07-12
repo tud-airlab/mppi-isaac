@@ -453,6 +453,9 @@ class IsaacGymWrapper:
     def save_root_state(self):
         self.saved_root_state = self.root_state.clone()
 
+    def get_saved_root_state(self):
+        return self.saved_root_state
+
     def reset_root_state(self):
         if self.ee_link_present:
             self.ee_positions_buffer = []
