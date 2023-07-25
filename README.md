@@ -17,7 +17,7 @@ If you found this repository useful, please consider citing the associated paper
 *NOTE: To use the GPU pipeline (default) you need an NVIDIA graphics card. If you do not have one, you can use the CPU pipeline, with fewer samples.*
 
 This project requires the source code of IsaacGym inside the folder
-`thirdparties`. Download it from https://developer.nvidia.com/isaac-gym, extract it, and place
+`thirdparty`. Download it from https://developer.nvidia.com/isaac-gym, extract it, and place
 it in `mppi-isaac/thirdparty`. Then you can proceed with the installation described below. 
 
 ## Virtual environment (advised)
