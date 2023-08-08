@@ -1,8 +1,5 @@
 <?xml version="1.0" ?>
 <robot name="panda" xmlns:xacro="http://www.ros.org/wiki/xacro">
-  <material name="purple">
-    <color rgba="0.5 0.1 0.7 1"/>
-  </material>
   <link name="panda_link0">
     <visual>
       <geometry>
@@ -168,35 +165,228 @@
     <limit effort="12" lower="-2.8973" upper="2.8973" velocity="2.6100"/>
   </joint>
 
-  <link name="panda_ee_finger">
+  <link name="panda_link8">
+    <collision>
+      <origin xyz="0.0424 0.0424 -0.0250" rpy="3.14 1.57 1.57"/>
+      <geometry>
+        <cylinder radius="0.03"  length="0.01" />
+      </geometry>
+    </collision>
+    <collision>
+      <origin xyz="0.0424 0.0424 -0.02" rpy="0 0 0"/>
+      <geometry>
+        <sphere radius="0.03"  />
+      </geometry>
+    </collision>
+    <collision>
+      <origin xyz="0.0424 0.0424 -0.03" rpy="0 0 0"/>
+      <geometry>
+        <sphere radius="0.03"  />
+      </geometry>
+    </collision>
+  </link>
+  <!-- <joint name="panda_joint8" type="fixed">
+    <origin rpy="0 0 -0.785398163397" xyz="0 0 0.107"/>
+    <parent link="panda_link7"/>
+    <child link="panda_link8"/>
+  </joint>
+
+  <joint name="hand_joint" type="fixed">
+    <origin rpy="0 0 0" xyz="0 0 0"/>
+    <parent link="panda_link8"/>
+    <child link="panda_hand"/>
+  </joint>
+
+
+  <link name="panda_hand">
     <visual>
       <geometry>
-        <cylinder length="0.29" radius="0.01"/>
+        <mesh filename="package://panda_isaac/meshes/visual/hand.dae"/>
       </geometry>
-      <origin rpy="0 0 0" xyz="0 0 0.16"/>
-      <material name="purple"/>
+    </visual>
+    <collision>
+      <origin xyz="0 0 0.04" rpy="0 1.57 1.57"/>
+      <geometry>
+        <cylinder radius="0.04" length="0.1" />
+      </geometry>
+    </collision>
+    <collision>
+      <origin xyz="0 -0.05 0.04" rpy="0 0 0"/>
+      <geometry>
+        <sphere radius="0.04+safety_distance}"  />
+      </geometry>
+    </collision>
+    <collision>
+      <origin xyz="0 0.05 0.04" rpy="0 0 0"/>
+      <geometry>
+        <sphere radius="0.04"  />
+      </geometry>
+    </collision>
+    <collision>
+      <origin xyz="0 0 0.1" rpy="0 1.57 1.57"/>
+      <geometry>
+        <cylinder radius="0.02" length="0.1" />
+      </geometry>
+    </collision>
+    <collision>
+      <origin xyz="0 -0.05 0.1" rpy="0 0 0"/>
+      <geometry>
+        <sphere radius="0.02"  />
+      </geometry>
+    </collision>
+    <collision>
+      <origin xyz="0 0.05 0.1" rpy="0 0 0"/>
+      <geometry>
+        <sphere radius="0.02"  />
+      </geometry>
+    </collision>
+  </link>
+  <link name="panda_hand_tcp" />
+  <joint name="panda_hand_tcp_joint" type="fixed">
+    <origin xyz="0 0 0.1034" rpy="0 0 0" />
+    <parent link="panda_hand" />
+    <child link="panda_hand_tcp" />
+  </joint>
+  <link name="panda_leftfinger">
+    <visual>
+      <geometry>
+        <mesh filename="package://panda_isaac/meshes/visual/finger.dae"/>
+      </geometry>
+    </visual>
+  </link>
+  <link name="panda_rightfinger">
+    <visual>
+      <origin xyz="0 0 0" rpy="0 0 3.14"/>
+      <geometry>
+        <mesh filename="package://panda_isaac/meshes/visual/finger.dae"/>
+      </geometry>
+    </visual>
+  </link>
+  <joint name="panda_finger_joint1" type="prismatic">
+    <parent link="panda_hand"/>
+    <child link="panda_leftfinger"/>
+    <origin xyz="0 0 0.0584" rpy="0 0 0"/>
+    <axis xyz="0 1 0"/>
+    <limit effort="100" lower="0.0" upper="0.04" velocity="0.2"/>
+  </joint>
+  <joint name="panda_finger_joint2" type="prismatic">
+    <parent link="panda_hand"/>
+    <child link="panda_rightfinger"/>
+    <origin xyz="0 0 0.0584" rpy="0 0 0"/>
+    <axis xyz="0 -1 0"/>
+    <limit effort="100" lower="0.0" upper="0.04" velocity="0.2"/>
+    <mimic joint="panda_finger_joint1" />
+  </joint>
+
+  <link name="panda_ee">
+  </link>
+  <joint name="panda_ee" type="fixed">
+    <origin rpy="0 0 0" xyz="0 0 0.21"/>
+    <parent link="panda_link7"/>
+    <child link="panda_ee"/>
+  </joint> -->
+
+  <link name="panda_ee"/>
+  <joint name="panda_ee" type="fixed">
+    <origin rpy="0 0 0" xyz="0 0 0.210"/>
+    <parent link="panda_link7"/>
+    <child link="panda_ee"/>
+    <axis xyz="0 0 0"/>
+  </joint>
+
+  <joint name="panda_hand_joint" type="fixed">
+    <!--
+    <parent link="panda_link8"/>
+    -->
+    <parent link="panda_link7"/>
+    <child link="panda_hand"/>
+    <origin rpy="0 0 -0.785398163397" xyz="0 0 0.107"/>
+    <!--
+    <origin rpy="0 0 -0.785398163397" xyz="0 0 0"/>
+    -->
+  </joint>
+  <link name="panda_hand">
+    <visual>
+      <geometry>
+        <mesh filename="package://panda_isaac/meshes/visual/hand.dae"/>
+      </geometry>
     </visual>
     <collision>
       <geometry>
-        <cylinder length="0.29" radius="0.01"/>
+        <mesh filename="package://panda_isaac/meshes/collision/hand.obj"/>
       </geometry>
-      <origin rpy="0 0 0" xyz="0 0 0.16"/>
     </collision>
   </link>
-  <joint name="panda_ee_finger" type="fixed">
-    <origin rpy="0 0 0" xyz="0 0 0.107"/>
-    <parent link="panda_link7"/>
-    <child link="panda_ee_finger"/>
-    <axis xyz="0 0 0"/>
-  </joint>
-  <link name="panda_ee_tip">
+  <link name="panda_leftfinger">
+    <visual>
+      <geometry>
+        <mesh filename="package://panda_isaac/meshes/visual/finger.dae"/>
+      </geometry>
+    </visual>
+    <collision>
+      <geometry>
+        <mesh filename="package://panda_isaac/meshes/collision/finger.obj"/>
+      </geometry>
+      <surface>
+        <friction>
+          <ode>
+            <mu>100000.0</mu>
+            <mu2>100000.0</mu2>
+          </ode>
+        </friction>
+        <contact>
+          <ode>
+            <min_depth>0.005</min_depth>
+          </ode>
+        </contact>
+      </surface>
+    </collision>
   </link>
-  <joint name="panda_ee_tip" type="fixed">
-    <origin rpy="0 0 0" xyz="0 0 0.29"/>
-    <parent link="panda_ee_finger"/>
-    <child link="panda_ee_tip"/>
-    <axis xyz="0 0 0"/>
+  <link name="panda_rightfinger">
+    <visual>
+      <origin rpy="0 0 3.14159265359" xyz="0 0 0"/>
+      <geometry>
+        <mesh filename="package://panda_isaac/meshes/visual/finger.dae"/>
+      </geometry>
+    </visual>
+    <collision>
+      <origin rpy="0 0 3.14159265359" xyz="0 0 0"/>
+      <geometry>
+        <mesh filename="package://panda_isaac/meshes/collision/finger.obj"/>
+        <surface>
+        <friction>
+          <ode>
+            <mu>100000.0</mu>
+            <mu2>100000.0</mu2>
+          </ode>
+        </friction>
+        <contact>
+          <ode>
+            <min_depth>0.005</min_depth>
+          </ode>
+        </contact>
+      </surface>
+      </geometry>
+    </collision>
+  </link>
+  <joint name="panda_finger_joint1" type="prismatic">
+    <parent link="panda_hand"/>
+    <child link="panda_leftfinger"/>
+    <origin rpy="0 0 0" xyz="0 0 0.0584"/>
+    <axis xyz="0 1 0"/>
+    <dynamics damping="10.0"/>
+    <limit effort="20" lower="0.0" upper="0.04" velocity="0.2"/>
   </joint>
+  <joint name="panda_finger_joint2" type="prismatic">
+    <parent link="panda_hand"/>
+    <child link="panda_rightfinger"/>
+    <origin rpy="0 0 0" xyz="0 0 0.0584"/>
+    <axis xyz="0 -1 0"/>
+    <dynamics damping="10.0"/>
+    <limit effort="20" lower="0.0" upper="0.04" velocity="0.2"/>
+    <mimic joint="panda_finger_joint1"/>
+  </joint>
+
 </robot>
 
 
