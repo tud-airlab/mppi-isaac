@@ -33,3 +33,12 @@ cs.store(name="config_boxer_push", node=ExampleConfig)
 cs.store(name="config_panda_c_space_goal", node=ExampleConfig)
 cs.store(group="mppi", name="base_mppi", node=MPPIConfig)
 cs.store(group="isaacgym", name="base_isaacgym", node=IsaacGymConfig)
+
+
+from hydra import compose, initialize
+from omegaconf import OmegaConf
+def load_isaacgym_config(name):
+    with initialize(config_path="../../conf"):
+        cfg = compose(config_name=name)
+        print(OmegaConf.to_yaml(cfg))
+    return cfg

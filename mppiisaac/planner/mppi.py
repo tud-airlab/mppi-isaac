@@ -116,6 +116,7 @@ class MPPIPlanner(ABC):
         self.terminal_state_cost = None
         self.update_lambda = cfg.update_lambda
         self.update_cov = cfg.update_cov
+        self.important_samples_indexes = None
 
         # Bound actions
         self.u_min = cfg.u_min
@@ -233,17 +234,24 @@ class MPPIPlanner(ABC):
         #control_costs = self._control_costs(actions)
         total_costs = traj_costs - torch.min(traj_costs) #+ self.beta * control_costs
 
-        # Normalization of the weights
-        exp_ = torch.exp((-1.0/self.beta) * total_costs)
-        eta = torch.sum(exp_)       # tells how many significant samples we have, more or less
-        w = 1/eta*exp_
-        # print(self.beta)
-        # beta update 
-        if eta > self.eta_u_bound:
-            self.beta = self.beta*self.beta_lm
-        elif eta < self.eta_l_bound:
-            self.beta = self.beta*self.beta_um
+        found = False
+        while not found:
+            # Normalization of the weights
+            exp_ = torch.exp((-1.0/self.beta) * total_costs)
+            eta = torch.sum(exp_)       # tells how many significant samples we have, more or less
+
+            # print(self.beta)
+            # beta update 
+            if eta > self.eta_u_bound:
+                self.beta = self.beta*self.beta_lm
+            elif eta < self.eta_l_bound:
+                self.beta = self.beta*self.beta_um
+            else:
+                found = True
         
+        w = 1/eta*exp_
+
+        _, self.important_samples_indexes = torch.topk(total_costs, k=int(eta), largest=False)
         #w = torch.softmax((-1.0/self.beta) * total_costs, dim=0)
         self.total_costs = total_costs
         return w
@@ -365,8 +373,10 @@ class MPPIPlanner(ABC):
 
             # Last rollout is a braking manover
             if self.sample_null_action:
-                u[self.K - 1, :] = torch.zeros_like(u[self.K -1, :])
-                self.perturbed_action[self.K - 1][t] = u[self.K -1, :]
+                num_null_actions = 1
+                for i in range(1, num_null_actions):
+                    u[self.K - i, :] = torch.zeros_like(u[self.K -i, :])
+                    self.perturbed_action[self.K - i][t] = u[self.K -i, :]
 
             if self.prior:
                 u[self.K - 2] = self.prior(state, t)
@@ -495,6 +505,7 @@ class MPPIPlanner(ABC):
         
         # First time mean is zero then it is updated in the distribution
         act_seq = self.mean_action + scaled_delta
+        # act_seq = act_seq[torch.randperm(act_seq.size()[0])]
 
         # Scales action within bounds. act_seq is the same as perturbed actions
         act_seq = scale_ctrl(act_seq, self.u_min, self.u_max, squash_fn=self.squash_fn)
