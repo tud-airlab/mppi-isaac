@@ -17,20 +17,21 @@ class Objective(object):
             "velocity": 1.0,
         }
 
-        self.block_goal = torch.tensor(
-            [3.0, 0.0, 0.5, 0.0, 0.0, 0.0, 1.0], device=cfg.mppi.device
-        )
         self.goal_yaw = 0.0
+    
+    def reset(self):
+        pass
 
     def compute_cost(self, sim):
         r_pos = sim.get_actor_link_by_name("heijn", "front_link")
         block_pos = sim.get_actor_position_by_name("block")
         block_vel = sim.get_actor_velocity_by_name("block")
         block_ort = sim.get_actor_orientation_by_name("block")
+        block_goal = sim.get_actor_position_by_name("goal")
 
         # Distances robot
         robot_to_block = r_pos[:, 0:2] - block_pos[:, 0:2]
-        block_to_goal = self.block_goal[0:2] - block_pos[:, 0:2]
+        block_to_goal = block_goal[:, 0:2] - block_pos[:, 0:2]
         block_yaws = quaternion_to_yaw(block_ort)
 
         # Distance costs
@@ -59,7 +60,7 @@ class Objective(object):
         return total_cost
 
 
-@hydra.main(version_base=None, config_path="../conf", config_name="config_heijn_push")
+@hydra.main(version_base=None, config_path="../../conf", config_name="config_heijn_push")
 def run_heijn_robot(cfg: ExampleConfig):
     objective = Objective(cfg)
     planner = zerorpc.Server(MPPIisaacPlanner(cfg, objective, prior=None))

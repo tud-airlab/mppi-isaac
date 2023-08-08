@@ -2,10 +2,7 @@ defaults:
   - mppi: panda
   - isaacgym: normal
 
-goal: [0.5, 0.4, 0.7]
-render: true
-n_steps: 1000
-actors: ['panda', 'xaxis', 'yaxis']
+n_steps: 10000
+actors: ['panda_stick', 'goal']
 initial_actor_positions: [[0.0, 0.0, 0.0]]
-
 nx: 14

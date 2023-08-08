@@ -1,17 +1,16 @@
-from mppiisaac.planner.isaacgym_wrapper import IsaacGymWrapper, ActorWrapper
-import yaml
-from yaml import SafeLoader
-import mppiisaac
+from mppiisaac.planner.isaacgym_wrapper import IsaacGymWrapper
 import hydra
+from hydra import compose, initialize
 import zerorpc
 from mppiisaac.utils.config_store import ExampleConfig
 from mppiisaac.utils.transport import torch_to_bytes, bytes_to_torch
-import os
 import time
+import torch
 
 
-@hydra.main(version_base=None, config_path="../conf", config_name="config_heijn_push")
+# @hydra.main(version_base=None, config_path="../../conf", config_name="config_heijn_push")
 def run_heijn_robot(cfg: ExampleConfig):
+
     sim = IsaacGymWrapper(
         cfg.isaacgym,
         actors=cfg.actors,
@@ -27,10 +26,11 @@ def run_heijn_robot(cfg: ExampleConfig):
     t = time.time()
     while True:
         # Compute action
-        action = bytes_to_torch(planner.compute_action_tensor(
-            torch_to_bytes(sim._dof_state),
-            torch_to_bytes(sim._root_state)
-        ))
+        action = bytes_to_torch(
+            planner.compute_action_tensor(
+                torch_to_bytes(sim._dof_state), torch_to_bytes(sim._root_state)
+            )
+        )
 
         # Apply action
         sim.set_dof_velocity_target_tensor(action)
@@ -44,15 +44,19 @@ def run_heijn_robot(cfg: ExampleConfig):
         sim.draw_lines(rollouts)
 
         # Timekeeping
-        actual_dt = (time.time() - t)
-        rt = cfg.isaacgym.dt/actual_dt
+        actual_dt = time.time() - t
+        rt = cfg.isaacgym.dt / actual_dt
         if rt > 1.0:
             time.sleep(cfg.isaacgym.dt - actual_dt)
-            actual_dt = (time.time() - t)
-            rt = cfg.isaacgym.dt/actual_dt
+            actual_dt = time.time() - t
+            rt = cfg.isaacgym.dt / actual_dt
         print(f"FPS: {1/actual_dt}, RT={rt}")
         t = time.time()
 
 
 if __name__ == "__main__":
+    initialize(version_base=None, config_path="../../conf"u)
+
+    cfg = compose(config_name="example", overrides=["mppi=heijn_push", "db.isaacgym=push"])
+
     res = run_heijn_robot()
