@@ -1,0 +1,7 @@
+dt: 0.05
+substeps: 2
+use_gpu_pipeline: True
+num_client_threads: 0
+viewer: False
+num_obstacles: 10
+spacing: 6.0

@@ -384,7 +384,7 @@ class IsaacGymWrapper:
         actor_idx = self._robot_indices[robot_idx]
         self.set_actor_velocity_by_actor_index(velocity, actor_idx)
 
-    def set_actor_dof_state(self, state: List[float], actor_idx):
+    def set_actor_dof_state(self, state):
         self._gym.set_dof_state_tensor(self._sim, gymtorch.unwrap_tensor(state))
 
     def set_dof_velocity_target_tensor(self, u):
@@ -573,7 +573,7 @@ class IsaacGymWrapper:
         dof_state_tensor = torch.tensor(dof_state).type(torch.float32).to(self.device)
 
         dof_state_tensor = dof_state_tensor.repeat(self.num_envs, 1)
-        self.set_dof_state_tensor(dof_state_tensor)
+        self.set_actor_dof_state(dof_state_tensor)
 
         self._gym.set_actor_root_state_tensor(
             self._sim, gymtorch.unwrap_tensor(self._root_state)

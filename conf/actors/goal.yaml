@@ -2,7 +2,7 @@ type: sphere
 name: goal 
 handle: None
 fixed: True
-size: [0.010]
-init_pos: [0.2, -0.2, 0.3]
+size: [0.100]
+init_pos: [0.2, 3.2, 0.3]
 color: [0.0, 1.0, 0.2]
 collision: False
