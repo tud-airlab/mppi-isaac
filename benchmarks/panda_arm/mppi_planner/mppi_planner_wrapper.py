@@ -2,83 +2,30 @@ from omegaconf import OmegaConf
 from plannerbenchmark.generic.planner import Planner
 from mppiisaac.planner.isaacgym_wrapper import IsaacGymWrapper
 from mppiisaac.planner.mppi_isaac import MPPIisaacPlanner
-
+import time
 import torch
 
-class ObjectiveOld(object):
-    def __init__(self, goal, device):
-        self.nav_goal = torch.tensor(goal, device=device)
-
-        self.w_nav = 2.0
-        self.w_obs = 1
-
-    def compute_cost(self, sim: IsaacGymWrapper):
-        dof_state = sim.dof_state
-        pos = torch.cat((dof_state[:, 0].unsqueeze(1), dof_state[:, 2].unsqueeze(1)), 1)
-        obs_positions = sim.obstacle_positions
-
-        nav_cost = torch.clamp(
-            torch.linalg.norm(pos - self.nav_goal, axis=1), min=0, max=1999
-        )
-
-        # sim.gym.refresh_net_contact_force_tensor(sim.sim)
-        # sim.net_cf
-
-        # This can cause steady state error if the goal is close to an obstacle, better use contact forces later on
-        obs_cost = torch.sum(
-            1 / torch.linalg.norm(obs_positions[:, :, :2] - pos.unsqueeze(1), axis=2),
-            axis=1,
-        )
-
-        return nav_cost * self.w_nav + obs_cost * self.w_obs
 
 class Objective(object):
     def __init__(self, goal, device):
         self.nav_goal = torch.tensor(goal, device=device)
-
-        self.w_nav = 1.0
-        self.w_obs = 0.5
-
-    def compute_cost(self, sim: IsaacGymWrapper):
-        dof_state = sim.dof_state
-        pos = torch.cat((dof_state[:, 0].unsqueeze(1), dof_state[:, 2].unsqueeze(1)), 1)
-        obs_positions = sim.obstacle_positions
-
-        nav_cost = torch.clamp(
-            torch.linalg.norm(pos - self.nav_goal, axis=1) - 0.05, min=0, max=1999
-        )
-
-        # sim.gym.refresh_net_contact_force_tensor(sim.sim)
-        # sim.net_cf
-
-        # This can cause steady state error if the goal is close to an obstacle, better use contact forces later on
-        obs_cost = torch.sum(
-            1 / torch.linalg.norm(obs_positions[:, :, :2] - pos.unsqueeze(1), axis=2),
-            axis=1,
-        )
-
-        return nav_cost * self.w_nav + obs_cost * self.w_obs
-
-class EndEffectorGoalObjective(object):
-    def __init__(self, goal, device):
-        self.nav_goal = torch.tensor(goal, device=device)
         self.ort_goal = torch.tensor([1, 0, 0, 0], device=device)
+        self.w_coll = 10.
+        self.w_pos = 1.
+        self.w_ort = 0.0
 
     def compute_cost(self, sim):
         pos = sim.rigid_body_state[:, sim.robot_rigid_body_ee_idx, :3]
         ort = sim.rigid_body_state[:, sim.robot_rigid_body_ee_idx, 3:7]
-        # dof_states = gym.acquire_dof_state_tensor(sim)
 
         reach_cost = torch.linalg.norm(pos - self.nav_goal, axis=1)
         align_cost = torch.linalg.norm(ort - self.ort_goal, axis=1)
-        return 10 * reach_cost + align_cost
-        # return torch.clamp(
-        #     torch.linalg.norm(pos - self.nav_goal, axis=1) - 0.05, min=0, max=1999
-        # )
 
+        # Collision avoidance with contact forces
+        xyz_contatcs = torch.sum(torch.abs(torch.cat((sim.net_cf[:, 0].unsqueeze(1), sim.net_cf[:, 1].unsqueeze(1), sim.net_cf[:, 2].unsqueeze(1)), 1)),1)
+        coll_cost = torch.sum(xyz_contatcs.reshape([sim.num_envs, int(xyz_contatcs.size(dim=0)/sim.num_envs)])[:, 1:sim.num_bodies], 1) # skip the first, it is the robot
 
-
-
+        return reach_cost * self.w_pos + align_cost * self.w_ort + coll_cost * self.w_coll
 
 class MPPIPlanner(Planner):
 
@@ -86,7 +33,6 @@ class MPPIPlanner(Planner):
         super().__init__(exp, **kwargs)
         self.cfg = kwargs['config']
         initial_actor_position = exp.initState()[0].tolist() 
-        initial_actor_position[2] += 0.05
         initial_actor_position = [0.0, 0.0, 0.05]
         self.cfg['initial_actor_positions'] = [initial_actor_position]
         self._config = OmegaConf.create(kwargs)
@@ -99,10 +45,12 @@ class MPPIPlanner(Planner):
     def setGoal(self, motionPlanningGoal):
         cfg = OmegaConf.create(self.cfg)
         goal_position = motionPlanningGoal.sub_goals()[0].position()
-        objective = EndEffectorGoalObjective(goal_position, cfg.mppi.device)
+        objective = Objective(goal_position, cfg.mppi.device)
+
         if not hasattr(self, '_planner'):
             self._planner = MPPIisaacPlanner(cfg, objective)
-
+        else:
+            self._planner.update_objective(objective)
 
     def setSelfCollisionAvoidance(self, r_body):
         pass

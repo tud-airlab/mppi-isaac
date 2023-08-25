@@ -1,7 +1,0 @@
-name: AcadosMpc
-N: 20
-w_pos: 4.0
-w_coll: 0.00
-w_input: 0.01
-w_joints: [0.01, 0.01, 0.01, 0.01, 0.01, 0.01, 0.01]
-w_vref: 5.0

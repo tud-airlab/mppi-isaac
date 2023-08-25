@@ -103,7 +103,7 @@ class IsaacGymWrapper:
         if viewer:
             self.cfg.viewer = viewer
         self.num_envs = num_envs
-
+        self.restarted = 1
         self.start_sim()
 
     def start_sim(self):
@@ -120,6 +120,25 @@ class IsaacGymWrapper:
             self.viewer = None
 
         self.add_ground_plane()
+
+        # Always add dummy obst at the end
+        if self.restarted == 2:
+            self.env_cfg.append(
+            ActorWrapper(
+                **{
+                    "type": "sphere",
+                    "name": "dummy",
+                    "handle": None,
+                    "size": [0.1],
+                    "fixed": True,
+                    "init_pos": [0, 0, -10],
+                    "collision": False
+                }
+            )
+            )
+            self.restarted += 1
+        else:
+            self.restarted += 1
 
         # Load / create assets for all actors in the envs
         self.env_actor_assets = []
@@ -171,7 +190,9 @@ class IsaacGymWrapper:
         # helpfull slices
         self.robot_indices = torch.tensor([i for i, a in enumerate(self.env_cfg) if a.type == "robot"], device="cuda:0")
 
-        self.obstacle_indices = torch.tensor([i for i, a in enumerate(self.env_cfg) if a.type in ["sphere", "box"]], device="cuda:0")
+        print(self.env_cfg)
+
+        self.obstacle_indices = torch.tensor([i for i, a in enumerate(self.env_cfg) if (a.type in ["sphere", "box"] and a.name != "dummy")], device="cuda:0")
 
         if self.ee_link_present:
             self.ee_positions = self.rigid_body_state[
@@ -202,6 +223,8 @@ class IsaacGymWrapper:
     def stop_sim(self):
         if self.viewer:
             self.gym.destroy_viewer(self.viewer)
+        for env_idx in range(self.num_envs):
+            self.gym.destroy_env(self.envs[env_idx])
         self.gym.destroy_sim(self.sim)
 
     def add_to_envs(self, additions):
@@ -537,10 +560,12 @@ class IsaacGymWrapper:
         )
 
     def update_root_state_tensor_by_obstacles_tensor(self, obst_tensor):
-        for i, o_tensor in enumerate(obst_tensor):
-            if self.env_cfg[i + 3].fixed:
-                continue
-            self.root_state[:, i + 3] = o_tensor.repeat(self.num_envs, 1)
+        for o_tensor in obst_tensor:
+            obst_idx = [
+                idx for idx, actor in enumerate(self.env_cfg) if (actor.type != 'robot' and not actor.fixed)
+            ][0]
+
+            self.root_state[:, obst_idx] = o_tensor.repeat(self.num_envs, 1)
 
         self.gym.set_actor_root_state_tensor(
             self.sim, gymtorch.unwrap_tensor(self.root_state)
