@@ -32,6 +32,13 @@ Access the virtual environment using
 poetry shell
 ```
 
+### Virtual environment - Pycharm
+If you are using Pycharm (professional), first add a new Python interpreter via 'Add New Interpreter', 'Add local interpreter" and 
+create a virtual environment within the mppi-isaac folder called 'venv'. Then install the necessary dependencies using [poetry](https://python-poetry.org/docs/) in the virtual environment.
+```bash
+poetry install --with dev
+```
+
 ### **Test the installation**
 Test that everything is properly set up, use pytest
 ```bash
