@@ -63,6 +63,7 @@ class ActorWrapper:
     fixed: bool = False
     collision: bool = True
     friction: float = 1.
+    torsion_friction: float = 1.
     handle: Optional[int] = None
     flip_visual: bool = False
     urdf_file: str = None
@@ -78,6 +79,7 @@ class ActorWrapper:
     noise_sigma_size: Optional[List[float]] = None
     noise_percentage_mass: float = 0.0
     noise_percentage_friction: float = 0.0
+    noise_percentage_torsion_friction: float = 0.0
 
 
 class IsaacGymWrapper:
@@ -320,8 +322,9 @@ class IsaacGymWrapper:
         props = self.gym.get_actor_rigid_shape_properties(env, handle)
         for i, p in enumerate(props):
             actor_friction_noise = np.random.uniform(-actor.noise_percentage_friction*actor.friction, actor.noise_percentage_friction*actor.friction)
+            actor_torsion_friction_noise = np.random.uniform(-actor.noise_percentage_torsion_friction*actor.torsion_friction, actor.noise_percentage_torsion_friction*actor.torsion_friction)
             p.friction = actor.friction + actor_friction_noise
-            p.torsion_friction = np.random.uniform(0.001, 0.01) 
+            p.torsion_friction = actor.torsion_friction + actor_torsion_friction_noise 
             p.rolling_friction = actor.friction + actor_friction_noise
 
             if i in caster_shapes:
