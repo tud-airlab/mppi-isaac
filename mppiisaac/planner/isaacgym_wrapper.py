@@ -194,7 +194,7 @@ class IsaacGymWrapper:
 
         print(self.env_cfg)
 
-        self.obstacle_indices = torch.tensor([i for i, a in enumerate(self.env_cfg) if (a.type in ["sphere", "box"] and a.name != "dummy")], device=self.device)
+        self.obstacle_indices = torch.tensor([i for i, a in enumerate(self.env_cfg) if (a.type in ["sphere", "box"] and a.name != "dummy")], device=self.device).type(torch.int32)
 
         if self.ee_link_present:
             self.ee_positions = self.rigid_body_state[
