@@ -103,14 +103,14 @@ def run_point_robot(cfg: ExampleConfig):
         # Calculate action with the fabric planner, slice the states to drop Z-axis [3] information.
         ob_robot = ob["robot_0"]
 
-        # t = time.time()
+        t = time.time()
 
         action = planner.compute_action(
             q=ob_robot["joint_state"]["position"],
             qdot=ob_robot["joint_state"]["velocity"],
         )
 
-        # print(f"Time: {(time.time() - t)} s")
+        print(f"Time: {(time.time() - t)} s")
         
         (
             ob,
