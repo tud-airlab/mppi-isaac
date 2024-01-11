@@ -13,6 +13,7 @@ import torch
 from mpscenes.goals.static_sub_goal import StaticSubGoal
 from mppiisaac.utils.config_store import ExampleConfig
 import time
+from mppiisaac.dynamics.point_robot import omnidirectional_point_robot_dynamics
 
 # MPPI to navigate a simple robot to a goal position
 
@@ -25,6 +26,14 @@ class Objective(object):
         positions = state[:, 0:2]
         goal_dist = torch.linalg.norm(positions - self.nav_goal, axis=1)
         return goal_dist * 1.0
+
+class Dynamics(object):
+    def __init__(self, cfg):
+        self.dt = cfg.dt
+
+    def step_dynamics(self, states, control, t):
+        new_states = omnidirectional_point_robot_dynamics(states, control, self.dt)
+        return (new_states, control)
 
 
 def initalize_environment(cfg) -> UrdfEnv:
@@ -74,7 +83,8 @@ def set_planner(cfg):
     """
     # urdf = "../assets/point_robot.urdf"
     objective = Objective(cfg, cfg.mppi.device)
-    planner = MPPICustomDynamicsPlanner(cfg, objective)
+    dynamics = Dynamics(cfg)
+    planner = MPPICustomDynamicsPlanner(cfg, objective, dynamics.step_dynamics)
 
     return planner
 

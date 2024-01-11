@@ -1,10 +1,5 @@
 from mppiisaac.planner.mppi import MPPIPlanner
-from typing import Callable, Optional
-import io
-import os
-import yaml
-from yaml.loader import SafeLoader
-from mppiisaac.dynamics.point_robot import omnidirectional_point_robot_dynamics
+from typing import Callable
 
 import torch
 
@@ -17,9 +12,10 @@ class MPPICustomDynamicsPlanner(object):
         dynamics, running_cost, and terminal_cost
     """
 
-    def __init__(self, cfg, objective: Callable):
+    def __init__(self, cfg, objective: Callable, dynamics: Callable):
         self.cfg = cfg
         self.objective = objective
+        self.dynamics = dynamics
 
         self.mppi = MPPIPlanner(
             cfg.mppi,
@@ -31,10 +27,6 @@ class MPPICustomDynamicsPlanner(object):
     
     def update_objective(self, objective):
         self.objective = objective
-
-    def dynamics(self, states, control, t):
-        new_states = omnidirectional_point_robot_dynamics(states, control, self.cfg.dt)
-        return (new_states, control)
 
     def running_cost(self, state):
         return self.objective.compute_cost(state)
