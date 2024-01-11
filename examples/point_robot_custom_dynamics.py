@@ -12,6 +12,7 @@ import os
 import torch
 from mpscenes.goals.static_sub_goal import StaticSubGoal
 from mppiisaac.utils.config_store import ExampleConfig
+import time
 
 # MPPI to navigate a simple robot to a goal position
 
@@ -44,7 +45,7 @@ def initalize_environment(cfg) -> UrdfEnv:
     robots = [
         GenericUrdfReacher(urdf=urdf_file, mode="vel"),
     ]
-    env: UrdfEnv = gym.make("urdf-env-v0", dt=0.05, robots=robots, render=cfg.render)
+    env: UrdfEnv = gym.make("urdf-env-v0", dt=cfg.dt, robots=robots, render=cfg.render)
     # Set the initial position and velocity of the point mass.
     env.reset()
     goal_dict = {
@@ -101,10 +102,16 @@ def run_point_robot(cfg: ExampleConfig):
     for _ in range(cfg.n_steps):
         # Calculate action with the fabric planner, slice the states to drop Z-axis [3] information.
         ob_robot = ob["robot_0"]
+
+        # t = time.time()
+
         action = planner.compute_action(
             q=ob_robot["joint_state"]["position"],
             qdot=ob_robot["joint_state"]["velocity"],
         )
+
+        # print(f"Time: {(time.time() - t)} s")
+        
         (
             ob,
             *_,
