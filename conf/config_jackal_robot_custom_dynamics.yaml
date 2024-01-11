@@ -1,0 +1,12 @@
+defaults:
+  - mppi: jackal
+
+goal: [2.0, 2.0]
+render: true
+n_steps: 1000
+nx: 4
+
+dt: 0.1
+
+actors: ['jackal']
+initial_actor_positions: [[0.0, 0.0, 0.05]]
