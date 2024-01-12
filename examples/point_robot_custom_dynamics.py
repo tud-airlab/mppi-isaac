@@ -115,10 +115,11 @@ def run_point_robot(cfg: ExampleConfig):
 
         t = time.time()
 
-        action = planner.compute_action(
-            q=ob_robot["joint_state"]["position"],
-            qdot=ob_robot["joint_state"]["velocity"],
-        )
+        state = np.concatenate((ob_robot["joint_state"]["position"], ob_robot["joint_state"]["velocity"]))
+        
+        t = time.time()
+
+        action = planner.compute_action(state)
 
         print(f"Time: {(time.time() - t)} s")
         

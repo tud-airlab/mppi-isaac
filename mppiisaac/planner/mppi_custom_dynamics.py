@@ -31,10 +31,12 @@ class MPPICustomDynamicsPlanner(object):
     def running_cost(self, state):
         return self.objective.compute_cost(state)
 
-    def compute_action(self, q, qdot):
-        q_tensor = torch.tensor([q], dtype=torch.float32, device=self.cfg.mppi.device)
-        qdot_tensor = torch.tensor([qdot], dtype=torch.float32, device=self.cfg.mppi.device)
-        self.current_state = torch.cat([q_tensor, qdot_tensor], dim=1)
+    def compute_action(self, state):
+        # q_tensor = torch.tensor([q], dtype=torch.float32, device=self.cfg.mppi.device)
+        # qdot_tensor = torch.tensor([qdot], dtype=torch.float32, device=self.cfg.mppi.device)
+        # self.current_state = torch.cat([q_tensor, qdot_tensor], dim=1)
+
+        self.current_state = torch.tensor([state], dtype=torch.float32, device=self.cfg.mppi.device)
 
         actions = self.mppi.command(self.current_state).cpu()
         return actions
