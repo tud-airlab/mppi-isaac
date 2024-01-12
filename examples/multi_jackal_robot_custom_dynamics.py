@@ -22,18 +22,34 @@ class Objective(object):
     def __init__(self, cfg, device):
         self.nav_goal = torch.tensor(cfg.goal, device=cfg.mppi.device)
 
+    def goal_cost(self, pos, goal):
+        return torch.linalg.norm(pos - goal, axis=1) * 1.0
+    
+    def rot_cost(self, theta):
+        return torch.abs(theta) * 0.05
+    
+    def dynamic_collision(self, position1, position2, radius):
+        collision_cost = 1.0*(torch.linalg.norm(position1 - position2, axis=1) < radius)
+        # collision_cost = 1.0*torch.pow((1/torch.linalg.norm(position1 - position2, axis=1)), 2)
+        return collision_cost * 5
+
     def compute_cost(self, state: torch.Tensor):
-        positions = state[:, 0:2]
-        rot_cost = torch.abs(state[:,5])
-        goal_dist = torch.linalg.norm(positions - self.nav_goal, axis=1)
-        return goal_dist * 1.0 + rot_cost * 0.05
+        goal_cost_robot_1 = self.goal_cost(state[:,0:2], self.nav_goal[:2])
+        goal_cost_robot_2 = self.goal_cost(state[:,6:8], self.nav_goal[2:4])
+        rot_cost_robot_1 = self.rot_cost(state[:,2])
+        rot_cost_robot_2 = self.rot_cost(state[:,8])
+        collision_cost = self.dynamic_collision(state[:,0:2], state[:,6:8], 0.5)
+        return goal_cost_robot_1 + goal_cost_robot_2 + rot_cost_robot_1 + rot_cost_robot_2 + collision_cost
 
 class Dynamics(object):
     def __init__(self, cfg):
         self.dt = cfg.dt
 
     def simulate(self, states, control, t):
-        new_states, control = jackal_robot_dynamics(states, control, self.dt)
+        new_states_1, control_1 = jackal_robot_dynamics(states[:,0:6], control[:,0:2], self.dt)
+        new_states_2, control_2 = jackal_robot_dynamics(states[:,6:12], control[:,2:4], self.dt)
+        new_states = torch.cat([new_states_1, new_states_2], dim=1)
+        control = torch.cat([control_1, control_2], dim=1)
         return (new_states, control)
 
 
@@ -50,8 +66,8 @@ def initalize_environment(cfg) -> UrdfEnv:
         Boolean toggle to set rendering on (True) or off (False).
     """
     with open(f'{os.path.dirname(mppiisaac.__file__)}/../conf/actors/jackal.yaml') as f:
-        heijn_cfg = yaml.load(f, Loader=SafeLoader)
-    urdf_file = f'{os.path.dirname(mppiisaac.__file__)}/../assets/urdf/' + heijn_cfg['urdf_file']
+        jackal_cfg = yaml.load(f, Loader=SafeLoader)
+    urdf_file = f'{os.path.dirname(mppiisaac.__file__)}/../assets/urdf/' + jackal_cfg['urdf_file']
     robots = [
         GenericDiffDriveRobot(
             urdf=urdf_file,
@@ -63,20 +79,45 @@ def initalize_environment(cfg) -> UrdfEnv:
                 "front_left_wheel",
             ],
             castor_wheels=[],
-            wheel_radius = 0.098,
-            wheel_distance = 2 * 0.187795 + 0.08,
+            wheel_radius = jackal_cfg['wheel_radius'],
+            wheel_distance = jackal_cfg['wheel_base'],
+        ),
+        GenericDiffDriveRobot(
+            urdf=urdf_file,
+            mode="vel",
+            actuated_wheels=[
+                "rear_right_wheel",
+                "rear_left_wheel",
+                "front_right_wheel",
+                "front_left_wheel",
+            ],
+            castor_wheels=[],
+            wheel_radius = jackal_cfg['wheel_radius'],
+            wheel_distance = jackal_cfg['wheel_base'],
         ),
     ]
     env: UrdfEnv = gym.make("urdf-env-v0", dt=cfg.dt, robots=robots, render=cfg.render)
-    # Set the initial position and velocity of the point mass.
-    env.reset()
+    # Set the initial position and velocity of the jackals.
+    env.reset(pos=np.array(cfg.initial_actor_positions))
     goal_dict = {
         "weight": 1.0,
         "is_primary_goal": True,
         "indices": [0, 1],
         "parent_link": 0,
         "child_link": 1,
-        "desired_position": cfg.goal,
+        "desired_position": cfg.goal[:2],
+        "epsilon": 0.05,
+        "type": "staticSubGoal",
+    }
+    goal = StaticSubGoal(name="simpleGoal", content_dict=goal_dict)
+    env.add_goal(goal)
+    goal_dict = {
+        "weight": 1.0,
+        "is_primary_goal": True,
+        "indices": [0, 1],
+        "parent_link": 0,
+        "child_link": 1,
+        "desired_position": cfg.goal[2:4],
         "epsilon": 0.05,
         "type": "staticSubGoal",
     }
@@ -102,7 +143,7 @@ def set_planner(cfg):
     return planner
 
 
-@hydra.main(version_base=None, config_path="../conf", config_name="config_jackal_robot_custom_dynamics.yaml")
+@hydra.main(version_base=None, config_path="../conf", config_name="config_multi_jackal_custom_dynamics.yaml")
 def run_jackal_robot(cfg: ExampleConfig):
     """
     Set the gym environment, the planner and run point robot example.
@@ -124,9 +165,11 @@ def run_jackal_robot(cfg: ExampleConfig):
 
     for _ in range(cfg.n_steps):
         # Calculate action with the fabric planner, slice the states to drop Z-axis [3] information.
-        ob_robot = ob["robot_0"]
+        ob_robot0 = ob["robot_0"]
+        ob_robot1 = ob["robot_1"]
 
-        state = np.concatenate((ob_robot["joint_state"]["position"], ob_robot["joint_state"]["velocity"]))
+        state = np.concatenate((ob_robot0["joint_state"]["position"], ob_robot0["joint_state"]["velocity"],
+                                ob_robot1["joint_state"]["position"], ob_robot1["joint_state"]["velocity"]))
         
         t = time.time()
 
