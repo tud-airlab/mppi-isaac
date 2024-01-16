@@ -46,6 +46,7 @@ def run_jackal_robot(cfg: ExampleConfig):
         actors=actors,
         num_envs=1,
         viewer=True,
+        device=cfg.mppi.device,
     )
 
     sim.gym.viewer_camera_look_at(
@@ -81,7 +82,7 @@ def run_jackal_robot(cfg: ExampleConfig):
 
         # Print error
         pos = sim.robot_positions[:, 0, :2]
-        print(torch.linalg.norm(pos - torch.tensor(cfg.goal, device="cuda:0"), axis=1))
+        print(torch.linalg.norm(pos - torch.tensor(cfg.goal, device=cfg.mppi.device), axis=1))
     return {}
 
 

@@ -36,7 +36,7 @@ def reset_trial(sim, init_pos, init_vel):
     sim.stop_sim()
     sim.start_sim()
     set_viewer(sim)
-    sim.set_dof_state_tensor(torch.tensor([init_pos[0], init_vel[0], init_pos[1], init_vel[1], init_pos[2], init_vel[2]], device="cuda:0"))
+    sim.set_dof_state_tensor(torch.tensor([init_pos[0], init_vel[0], init_pos[1], init_vel[1], init_pos[2], init_vel[2]], device=sim.device))
         
 @hydra.main(version_base=None, config_path="../conf", config_name="config_heijn_push")
 def run_heijn_robot(cfg: ExampleConfig):
@@ -54,6 +54,7 @@ def run_heijn_robot(cfg: ExampleConfig):
         actors=actors,
         num_envs=1,
         viewer=True,
+        device=cfg.mppi.device,
     )
     
     # Experiment setup
@@ -155,7 +156,7 @@ def run_heijn_robot(cfg: ExampleConfig):
     planner.add_to_env(additions)
     set_viewer(sim)
 
-    sim.set_dof_state_tensor(torch.tensor([init_pos[0], init_vel[0], init_pos[1], init_vel[1], init_pos[2], init_vel[2]], device="cuda:0"))
+    sim.set_dof_state_tensor(torch.tensor([init_pos[0], init_vel[0], init_pos[1], init_vel[1], init_pos[2], init_vel[2]], device=sim.device))
 
     # Helpers
     count = 0

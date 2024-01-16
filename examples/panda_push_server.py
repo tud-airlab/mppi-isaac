@@ -39,7 +39,7 @@ def reset_trial(sim, init_pos, init_vel):
                 )
     sim.set_dof_state_tensor(torch.tensor([init_pos[0], init_vel[0], init_pos[1], init_vel[1], init_pos[2], init_vel[2],
                                            init_pos[3], init_vel[3], init_pos[4], init_vel[4], init_pos[5], init_vel[5],
-                                           init_pos[6], init_vel[6]], device="cuda:0"))
+                                           init_pos[6], init_vel[6]], device=sim.device))
         
 @hydra.main(version_base=None, config_path="../conf", config_name="config_panda_push")
 def run_panda_robot(cfg: ExampleConfig):
@@ -57,6 +57,7 @@ def run_panda_robot(cfg: ExampleConfig):
         actors=actors,
         num_envs=1,
         viewer=True,
+        device=cfg.mppi.device,
     )
 
     # Manually add table + block and restart isaacgym
@@ -188,7 +189,7 @@ def run_panda_robot(cfg: ExampleConfig):
 
     sim.set_dof_state_tensor(torch.tensor([init_pos[0], init_vel[0], init_pos[1], init_vel[1], init_pos[2], init_vel[2],
                                            init_pos[3], init_vel[3], init_pos[4], init_vel[4], init_pos[5], init_vel[5],
-                                           init_pos[6], init_vel[6]], device="cuda:0"))
+                                           init_pos[6], init_vel[6]], device=cfg.mppi.device))
 
     # Helpers
     count = 0

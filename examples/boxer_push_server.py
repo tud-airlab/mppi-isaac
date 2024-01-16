@@ -31,7 +31,7 @@ def reset_trial(sim, init_pos, init_vel):
     sim.stop_sim()
     sim.start_sim()
     set_viewer(sim)    
-    sim.set_dof_state_tensor(torch.tensor([init_pos[0], init_vel[0], init_pos[1], init_vel[1], init_pos[2], init_vel[2]], device="cuda:0"))
+    sim.set_dof_state_tensor(torch.tensor([init_pos[0], init_vel[0], init_pos[1], init_vel[1], init_pos[2], init_vel[2]], device=sim.device))
 
 def set_viewer(sim):
     sim.gym.viewer_camera_look_at(
@@ -55,6 +55,7 @@ def run_boxer_robot(cfg: ExampleConfig):
         actors=actors,
         num_envs=1,
         viewer=True,
+        device=cfg.mppi.device,
     )
 
     # Manually add table + block and restart isaacgym
