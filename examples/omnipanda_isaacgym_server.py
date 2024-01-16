@@ -43,7 +43,7 @@ def reset_trial(sim, init_pos, init_vel):
     sim.set_dof_state_tensor(torch.tensor([init_pos[0], init_vel[0], init_pos[1], init_vel[1], init_pos[2], init_vel[2],
                                            init_pos[3], init_vel[3], init_pos[4], init_vel[4], init_pos[5], init_vel[5],
                                            init_pos[6], init_vel[6], init_pos[7], init_vel[7], init_pos[8], init_vel[8],
-                                           init_pos[9], init_vel[9], init_pos[10], init_vel[10], init_pos[11], init_vel[11],], device="cuda:0"))
+                                           init_pos[9], init_vel[9], init_pos[10], init_vel[10], init_pos[11], init_vel[11],], device=sim.device))
         
 @hydra.main(version_base=None, config_path="../conf", config_name="config_omnipanda")
 def run_omnipanda_robot(cfg: ExampleConfig):
@@ -61,6 +61,7 @@ def run_omnipanda_robot(cfg: ExampleConfig):
         actors=actors,
         num_envs=1,
         viewer=True,
+        device=cfg.mppi.device,
     )
 
     # Manually add table + block and restart isaacgym
@@ -132,7 +133,7 @@ def run_omnipanda_robot(cfg: ExampleConfig):
     sim.set_dof_state_tensor(torch.tensor([init_pos[0], init_vel[0], init_pos[1], init_vel[1], init_pos[2], init_vel[2],
                                            init_pos[3], init_vel[3], init_pos[4], init_vel[4], init_pos[5], init_vel[5],
                                            init_pos[6], init_vel[6], init_pos[7], init_vel[7], init_pos[8], init_vel[8],
-                                           init_pos[9], init_vel[9], init_pos[10], init_vel[10], init_pos[11], init_vel[11],], device="cuda:0"))
+                                           init_pos[9], init_vel[9], init_pos[10], init_vel[10], init_pos[11], init_vel[11],], device=sim.device))
 
     # Helpers
     count = 0

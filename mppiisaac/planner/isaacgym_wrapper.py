@@ -23,11 +23,11 @@ class IsaacGymConfig(object):
     spacing: float = 6.0
 
 
-def parse_isaacgym_config(cfg: IsaacGymConfig) -> gymapi.SimParams:
+def parse_isaacgym_config(cfg: IsaacGymConfig, device: str = "cuda:0") -> gymapi.SimParams:
     sim_params = gymapi.SimParams()
     sim_params.dt = cfg.dt
     sim_params.substeps = cfg.substeps
-    sim_params.use_gpu_pipeline = cfg.use_gpu_pipeline
+    sim_params.use_gpu_pipeline = device == "cuda:0"
     sim_params.num_client_threads = cfg.num_client_threads
 
     sim_params.up_axis = gymapi.UP_AXIS_Z
@@ -88,9 +88,11 @@ class IsaacGymWrapper:
         init_positions: List[List[float]],
         num_envs: int,
         viewer: bool = False,
+        device: str = "cuda:0"
     ):
         self.gym = gymapi.acquire_gym()
         self.env_cfg = actors
+        self.device = device
 
         assert len([a for a in self.env_cfg if a.type == "robot"]) == len(
             init_positions
@@ -111,7 +113,7 @@ class IsaacGymWrapper:
             compute_device=0,
             graphics_device=0,
             type=gymapi.SIM_PHYSX,
-            params=parse_isaacgym_config(self.cfg),
+            params=parse_isaacgym_config(self.cfg, self.device),
         )
 
         if self.cfg.viewer:
@@ -188,11 +190,11 @@ class IsaacGymWrapper:
             self.ee_positions_buffer = []
 
         # helpfull slices
-        self.robot_indices = torch.tensor([i for i, a in enumerate(self.env_cfg) if a.type == "robot"], device="cuda:0")
+        self.robot_indices = torch.tensor([i for i, a in enumerate(self.env_cfg) if a.type == "robot"], device=self.device)
 
         print(self.env_cfg)
 
-        self.obstacle_indices = torch.tensor([i for i, a in enumerate(self.env_cfg) if (a.type in ["sphere", "box"] and a.name != "dummy")], device="cuda:0")
+        self.obstacle_indices = torch.tensor([i for i, a in enumerate(self.env_cfg) if (a.type in ["sphere", "box"] and a.name != "dummy")], device=self.device)
 
         if self.ee_link_present:
             self.ee_positions = self.rigid_body_state[
@@ -378,7 +380,7 @@ class IsaacGymWrapper:
     def apply_robot_cmd_velocity(self, u_desired):
         vel_dof_shape = list(self.dof_state.size())
         vel_dof_shape[1] = vel_dof_shape[1] // 2
-        u = torch.zeros(vel_dof_shape, device="cuda:0")
+        u = torch.zeros(vel_dof_shape, device=self.device)
 
         u_desired_idx = 0
         u_dof_idx = 0
@@ -444,7 +446,7 @@ class IsaacGymWrapper:
 
             q_idx += actor_q_count
 
-        dof_state_tensor = torch.tensor(dof_state).type(torch.float32).to("cuda:0")
+        dof_state_tensor = torch.tensor(dof_state).type(torch.float32).to(self.device)
 
         dof_state_tensor = dof_state_tensor.repeat(self.num_envs, 1)
         self.set_dof_state_tensor(dof_state_tensor)
@@ -502,9 +504,9 @@ class IsaacGymWrapper:
             np.cos(roll / 2) * np.cos(pitch / 2) * np.cos(yaw / 2),
         ]
 
-        self.root_state[:, handle, :2] = torch.tensor(pos[:2], device="cuda:0")
-        self.root_state[:, handle, 3:7] = torch.tensor(orientation, device="cuda:0")
-        self.root_state[:, handle, 7:10] = torch.tensor(vel, device="cuda:0")
+        self.root_state[:, handle, :2] = torch.tensor(pos[:2], device=self.device)
+        self.root_state[:, handle, 3:7] = torch.tensor(orientation, device=self.device)
+        self.root_state[:, handle, 7:10] = torch.tensor(vel, device=self.device)
 
     def update_root_state_tensor_by_obstacles(self, obstacles):
         """
@@ -539,7 +541,7 @@ class IsaacGymWrapper:
                 continue
 
             obst_state = torch.tensor(
-                [*pos, 0, 0, 0, 1, *vel, 0, 0, 0], device="cuda:0"
+                [*pos, 0, 0, 0, 1, *vel, 0, 0, 0], device=self.device
             )
 
             # Note: reset simulator if size changed, because this cannot be done at runtime.

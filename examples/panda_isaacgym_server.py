@@ -44,6 +44,7 @@ def run_panda_robot(cfg: ExampleConfig):
         actors=actors,
         num_envs=1,
         viewer=True,
+        device=cfg.mppi.device,
     )
 
     sim.gym.viewer_camera_look_at(
@@ -55,7 +56,7 @@ def run_panda_robot(cfg: ExampleConfig):
     print("Mppi server found!")
 
     pi = 3.14
-    sim.set_dof_state_tensor(torch.tensor([0, 0, 0, 0, 0, 0, -pi/2, 0, 0, 0, pi/2, 0, pi/4, 0], device="cuda:0"))
+    sim.set_dof_state_tensor(torch.tensor([0, 0, 0, 0, 0, 0, -pi/2, 0, 0, 0, pi/2, 0, pi/4, 0], device=sim.device))
 
     for _ in range(cfg.n_steps):
         # Reset state
