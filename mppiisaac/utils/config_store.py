@@ -108,6 +108,7 @@ class ExampleConfig:
 
 
 cs = ConfigStore.instance()
+cs.store(name="config_anymal", node=ExampleConfig)
 cs.store(name="config_point_robot", node=ExampleConfig)
 cs.store(name="config_multi_point_robot", node=ExampleConfig)
 cs.store(name="config_heijn_robot", node=ExampleConfig)
