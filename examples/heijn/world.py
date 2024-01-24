@@ -55,7 +55,7 @@ def run_heijn_robot(cfg: ExampleConfig):
 
 
 if __name__ == "__main__":
-    initialize(version_base=None, config_path="../../conf"u)
+    initialize(version_base=None, config_path="../../conf")
 
     cfg = compose(config_name="example", overrides=["mppi=heijn_push", "db.isaacgym=push"])
 
