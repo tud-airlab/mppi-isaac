@@ -8,7 +8,7 @@ import time
 import torch
 
 
-# @hydra.main(version_base=None, config_path="../../conf", config_name="config_heijn_push")
+@hydra.main(version_base=None, config_path="../../conf", config_name="config_heijn_push")
 def run_heijn_robot(cfg: ExampleConfig):
 
     sim = IsaacGymWrapper(
@@ -55,8 +55,4 @@ def run_heijn_robot(cfg: ExampleConfig):
 
 
 if __name__ == "__main__":
-    initialize(version_base=None, config_path="../../conf")
-
-    cfg = compose(config_name="example", overrides=["mppi=heijn_push", "db.isaacgym=push"])
-
     res = run_heijn_robot()
