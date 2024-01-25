@@ -1,6 +1,5 @@
 from mppiisaac.planner.mppi_isaac import MPPIisaacPlanner
 from mppiisaac.utils.config_store import ExampleConfig
-from mppiisaac.utils.mppi_utils import quaternion_to_yaw
 import hydra
 import torch
 import pytorch3d.transforms

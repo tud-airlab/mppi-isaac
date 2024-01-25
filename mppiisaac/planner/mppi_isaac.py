@@ -1,4 +1,5 @@
 from mppiisaac.planner.isaacgym_wrapper import IsaacGymWrapper, ActorWrapper
+from mppiisaac.utils.transport import bytes_to_torch, torch_to_bytes
 from mppi_torch.mppi import MPPIPlanner as MPPIPlanner
 import mppiisaac
 from typing import Callable, Optional
@@ -10,19 +11,8 @@ from yaml.loader import SafeLoader
 from isaacgym import gymtorch
 import torch
 
+
 torch.set_printoptions(precision=2, sci_mode=False)
-
-
-def torch_to_bytes(t: torch.Tensor) -> bytes:
-    buff = io.BytesIO()
-    torch.save(t, buff)
-    buff.seek(0)
-    return buff.read()
-
-
-def bytes_to_torch(b: bytes) -> torch.Tensor:
-    buff = io.BytesIO(b)
-    return torch.load(buff)
 
 
 class MPPIisaacPlanner(object):
