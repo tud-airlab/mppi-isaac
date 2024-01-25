@@ -1,0 +1,10 @@
+type: robot
+name: dingo_kinova
+urdf_file: "dingo_kinova/dingo_kinova.urdf"
+gravity: true
+fixed: false
+# differential_drive: true
+# wheel_count: 4  
+#  This should be instead a list fo the names of the wheel links
+flip_visual: false
+collision: True

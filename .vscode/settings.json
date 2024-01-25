@@ -1,0 +1,26 @@
+{
+    "python.analysis.extraPaths": [
+        "thirdparty/isaacgym/python"
+    ],
+
+    "cSpell.languageSettings": [
+        // This one works with python
+        {
+            "languageId": "python",
+            "includeRegExpList": [
+                "/#.*/",
+                "/('''|\"\"\")[^\\1]+?\\1/g"
+            ]
+        },
+        // this one works with javascript, C, typescript, etc, 
+        // but you need to copy it and change the language id.
+        {
+            "languageId": "javascript",
+            "includeRegExpList": [
+               "CStyleComment"
+            ]
+        }
+    ],
+    
+    "python.terminal.executeInFileDir": true,
+}

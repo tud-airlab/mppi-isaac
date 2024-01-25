@@ -7,3 +7,5 @@ thirdparty/**/*
 
 **/outputs/**
 .venv
+
+.python-version
