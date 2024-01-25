@@ -145,7 +145,7 @@ def test(cfg: ExampleConfig):
         cfg.flip_visual,
         num_envs=1,
         robot_init_pos=cfg.initial_position,
-        ee_link=cfg.ee_link,
+        visualize_link=cfg.visualize_link,
         disable_gravity=cfg.disable_gravity,
     )
 

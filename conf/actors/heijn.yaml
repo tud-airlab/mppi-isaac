@@ -6,4 +6,4 @@ gravity: true
 fixed: true
 flip_visual: true
 collision: True
-ee_link: "front_link"
+visualize_link: "front_link"

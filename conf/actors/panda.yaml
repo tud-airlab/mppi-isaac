@@ -2,7 +2,7 @@ type: robot
 name: panda
 fixed: True
 urdf_file: "panda_isaac/robots/franka_panda.urdf"
-ee_link: "panda_link7"
+visualize_link: "panda_link7"
 flip_visual: true
 gravity: false
 init_joint_pose: [0.0, 0, -0.94, 0, 0., 0, -2.8, 0, 0., 0, 1.8675, 0, 0., 0]

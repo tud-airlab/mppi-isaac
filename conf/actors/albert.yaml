@@ -1,7 +1,7 @@
 type: robot
 name: albert
 urdf_file: "albert/albert.urdf"
-ee_link: "mmrobot_link7"
+visualize_link: "mmrobot_link7"
 gravity: true
 fixed: false
 flip_visual: false

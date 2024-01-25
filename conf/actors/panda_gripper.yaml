@@ -1,7 +1,7 @@
 type: robot
 name: panda
 urdf_file: "panda_isaac/robots/franka_panda_gripper.urdf"
-ee_link: "panda_ee"
+visualize_link: "panda_ee"
 fixed: True
 flip_visual: true
 gravity: false

@@ -86,7 +86,7 @@ class MPPIisaacPlanner(object):
     def reset_rollout_sim(
         self, dof_state_tensor, root_state_tensor, rigid_body_state_tensor=None
     ):
-        self.sim.ee_positions_buffer = []
+        self.sim.visualize_link_buffer = []
         self.sim._dof_state[:] = bytes_to_torch(dof_state_tensor)
         self.sim._root_state[:] = bytes_to_torch(root_state_tensor)
 
@@ -117,8 +117,10 @@ class MPPIisaacPlanner(object):
     def get_rollouts(self):
         # lines = lines[:, self.mppi.important_samples_indexes, :]
         # print(type(self.mppi.important_samples_indexes))
+        if not self.sim._visualize_link_present:
+            return torch_to_bytes(torch.zeros((1, 1, 1)))
 
-        return torch_to_bytes(torch.stack(self.sim.ee_positions_buffer))
+        return torch_to_bytes(torch.stack(self.sim.visualize_link_buffer))
 
     def update_weights(self, weights):
         self.objective.weights = weights
