@@ -1,5 +1,5 @@
 from dataclasses import dataclass, field
-from mppiisaac.planner.mppi import MPPIConfig
+from mppi_torch.mppi import MPPIConfig
 from mppiisaac.planner.isaacgym_wrapper import IsaacGymConfig, ActorWrapper
 from hydra.core.config_store import ConfigStore
 

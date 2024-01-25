@@ -1,5 +1,5 @@
 from mppiisaac.planner.isaacgym_wrapper import IsaacGymWrapper, ActorWrapper
-from mppiisaac.planner.mppi import MPPIPlanner
+from mppi_torch.mppi import MPPIPlanner as MPPIPlanner
 import mppiisaac
 from typing import Callable, Optional
 import io
@@ -128,7 +128,7 @@ class MPPIisaacPlanner(object):
         # lines = lines[:, self.mppi.important_samples_indexes, :]
         # print(type(self.mppi.important_samples_indexes))
 
-        return torch_to_bytes(torch.stack(self.sim.ee_positions_buffer)[:, self.mppi.important_samples_indexes, :])
+        return torch_to_bytes(torch.stack(self.sim.ee_positions_buffer))
 
     def update_weights(self, weights):
         self.objective.weights = weights
