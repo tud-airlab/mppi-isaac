@@ -1,10 +1,11 @@
 defaults:
-  - mppi: boxer_push
+  - mppi: boxer
   - isaacgym: normal
 
 render: true
-n_steps: 5
+n_steps: 1000
 nx: 4
+goal: [0.0, 0.0, 0.0]
 
-actors: ['boxer', 'block', 'goal']
+actors: ['boxer', 'goal']
 initial_actor_positions: [[0.0, 0.0, 0.05]]

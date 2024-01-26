@@ -1,15 +1,14 @@
 from mppiisaac.planner.isaacgym_wrapper import IsaacGymWrapper
 import hydra
-from hydra import compose, initialize
 import zerorpc
 from mppiisaac.utils.config_store import ExampleConfig
 from mppiisaac.utils.transport import torch_to_bytes, bytes_to_torch
 import time
-import torch
+from isaacgym import gymapi
 
 
-@hydra.main(version_base=None, config_path="../../conf", config_name="config_boxer_push")
-def run_boxer_robot(cfg: ExampleConfig):
+@hydra.main(version_base=None, config_path="../../conf", config_name="config_boxer_reach")
+def reach(cfg: ExampleConfig):
 
     sim = IsaacGymWrapper(
         cfg.isaacgym,
@@ -19,11 +18,16 @@ def run_boxer_robot(cfg: ExampleConfig):
         viewer=True,
     )
 
+    sim._gym.viewer_camera_look_at(
+        sim.viewer, None, gymapi.Vec3(1.5, 2, 3), gymapi.Vec3(1.5, 0, 0)
+    )
+
     planner = zerorpc.Client()
     planner.connect("tcp://127.0.0.1:4242")
     print("Mppi server found!")
 
     t = time.time()
+
     while True:
         # Compute action
         action = bytes_to_torch(
@@ -55,4 +59,4 @@ def run_boxer_robot(cfg: ExampleConfig):
 
 
 if __name__ == "__main__":
-    res = run_boxer_robot()
+    res = reach()

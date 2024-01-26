@@ -87,7 +87,8 @@ class IsaacGymWrapper:
         init_positions: List[List[float]] = None,
         num_envs: int = 1,
         viewer: bool = False,
-        device: str = "cuda:0"
+        device: str = "cuda:0",
+        interactive_goal = True
     ):
         self._gym = gymapi.acquire_gym()
         self.env_cfg = load_actor_cfgs(actors)
@@ -106,9 +107,18 @@ class IsaacGymWrapper:
         self.cfg = cfg
         if viewer:
             self.cfg.viewer = viewer
+        self.interactive_goal = interactive_goal
         self.num_envs = num_envs
         self.restarted = 1
         self.start_sim()
+
+    def initialize_keyboard_listeners(self):
+        self._gym.subscribe_viewer_keyboard_event(self.viewer, gymapi.KEY_A, "left")
+        self._gym.subscribe_viewer_keyboard_event(self.viewer, gymapi.KEY_S, "down")
+        self._gym.subscribe_viewer_keyboard_event(self.viewer, gymapi.KEY_D, "right")
+        self._gym.subscribe_viewer_keyboard_event(self.viewer, gymapi.KEY_W, "up")
+        self._gym.subscribe_viewer_keyboard_event(self.viewer, gymapi.KEY_E, "high")
+        self._gym.subscribe_viewer_keyboard_event(self.viewer, gymapi.KEY_Q, "low")
 
     def start_sim(self):
         self._sim = self._gym.create_sim(
@@ -120,6 +130,8 @@ class IsaacGymWrapper:
 
         if self.cfg.viewer:
             self.viewer = self._gym.create_viewer(self._sim, gymapi.CameraProperties())
+            if self.interactive_goal:
+                self.initialize_keyboard_listeners()
         else:
             self.viewer = None
 
@@ -345,13 +357,11 @@ class IsaacGymWrapper:
     # NOTE: we're using the tensor api everywhere so it works parallelized for the number of envs
     # Setters
     def set_actor_position_by_actor_index(
-        self, position: List[float], actor_idx: str
+        self, position: List[float], actor_idx: int
     ) -> None:
-        # self._root_state[:, actor_idx, :3] = position
-        actor_state = self._root_state[:, actor_idx]
-        actor_state[:, :3] = position
-        self._gym.set_actor_root_state_indexed(
-            self._sim, gymtorch.unwrap_tensor(actor_state), 1
+        self._root_state[:, actor_idx, :3] = position
+        self._gym.set_actor_root_state_tensor_indexed(
+            self._sim, gymtorch.unwrap_tensor(self._root_state), gymtorch.unwrap_tensor(torch.tensor([actor_idx], dtype=torch.int32, device=self.device)), 1
         )
 
     def set_actor_position_by_name(self, position: List[float], name: str) -> None:
@@ -365,18 +375,16 @@ class IsaacGymWrapper:
         self.set_actor_position_by_actor_index(position, actor_idx)
 
     def set_actor_velocity_by_actor_index(
-        self, velocity: List[float], actor_idx: str
+        self, velocity: List[float], actor_idx: int
     ) -> None:
-        # self._root_state[:, actor_idx, :3] = velocity
-        actor_state = self._root_state[:, actor_idx]
-        actor_state[:, 7:10] = velocity
-        self._gym.set_actor_root_state_indexed(
-            self._sim, gymtorch.unwrap_tensor(actor_state), 1
+        self._root_state[:, actor_idx, 7:10] = velocity
+        self._gym.set_actor_root_state_tensor_indexed(
+            self._sim, gymtorch.unwrap_tensor(self._root_state), gymtorch.unwrap_tensor(torch.tensor([actor_idx], dtype=torch.int32, device=self.device)), 1
         )
 
     def set_actor_velocity_by_name(self, velocity: List[float], name: str) -> None:
         actor_idx = [a.name for a in self.env_cfg].index(name)
-        self.set_actor_velocity_by_actor_index(velocity, actor_idx)
+        self.set_actor_velocity_by_actor_index(torch.tensor(velocity), actor_idx)
 
     def set_actor_velocity_by_robot_index(
         self, velocity: List[float], robot_idx: str
@@ -486,7 +494,6 @@ class IsaacGymWrapper:
         # wheel_sets = actor.wheel_count // 2
 
         # Diff drive fk
-        u_ik = u.clone()
         u_left_wheel = (u[:, 0] / r) - ((L * u[:, 1]) / (2 * r))
         u_right_wheel = (u[:, 0] / r) + ((L * u[:, 1]) / (2 * r))
 
@@ -581,6 +588,24 @@ class IsaacGymWrapper:
             self._sim, gymtorch.unwrap_tensor(self._root_state)
         )
 
+    def interactive_goal_update(self):
+        for e in self._gym.query_viewer_action_events(self.viewer):
+            goal_pos = self.get_actor_position_by_name("goal")
+            delta_pos = 0.1
+            if e.action == "up":
+                goal_pos[0, 1] -= delta_pos
+            if e.action == "down":
+                goal_pos[0, 1] += delta_pos
+            if e.action == "left":
+                goal_pos[0, 0] += delta_pos
+            if e.action == "right":
+                goal_pos[0, 0] -= delta_pos
+            if e.action == "high":
+                goal_pos[0, 2] += delta_pos
+            if e.action == "low":
+                goal_pos[0, 2] -= delta_pos
+            self.set_actor_position_by_name(position=goal_pos, name="goal")
+
     def step(self):
         self._gym.simulate(self._sim)
         self._gym.fetch_results(self._sim, True)
@@ -595,6 +620,10 @@ class IsaacGymWrapper:
 
         if self._visualize_link_present:
             self.visualize_link_buffer.append(self.visualize_link_pos.clone())
+
+        if self.interactive_goal:
+            self.interactive_goal_update()
+
 
     def set_root_state_tensor_by_actor_idx(self, state_tensor, idx):
         for i in range(self.num_envs):

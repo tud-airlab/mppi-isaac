@@ -5,27 +5,11 @@ import zerorpc
 from mppiisaac.utils.config_store import ExampleConfig
 from mppiisaac.utils.transport import torch_to_bytes, bytes_to_torch
 import time
-from pynput import mouse, keyboard
-
-MODE = "auto"  # "step"
-CONTINUE = True
-
-
-def on_press(key):
-    global MODE, CONTINUE
-    if key.char == 'c':
-        MODE = "auto"
-    elif key.char == 's':
-        MODE = "step"
-        CONTINUE = True
 
 
 
 @hydra.main(version_base=None, config_path="../../conf", config_name="panda_pick")
 def run_heijn_robot(cfg: ExampleConfig):
-    global MODE, CONTINUE
-    listener = keyboard.Listener(on_press=on_press)
-    listener.start()
 
     cfg.isaacgym.dt = 0.1
     sim = IsaacGymWrapper(
@@ -57,7 +41,7 @@ def run_heijn_robot(cfg: ExampleConfig):
         )
 
         # Apply action
-        sim.set_dof_velocity_target_tensor(action)
+        sim.apply_robot_cmd_velocity(action)
 
         # Step simulator
         sim.step()
@@ -68,19 +52,14 @@ def run_heijn_robot(cfg: ExampleConfig):
         sim.draw_lines(rollouts)
 
         # Timekeeping
-        if MODE == "auto":
+        actual_dt = time.time() - t
+        rt = cfg.isaacgym.dt / actual_dt
+        if rt > 1.0:
+            time.sleep(cfg.isaacgym.dt - actual_dt)
             actual_dt = time.time() - t
             rt = cfg.isaacgym.dt / actual_dt
-            if rt > 1.0:
-                time.sleep(cfg.isaacgym.dt - actual_dt)
-                actual_dt = time.time() - t
-                rt = cfg.isaacgym.dt / actual_dt
-            print(f"FPS: {1/actual_dt}, RT={rt}")
-            t = time.time()
-        elif MODE == "step":
-            while not CONTINUE:
-                time.sleep(0.05)
-            CONTINUE = False
+        print(f"FPS: {1/actual_dt}, RT={rt}")
+        t = time.time()
 
 
 if __name__ == "__main__":

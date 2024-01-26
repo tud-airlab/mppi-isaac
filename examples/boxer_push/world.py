@@ -1,16 +1,15 @@
 from mppiisaac.planner.isaacgym_wrapper import IsaacGymWrapper
-from isaacgym import gymapi
 import hydra
 import zerorpc
 from mppiisaac.utils.config_store import ExampleConfig
 from mppiisaac.utils.transport import torch_to_bytes, bytes_to_torch
 import time
-from pynput import mouse, keyboard
+from isaacgym import gymapi
 
 
-@hydra.main(version_base=None, config_path="../../conf", config_name="config_albert")
-def run_albert_robot(cfg: ExampleConfig):
-    cfg.isaacgym.dt = 0.1
+@hydra.main(version_base=None, config_path="../../conf", config_name="config_boxer_push")
+def reach(cfg: ExampleConfig):
+
     sim = IsaacGymWrapper(
         cfg.isaacgym,
         actors=cfg.actors,
@@ -19,19 +18,22 @@ def run_albert_robot(cfg: ExampleConfig):
         viewer=True,
     )
 
+    sim._gym.viewer_camera_look_at(
+        sim.viewer, None, gymapi.Vec3(1.5, 2, 3), gymapi.Vec3(1.5, 0, 0)
+    )
+
+    sim._gym.subscribe_viewer_keyboard_event(sim.viewer, gymapi.KEY_A, "left")
+    sim._gym.subscribe_viewer_keyboard_event(sim.viewer, gymapi.KEY_S, "down")
+    sim._gym.subscribe_viewer_keyboard_event(sim.viewer, gymapi.KEY_D, "right")
+    sim._gym.subscribe_viewer_keyboard_event(sim.viewer, gymapi.KEY_W, "up")
+
     planner = zerorpc.Client()
     planner.connect("tcp://127.0.0.1:4242")
     print("Mppi server found!")
 
-    sim._gym.viewer_camera_look_at(
-        sim.viewer,
-        None,
-        gymapi.Vec3(1.0, 6.5, 4),
-        gymapi.Vec3(1.0, 0, 0),  # CAMERA LOCATION, CAMERA POINT OF INTEREST
-    )
-
     t = time.time()
-    for _ in range(cfg.n_steps):
+
+    while True:
         # Compute action
         action = bytes_to_torch(
             planner.compute_action_tensor(
@@ -40,7 +42,7 @@ def run_albert_robot(cfg: ExampleConfig):
         )
 
         # Apply action
-        sim.apply_robot_cmd_velocity(action.unsqueeze(0))
+        sim.apply_robot_cmd_velocity(action)
 
         # Step simulator
         sim.step()
@@ -62,4 +64,4 @@ def run_albert_robot(cfg: ExampleConfig):
 
 
 if __name__ == "__main__":
-    res = run_albert_robot()
+    res = reach()

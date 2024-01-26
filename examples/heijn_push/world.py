@@ -1,11 +1,9 @@
 from mppiisaac.planner.isaacgym_wrapper import IsaacGymWrapper
 import hydra
-from hydra import compose, initialize
 import zerorpc
 from mppiisaac.utils.config_store import ExampleConfig
 from mppiisaac.utils.transport import torch_to_bytes, bytes_to_torch
 import time
-import torch
 
 
 @hydra.main(version_base=None, config_path="../../conf", config_name="config_heijn_push")

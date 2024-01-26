@@ -23,11 +23,11 @@ class Objective(object):
         pass
 
     def compute_cost(self, sim):
-        r_pos = sim.get_actor_position_by_name("boxer")
+        r_pos = sim.get_actor_link_by_name(actor_name="boxer", link_name="ee_link")
+        block_goal = sim.get_actor_position_by_name("goal")
         block_pos = sim.get_actor_position_by_name("block")
         block_vel = sim.get_actor_velocity_by_name("block")
         block_ort = sim.get_actor_orientation_by_name("block")
-        block_goal = sim.get_actor_position_by_name("goal")
 
         # Distances robot
         robot_to_block = r_pos[:, 0:2] - block_pos[:, 0:2]
@@ -56,6 +56,7 @@ class Objective(object):
             + self.weights["push_align"] * push_align
             + self.weights["velocity"] * vel
         )
+
 
         return total_cost
 
