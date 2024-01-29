@@ -18,7 +18,6 @@ hydra-core = "^1.3.1"
 yourdfpy = "^0.0.52"
 pytorch3d = "^0.3.0"
 zerorpc = "^0.6.3"
-pynput = "^1.7.6"
 mppi-torch = {git = "ssh://git@github.com/tud-airlab/mppi_torch.git"}
 
 [tool.poetry.group.dev]

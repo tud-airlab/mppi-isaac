@@ -5,7 +5,6 @@ import zerorpc
 from mppiisaac.utils.config_store import ExampleConfig
 from mppiisaac.utils.transport import torch_to_bytes, bytes_to_torch
 import time
-from pynput import mouse, keyboard
 
 
 @hydra.main(version_base=None, config_path=".", config_name="config_albert")
