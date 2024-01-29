@@ -9,3 +9,7 @@ nx: 6
 
 actors: ['heijn', 'wall', 'goal']
 initial_actor_positions: [[0.0, 0.0, 0.05]]
+
+hydra:
+  searchpath:
+    - pkg://conf

@@ -6,3 +6,7 @@ n_steps: 10000
 actors: ['panda_gripper', 'xaxis', 'yaxis', 'panda_pick_block', 'table', 'goal']
 initial_actor_positions: [[0.0, 0.0, 0.0]]
 nx: 18
+
+hydra:
+  searchpath:
+    - pkg://conf

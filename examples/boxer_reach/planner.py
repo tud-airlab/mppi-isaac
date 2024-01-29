@@ -24,7 +24,7 @@ class Objective(object):
         return robot_to_goal_dist + forces
 
 
-@hydra.main(version_base=None, config_path="../../conf", config_name="config_boxer_reach")
+@hydra.main(version_base=None, config_path=".", config_name="config_boxer_reach")
 def run_heijn_robot(cfg: ExampleConfig):
     objective = Objective(cfg)
     planner = zerorpc.Server(MPPIisaacPlanner(cfg, objective, prior=None))

@@ -7,7 +7,7 @@ from mppiisaac.utils.transport import torch_to_bytes, bytes_to_torch
 import time
 
 
-@hydra.main(version_base=None, config_path="../../conf", config_name="config_anymal")
+@hydra.main(version_base=None, config_path=".", config_name="config_anymal")
 def run_heijn_robot(cfg: ExampleConfig):
     cfg.isaacgym.dt = 0.1
     sim = IsaacGymWrapper(

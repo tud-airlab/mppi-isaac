@@ -113,7 +113,7 @@ def fabrics_point(goal, weight=0.5, max_num_obstacles=10):
 
 
 @hydra.main(
-    version_base=None, config_path="../../conf", config_name="config_point_robot"
+    version_base=None, config_path=".", config_name="config_point_robot"
 )
 def test(cfg: ExampleConfig):
 

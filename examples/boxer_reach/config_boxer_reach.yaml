@@ -8,3 +8,7 @@ nx: 4
 
 actors: ['boxer', 'wall', 'goal']
 initial_actor_positions: [[0.0, 0.0, 0.05]]
+
+hydra:
+  searchpath:
+    - pkg://conf

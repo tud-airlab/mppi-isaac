@@ -6,3 +6,7 @@ n_steps: 10000
 actors: ['albert', 'goal']
 initial_actor_positions: [[0.0, 0.0, 0.05]]
 nx: 18
+
+hydra:
+  searchpath:
+    - pkg://conf

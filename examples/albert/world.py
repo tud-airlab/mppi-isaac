@@ -8,7 +8,7 @@ import time
 from pynput import mouse, keyboard
 
 
-@hydra.main(version_base=None, config_path="../../conf", config_name="config_albert")
+@hydra.main(version_base=None, config_path=".", config_name="config_albert")
 def run_albert_robot(cfg: ExampleConfig):
     cfg.isaacgym.dt = 0.1
     sim = IsaacGymWrapper(

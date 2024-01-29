@@ -7,7 +7,7 @@ import time
 from isaacgym import gymapi
 
 
-@hydra.main(version_base=None, config_path="../../conf", config_name="config_boxer_push")
+@hydra.main(version_base=None, config_path=".", config_name="config_boxer_push")
 def reach(cfg: ExampleConfig):
 
     sim = IsaacGymWrapper(

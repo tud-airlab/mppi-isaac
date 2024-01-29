@@ -48,7 +48,7 @@ class Objective(object):
         return total_cost
 
 
-@hydra.main(version_base=None, config_path="../../conf", config_name="config_anymal")
+@hydra.main(version_base=None, config_path=".", config_name="config_anymal")
 def run_heijn_robot(cfg: ExampleConfig):
     objective = Objective(cfg)
     planner = zerorpc.Server(MPPIisaacPlanner(cfg, objective, prior=None))

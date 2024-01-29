@@ -8,7 +8,7 @@ import time
 
 
 
-@hydra.main(version_base=None, config_path="../../conf", config_name="panda_pick")
+@hydra.main(version_base=None, config_path=".", config_name="panda_pick")
 def run_heijn_robot(cfg: ExampleConfig):
 
     cfg.isaacgym.dt = 0.1

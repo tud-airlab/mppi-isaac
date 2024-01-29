@@ -112,7 +112,7 @@ class Tuning:
 
         return obj
 
-@hydra.main(version_base=None, config_path="../../conf", config_name="panda_pick")
+@hydra.main(version_base=None, config_path=".", config_name="panda_pick")
 def main(cfg: ExampleConfig):
     t = Tuning(cfg)
     t.tune()
