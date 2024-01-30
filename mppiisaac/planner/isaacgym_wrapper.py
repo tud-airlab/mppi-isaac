@@ -68,6 +68,9 @@ class ActorWrapper:
     urdf_file: str = None
     ee_link: str = None
     gravity: bool = True
+    use_mesh_materials: bool = False
+    override_com: bool = False
+    override_inertia: bool = False
     differential_drive: bool = False
     wheel_radius: Optional[float] = None
     wheel_base: Optional[float] = None
@@ -243,6 +246,9 @@ class IsaacGymWrapper:
             asset_file = "urdf/" + actor_cfg.urdf_file
             asset_options.flip_visual_attachments = actor_cfg.flip_visual
             asset_options.disable_gravity = not actor_cfg.gravity
+            asset_options.use_mesh_materials = actor_cfg.use_mesh_materials
+            asset_options.override_com = actor_cfg.override_com 
+            asset_options.override_inertia = actor_cfg.override_inertia # override inertia tensor, to avoid jittering
             actor_asset = self.gym.load_asset(
                 sim=self.sim,
                 rootpath=f"{file_path}/../../assets",
