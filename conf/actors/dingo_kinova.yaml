@@ -1,8 +1,12 @@
 type: robot
 name: dingo_kinova
 urdf_file: "dingo_kinova/dingo_kinova.urdf"
-gravity: true
-fixed: false
+gravity: false
+fixed: true
+use_mesh_materials: True
+# override_com: True
+# override_inertia: True
+ee_link: "arm_gripper_base_link"
 # differential_drive: true
 # wheel_count: 4  
 #  This should be instead a list fo the names of the wheel links

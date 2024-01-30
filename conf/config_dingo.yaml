@@ -1,0 +1,13 @@
+defaults:
+  - mppi: dingo
+  - isaacgym: push
+
+goal: [0.5, 0.4, 0.7]
+render: true
+n_steps: 5
+nx: 26
+# nx: 24
+
+# actors: ['omnipanda']
+actors: ['dingo_kinova']
+initial_actor_positions: [[0.0, 0.0, 0.0]]
