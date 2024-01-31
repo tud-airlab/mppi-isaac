@@ -69,12 +69,12 @@ def run_omnipanda_robot(cfg: ExampleConfig):
     obj_index = 0
 
                 #  l     w     h    mu     m    x    y
-    obj_set =  [[0.05, 0.05, 0.05, 0.90, 0.05, 0.37, 0.],    # Cube
+    obj_set =  [[0.04, 0.04, 0.04, 0.90, 0.05, 0.6, 0.0],    # Cube
                 [0.03, 0.03, 0.04, 0.90, 0.2, 0.37, 0.]]    # Other
     
     obj_ = obj_set[obj_index][:]
-    table_dim = [0.8, 1.0, 0.30]
-    table_pos = [0.5, 0., 0.6]
+    table_dim = [0.7, 0.8, 0.20]
+    table_pos = [0.8, 0.0, table_dim[-1]/2]
     goal_pos = [-1., -1., 0.6]
 
     additions = [
