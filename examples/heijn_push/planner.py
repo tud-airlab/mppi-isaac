@@ -11,14 +11,15 @@ class Objective(object):
         # Tuning of the weights for box
         self.weights = {
             "robot_to_block": 0.2,
-            "block_to_pos": 2.0,
-            "block_to_ort": 2.0,
-            "push_align": 0.2,
-            "velocity": 1.0,
+            "block_to_goal": 2.0,
+            "block_to_goal_ort": 3.0,
+            "push_align": 0.6,
+            "collision": 10,
+            "velocity": 0.0,
         }
 
         self.goal_yaw = 0.0
-    
+
     def reset(self):
         pass
 
@@ -46,15 +47,21 @@ class Objective(object):
             + 1
         )
 
+        # Collision avoidance
+        obst1_forces = sim.get_actor_contact_forces_by_name(actor_name="paper_obst1", link_name="box")
+        obst2_forces = sim.get_actor_contact_forces_by_name(actor_name="paper_obst2", link_name="box")
+        coll = torch.sum(torch.abs(obst1_forces[:, 0:2]), axis=1) + torch.sum(torch.abs(obst2_forces[:, 0:2]), axis=1)
+
         # Velocity cost
         vel = torch.linalg.norm(block_vel[:, 0:2], axis=1)
 
         total_cost = (
             self.weights["robot_to_block"] * robot_to_block_dist
-            + self.weights["block_to_pos"] * block_to_pos_dist
-            + self.weights["block_to_ort"] * block_to_ort_dist
+            + self.weights["block_to_goal"] * block_to_pos_dist
+            + self.weights["block_to_goal_ort"] * block_to_ort_dist
             + self.weights["push_align"] * push_align
             + self.weights["velocity"] * vel
+            + self.weights["collision"] * coll
         )
 
         return total_cost

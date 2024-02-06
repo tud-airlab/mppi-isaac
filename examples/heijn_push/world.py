@@ -4,6 +4,7 @@ import zerorpc
 from mppiisaac.utils.config_store import ExampleConfig
 from mppiisaac.utils.transport import torch_to_bytes, bytes_to_torch
 import time
+from isaacgym import gymapi
 
 
 @hydra.main(version_base=None, config_path=".", config_name="config_heijn_push")
@@ -15,6 +16,10 @@ def run_heijn_robot(cfg: ExampleConfig):
         init_positions=cfg.initial_actor_positions,
         num_envs=1,
         viewer=True,
+    )
+
+    sim._gym.viewer_camera_look_at(
+        sim.viewer, None, gymapi.Vec3(1.5, 2, 3), gymapi.Vec3(1.5, 0, 0)
     )
 
     planner = zerorpc.Client()
