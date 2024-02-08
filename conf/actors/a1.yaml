@@ -1,0 +1,6 @@
+type: robot
+name: a1
+fixed: false
+urdf_file: "a1/a1.urdf"
+flip_visual: true
+gravity: true

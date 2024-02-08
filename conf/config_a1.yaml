@@ -1,0 +1,11 @@
+defaults:
+  - mppi: a1
+  - isaacgym: normal
+
+goal: [2.0, 2.0]
+render: true
+n_steps: 1
+nx: 24 
+
+actors: ['a1']
+initial_actor_positions: [[0.0, 0.0, 0.5]]
