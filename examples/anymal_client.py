@@ -14,13 +14,13 @@ class Objective(object):
 
     def compute_cost(self, sim):
         robot_pos = sim.robot_positions[:, 0, :2]
-        rel_robot_pos = robot_pos - torch.tensor([2.0, 2.0], device=self.device)
+        rel_robot_pos = robot_pos - torch.tensor([0.0, 0.0], device=self.device)
         euclidean_cost = torch.norm(rel_robot_pos, dim=1)
 
         robot_height = sim.robot_positions[:, 0, 2]
-        height_cost = torch.abs(robot_height - 1.0)
+        height_cost = torch.norm(robot_height - 0.6)
 
-        return euclidean_cost + height_cost
+        return euclidean_cost + 100.0*height_cost
 
 
 @hydra.main(version_base=None, config_path="../conf", config_name="config_anymal")

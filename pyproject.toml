@@ -30,6 +30,7 @@ optional = true
 [tool.poetry.group.dev.dependencies]
 pylint = "^2.16.1"
 black = "^23.1.0"
+ipykernel = "^6.29.3"
 
 [tool.poetry.group.benchmark]
 optional = true

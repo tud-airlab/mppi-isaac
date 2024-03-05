@@ -49,6 +49,7 @@ def run_anymal(cfg: ExampleConfig):
         actors=actors,
         num_envs=1,
         viewer=True,
+        device=cfg.mppi.device,
     )
 
     planner = zerorpc.Client()

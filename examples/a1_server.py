@@ -73,7 +73,7 @@ def run_anymal(cfg: ExampleConfig):
         # print cost at current state  
         cost = objective.compute_cost(sim)
         print("Cost: ", cost)
-        # print("dof state: ", sim.dof_state)
+        print("vel x: ", sim.root_state[:,0,7])
        
         # Compute action
         action = bytes_to_torch(planner.command())
@@ -84,7 +84,7 @@ def run_anymal(cfg: ExampleConfig):
         # Apply action
         # sim.set_dof_velocity_target_tensor(10*action)
         
-        # action = torch.tensor([0.0, 0.0, 10.0, 0.0, 0.0, 10.0, 0.0, 0.0, 10.0, 0.0, 0.0, 10.0], device=cfg.mppi.device)
+        # action = torch.tensor([0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, -0.1], device=cfg.mppi.device)
         
         sim.apply_robot_cmd_velocity(torch.unsqueeze(action, axis=0))
 

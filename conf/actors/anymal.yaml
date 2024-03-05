@@ -1,6 +1,6 @@
 type: robot
 name: anymal
 fixed: false
-urdf_file: "anymal_c/urdf/anymal_minimal.urdf"
+urdf_file: "anymal_c/urdf/anymal_really_minimal.urdf"
 flip_visual: true
 gravity: true

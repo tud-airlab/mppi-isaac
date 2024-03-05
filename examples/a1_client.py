@@ -15,11 +15,13 @@ class Objective(object):
 
     def compute_cost(self, sim):
         robot_pos = sim.robot_positions[:, 0, :2]
-        rel_robot_pos = robot_pos - torch.tensor([0.0, 0.0], device=self.device)
+        rel_robot_pos = robot_pos - torch.tensor([-1.0, 0.0], device=self.device)
         euclidean_cost = torch.sum(torch.square(rel_robot_pos))
 
         upward_quat = torch.tensor([0., 0., 0., 1.], device=self.device)
         orientation_cost = torch.sum(torch.square(sim.root_state[:,0,3:7] - upward_quat.expand_as(sim.root_state[:,0,3:7])), dim=1)
+
+        vel_x_cost = torch.square(sim.root_state[:,0,7] + 0.2)
 
         # only penalize the pose
         pose_indices = torch.arange(0, 24, 2, device=self.device)  # indices for position states
@@ -28,7 +30,22 @@ class Objective(object):
         robot_height = sim.robot_positions[:, 0, 2]
         height_cost = torch.square(robot_height - 0.35)
 
-        return 100.*euclidean_cost + 100.0*height_cost + 1.0*pose_cost + 100.0*orientation_cost
+        # # Collision avoidance
+        # contact_f = torch.sum(torch.abs(torch.cat((sim.net_cf[:, 0].unsqueeze(1), sim.net_cf[:, 1].unsqueeze(1), sim.net_cf[:, 2].unsqueeze(1)), 1)),1)
+        # coll = torch.sum(contact_f.reshape([sim.num_envs, int(contact_f.size(dim=0)/sim.num_envs)])[:, (sim.num_bodies - 1 - self.obst_number):sim.num_bodies], 1) # Consider obstacles
+
+        # Collision avoidance
+        contact_f = torch.sum(torch.abs(torch.cat((sim.net_cf[:, 0].unsqueeze(1), sim.net_cf[:, 1].unsqueeze(1), sim.net_cf[:, 2].unsqueeze(1)), 1)),1)
+        contact_f_reshaped = contact_f.reshape([sim.num_envs, int(contact_f.size(dim=0)/sim.num_envs)])
+
+        # Indices for feet
+        feet_indices = torch.tensor([6, 11, 16, 21], device=sim.device)
+
+        # Consider all but feet
+        non_feet_indices = torch.tensor([i for i in range(sim.num_bodies) if i not in feet_indices.tolist()], device=sim.device)
+        coll = torch.sum(torch.index_select(contact_f_reshaped, 1, non_feet_indices), 1)
+
+        return 100.*euclidean_cost + 10.0*height_cost + 0.5*pose_cost + 100.0*orientation_cost + 10.0*vel_x_cost + 10.0*coll
         # return 1.0*pose_cost 
 
 
