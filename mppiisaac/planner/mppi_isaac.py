@@ -57,7 +57,9 @@ class MPPIisaacPlanner(object):
         # Note: normally mppi passes the state as the first parameter in a dynamics call, but using isaacgym the state is already saved in the simulator itself, so we ignore it.
         # Note: t is an unused step dependent dynamics variable
 
-        self.sim.apply_robot_cmd_velocity(u)
+        # self.sim.apply_robot_cmd_velocity(u)
+        self.sim.set_dof_actuation_force_tensor(u)
+
 
         self.sim.step()
 

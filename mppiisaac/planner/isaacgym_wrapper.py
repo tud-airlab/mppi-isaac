@@ -398,6 +398,9 @@ class IsaacGymWrapper:
     def set_dof_velocity_target_tensor(self, u):
         self._gym.set_dof_velocity_target_tensor(self._sim, gymtorch.unwrap_tensor(u))
 
+    def set_dof_actuation_force_tensor(self, u):
+        self._gym.set_dof_actuation_force_tensor(self._sim, gymtorch.unwrap_tensor(u))
+
     # # Note: difficult because the number of dofs can change per actor. thus we cannot simply use view to rearange the dof_state_tensor for easy access.
     # # We have to lookup the exact indices of the dofs for the given actor name
     # def set_robot_position_by_name(self, position: List[float], name: str):
@@ -482,9 +485,10 @@ class IsaacGymWrapper:
                 )
 
             props = self._gym.get_asset_dof_properties(asset)
-            props["driveMode"].fill(gymapi.DOF_MODE_VEL)
+            props["driveMode"].fill(gymapi.DOF_MODE_EFFORT)
             props["stiffness"].fill(0.0)
-            props["damping"].fill(600)
+            props["armature"].fill(0.0)
+            props["damping"].fill(10.0)
             self._gym.set_actor_dof_properties(env, handle, props)
         return handle
 

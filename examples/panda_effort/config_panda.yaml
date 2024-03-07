@@ -1,0 +1,12 @@
+defaults:
+  - mppi: panda_effort
+  - isaacgym: normal
+
+n_steps: 10000
+actors: ['panda', 'goal']
+initial_actor_positions: [[0.0, 0.0, 0.0]]
+nx: 14
+
+hydra:
+  searchpath:
+    - pkg://conf
