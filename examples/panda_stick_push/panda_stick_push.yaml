@@ -1,0 +1,12 @@
+defaults:
+  - mppi: panda_stick_push
+  - isaacgym: normal
+
+n_steps: 10000
+actors: ['panda_stick', 'xaxis', 'yaxis', 'panda_push_block', 'table', 'goal']
+initial_actor_positions: [[0.0, 0.0, 0.0]]
+nx: 14
+
+hydra:
+  searchpath:
+    - pkg://conf
