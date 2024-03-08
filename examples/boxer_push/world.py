@@ -42,7 +42,7 @@ def reach(cfg: ExampleConfig):
         )
 
         # Apply action
-        sim.apply_robot_cmd_velocity(action)
+        sim.apply_robot_cmd(action)
 
         # Step simulator
         sim.step()

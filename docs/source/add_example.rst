@@ -65,7 +65,7 @@ The world file represents your 'real' world and should call the planner each ste
             )
 
             # Apply action
-            sim.apply_robot_cmd_velocity(action.unsqueeze(0))
+            sim.apply_robot_cmd(action.unsqueeze(0))
 
             # Step simulator
             sim.step()

@@ -39,7 +39,7 @@ def run_albert_robot(cfg: ExampleConfig):
         )
 
         # Apply action
-        sim.apply_robot_cmd_velocity(action.unsqueeze(0))
+        sim.apply_robot_cmd(action)
 
         # Step simulator
         sim.step()

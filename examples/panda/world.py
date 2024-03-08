@@ -39,7 +39,7 @@ def run_panda_robot(cfg: ExampleConfig):
         )
 
         # Apply action
-        sim.set_dof_velocity_target_tensor(action)
+        sim.apply_robot_cmd(action)
 
         # Step simulator
         sim.step()

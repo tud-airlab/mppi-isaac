@@ -50,6 +50,7 @@ class SupportedActorTypes(Enum):
 class ActorWrapper:
     type: SupportedActorTypes
     name: str
+    dof_mode: str = "velocity"
     init_pos: List[float] = field(default_factory=lambda: [0, 0, 0])
     init_ori: List[float] = field(default_factory=lambda: [0, 0, 0, 1])
     size: List[float] = field(default_factory=lambda: [0.1, 0.1, 0.1])
@@ -485,10 +486,21 @@ class IsaacGymWrapper:
                 )
 
             props = self._gym.get_asset_dof_properties(asset)
-            props["driveMode"].fill(gymapi.DOF_MODE_EFFORT)
-            props["stiffness"].fill(0.0)
-            props["armature"].fill(0.0)
-            props["damping"].fill(10.0)
+            if actor.dof_mode == "effort":
+                props["driveMode"].fill(gymapi.DOF_MODE_EFFORT)
+                props["stiffness"].fill(0.0)
+                props["armature"].fill(0.0)
+                props["damping"].fill(10.0)
+            elif actor.dof_mode == "velocity":
+                props["driveMode"].fill(gymapi.DOF_MODE_VEL)
+                props["stiffness"].fill(0.0)
+                props["damping"].fill(600.0)
+            elif actor.dof_mode == "position":
+                props["driveMode"].fill(gymapi.DOF_MODE_POS)
+                props["stiffness"].fill(80.0)
+                props["damping"].fill(0.0)
+            else:
+                raise ValueError("Invalid dof_mode")
             self._gym.set_actor_dof_properties(env, handle, props)
         return handle
 
@@ -506,18 +518,24 @@ class IsaacGymWrapper:
 
         return u_left_wheel, u_right_wheel
 
-    def apply_robot_cmd_velocity(self, u_desired):
+    def apply_robot_cmd(self, u_desired):
         if len(u_desired.size()) == 1:
             u_desired = u_desired.unsqueeze(0)
 
-        vel_dof_shape = list(self._dof_state.size())
-        vel_dof_shape[1] = vel_dof_shape[1] // 2
-        u = torch.zeros(vel_dof_shape, device=self.device)
+        dof_shape = list(self._dof_state.size())
+        dof_shape[1] = dof_shape[1] // 2
+        u = torch.zeros(dof_shape, device=self.device)
 
         u_desired_idx = 0
+        dof_mode = None
         for actor in self.env_cfg:
             if actor.type != "robot":
                 continue
+            dof_mode = actor.dof_mode
+
+            if dof_mode is not None and dof_mode != actor.dof_mode:
+                raise ValueError("All robots must have the same dof_mode")
+
             actor_dof_count = self._gym.get_actor_dof_count(self.envs[0], actor.handle)
             dof_dict = self._gym.get_actor_dof_dict(self.envs[0], actor.handle)
 
@@ -543,7 +561,12 @@ class IsaacGymWrapper:
                 u[u[:, actor_dof_count -1] > 0.0, actor_dof_count-2] = 0.1
                 u[u[:, actor_dof_count -1] >= 0.0, actor_dof_count-2] = -0.1
 
-        self._gym.set_dof_velocity_target_tensor(self._sim, gymtorch.unwrap_tensor(u))
+        if dof_mode == "effort":
+            self.set_dof_actuation_force_tensor(u)
+        elif dof_mode == "velocity":
+            self.set_dof_velocity_target_tensor(u)
+        elif dof_mode == "position":
+            self.set_actor_dof_state(u)
 
     def reset_robot_state(self, q, qdot):
         """
