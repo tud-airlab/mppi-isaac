@@ -1,0 +1,23 @@
+defaults:
+  - base_mppi
+
+mppi_mode: "halton-spline"  # halton-spline, simple
+sampling_method: "halton"   # halton, random
+num_samples: 1000
+horizon: 12                 # At least 12 for Halton Sampling
+device: "cuda:0"
+u_min: [-0.2]
+u_max: [0.2]
+lambda_: 0.05
+noise_sigma: [[0.1, 0., 0., 0., 0., 0., 0.],
+              [0., 0.1, 0., 0., 0., 0., 0.], 
+              [0., 0., 0.1, 0., 0., 0., 0.],
+              [0., 0., 0., 0.1, 0., 0., 0.],
+              [0., 0., 0., 0., 0.1, 0., 0.],
+              [0., 0., 0., 0., 0., 0.1, 0.],
+              [0., 0., 0., 0., 0., 0., 0.1]]
+rollout_var_discount: 0.95
+update_cov: False
+sample_null_action: True
+filter_u: True
+use_priors: False

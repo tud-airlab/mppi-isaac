@@ -133,7 +133,7 @@ def fabrics_panda(goal, urdf_file, max_num_obstacles=10):
 
 
 @hydra.main(
-    version_base=None, config_path="../../conf", config_name="config_panda"
+    version_base=None, config_path=".", config_name="config_panda"
 )
 def test(cfg: ExampleConfig):
 
@@ -145,7 +145,7 @@ def test(cfg: ExampleConfig):
         cfg.flip_visual,
         num_envs=1,
         robot_init_pos=cfg.initial_position,
-        ee_link=cfg.ee_link,
+        visualize_link=cfg.visualize_link,
         disable_gravity=cfg.disable_gravity,
     )
 

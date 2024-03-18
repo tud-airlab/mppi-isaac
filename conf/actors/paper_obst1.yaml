@@ -1,0 +1,9 @@
+type: "box"
+name: "paper_obst1"
+size: [0.6, 0.8, 0.108]
+init_pos: [1, 1, 0.054]
+fixed: True
+handle: None
+color: [1.0, 1.0, 1.0]
+friction: 0.2
+noise_percentage_friction: 0.3

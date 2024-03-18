@@ -1,0 +1,17 @@
+<?xml version="1.0"?>
+<robot name="mesh">
+  <link name="mesh1">
+    <visual>
+      <origin rpy="0 0 0" xyz="0 0 0"/>
+      <geometry>
+        <mesh filename="/home/albert/workspaces/isaac_ros-dev/src/isaac_ros_nvblox/super_cool_map.obj"/>
+      </geometry>
+    </visual>
+    <collision>
+      <origin rpy="0 0 0" xyz="0 0 0"/>
+      <geometry>
+        <mesh filename="/home/albert/workspaces/isaac_ros-dev/src/isaac_ros_nvblox/super_cool_map.obj"/>
+      </geometry>
+    </collision>
+  </link>
+</robot>

@@ -1,5 +1,5 @@
 from dataclasses import dataclass, field
-from mppiisaac.planner.mppi import MPPIConfig
+from mppi_torch.mppi import MPPIConfig
 from mppiisaac.planner.isaacgym_wrapper import IsaacGymConfig, ActorWrapper
 from hydra.core.config_store import ConfigStore
 
@@ -29,7 +29,18 @@ cs.store(name="config_panda", node=ExampleConfig)
 cs.store(name="config_omnipanda", node=ExampleConfig)
 cs.store(name="config_panda_push", node=ExampleConfig)
 cs.store(name="config_heijn_push", node=ExampleConfig)
+cs.store(name="config_heijn_reach", node=ExampleConfig)
 cs.store(name="config_boxer_push", node=ExampleConfig)
+cs.store(name="config_boxer_reach", node=ExampleConfig)
 cs.store(name="config_panda_c_space_goal", node=ExampleConfig)
 cs.store(group="mppi", name="base_mppi", node=MPPIConfig)
 cs.store(group="isaacgym", name="base_isaacgym", node=IsaacGymConfig)
+
+
+from hydra import compose, initialize
+from omegaconf import OmegaConf
+def load_isaacgym_config(name):
+    with initialize(config_path="../../conf"):
+        cfg = compose(config_name=name)
+        print(OmegaConf.to_yaml(cfg))
+    return cfg

@@ -1,0 +1,6 @@
+type: robot
+name: anymal
+fixed: false
+urdf_file: "anymal_c/urdf/anymal.urdf"
+flip_visual: true
+gravity: true

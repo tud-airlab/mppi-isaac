@@ -1,0 +1,12 @@
+type: "box"
+name: "wall"
+size: [2.0, 0.2, 0.2]
+init_pos: [1.0, 1.0, 0.0]
+mass: 1.0 
+fixed: true
+handle: None
+color: [0.2, 0.2, 1.0]
+friction: 0.2
+noise_sigma_size: [0.005, 0.005, 0.0]
+noise_percentage_friction: 0.3
+noise_percentage_mass: 0.3

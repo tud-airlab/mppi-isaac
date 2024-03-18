@@ -1,0 +1,12 @@
+type: "box"
+name: "block"
+size: [0.4, 0.3, 0.2]
+init_pos: [2.5, 1.8, 0.2]
+mass: 1.0 
+fixed: False
+handle: None
+color: [0.2, 0.2, 1.0]
+friction: 0.6
+noise_sigma_size: [0.005, 0.005, 0.0]
+noise_percentage_friction: 0.3
+noise_percentage_mass: 0.3
