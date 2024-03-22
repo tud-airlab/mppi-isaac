@@ -19,7 +19,7 @@ class Objective(object):
         # self.w_robot_to_block_pos=  8
         # self.w_block_to_goal_pos=   3
         self.w_ee_to_goal_pos=      8.0
-        self.w_ee_align=            0.0
+        self.w_ee_align=            0.5
         self.w_collision=           1.0
         # Task configration for comparison with baselines
         self.ee_index = 25
