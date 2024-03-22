@@ -343,18 +343,10 @@
     dingo_gazebo/launch/dingo_world.launch
     dingo_base/launch/base.launch
   -->
-  <material name="aluminum">
-    <color rgba="0.5 0.5 0.5 1"/>
-  </material>
-  <material name="plastic">
-    <color rgba="0.1 0.1 0.1 1"/>
-  </material>
-  <!-- This file is a placeholder which is included by default from
-       dingo.urdf.xacro. If a robot is being customized and requires
-       additional URDF, set the DINGO_URDF_EXTRAS environment variable
-       to the full path of the file you would like included. -->
-  <!-- Run the macros -->
-  <link name="arm_base_link">
+
+  <!-- URDF of the KINOVA arm from the official repo https://github.com/Kinovarobotics/ros_kortex/blob/noetic-devel/kortex_description/readme.md -->
+
+<link name="arm_base_link">
     <inertial>
       <origin rpy="0 0 0" xyz="0.00244324 0.00015573 0.08616742"/>
       <mass value="1.14608471"/>
@@ -410,7 +402,8 @@
     <child link="arm_shoulder_link"/>
     <axis xyz="0 0 1"/>
     <limit effort="10" lower="-2.68" upper="2.68" velocity="1.6"/>
-    <dynamics damping="100.0"/>
+    <dynamics damping="1000.0"/>
+
   </joint>
   <link name="arm_arm_link">
     <inertial>
@@ -443,7 +436,7 @@
     <child link="arm_arm_link"/>
     <axis xyz="0 0 1"/>
     <limit effort="14" lower="-2.61" upper="2.61" velocity="1.6"/>
-    <dynamics damping="100.0"/>
+    <dynamics damping="1000.0"/>
   </joint>
   <link name="arm_forearm_link">
     <inertial>
@@ -476,7 +469,7 @@
     <child link="arm_forearm_link"/>
     <axis xyz="0 0 1"/>
     <limit effort="10" lower="-2.61" upper="2.61" velocity="1.6"/>
-    <dynamics damping="100.0"/>
+    <dynamics damping="1000.0"/>
   </joint>
   <link name="arm_lower_wrist_link">
     <inertial>
@@ -509,7 +502,7 @@
     <child link="arm_lower_wrist_link"/>
     <axis xyz="0 0 1"/>
     <limit effort="7" lower="-2.6" upper="2.6" velocity="1.6"/>
-    <dynamics damping="100.0"/>
+    <dynamics damping="1000.0"/>
   </joint>
   <link name="arm_upper_wrist_link">
     <inertial>
@@ -541,8 +534,8 @@
     <parent link="arm_lower_wrist_link"/>
     <child link="arm_upper_wrist_link"/>
     <axis xyz="0 0 1"/>
-    <limit effort="10" lower="-2.53" upper="2.53" velocity="1.6"/>
-    <dynamics damping="100.0"/>
+    <limit effort="7" lower="-2.53" upper="2.53" velocity="1.6"/>
+    <dynamics damping="1000.0"/>
   </joint>
   <link name="arm_end_effector_link"/>
   <joint name="arm_joint_6" type="revolute">
@@ -550,8 +543,8 @@
     <parent link="arm_upper_wrist_link"/>
     <child link="arm_end_effector_link"/>
     <axis xyz="0 0 1"/>
-    <limit effort="10" lower="-2.6" upper="2.6" velocity="3.2"/>
-    <dynamics damping="100.0"/>
+    <limit effort="7" lower="-2.6" upper="2.6" velocity="3.2"/>
+    <dynamics damping="1000.0"/>
   </joint>
   <link name="arm_dummy_link"/>
   <joint name="arm_end_effector" type="fixed">
@@ -632,7 +625,7 @@
     <child link="arm_right_finger_prox_link"/>
     <axis xyz="0 0 1"/>
     <limit effort="1000" lower="-0.09" upper="0.96" velocity="0.6"/>
-    <dynamics damping="100.0"/>
+    <dynamics damping="1000.0"/>
   </joint>
   <link name="arm_right_finger_dist_link">
     <inertial>
@@ -659,13 +652,13 @@
   <gazebo reference="arm_right_finger_dist_link">
     <material>Kortex/Blue</material>
   </gazebo>
-  <joint name="arm_right_finger_tip_joint" type="revolute">
+  <joint name="arm_right_finger_tip_joint" type="fixed">
     <origin rpy="0 0 0" xyz="-0.045636 0.020423 0"/>
     <parent link="arm_right_finger_prox_link"/>
     <child link="arm_right_finger_dist_link"/>
     <axis xyz="0 0 1"/>
     <limit effort="1000" lower="-0.50" upper="0.21" velocity="1000"/>
-    <dynamics damping="100.0"/>
+    <dynamics damping="10000.0"/>
     <!--limit lower="-1.03" upper="0.21" effort="1000" velocity="1000" /-->
     <mimic joint="arm_right_finger_bottom_joint" multiplier="-0.676" offset="0.149"/>
   </joint>
@@ -700,7 +693,7 @@
     <child link="arm_left_finger_prox_link"/>
     <axis xyz="0 0 1"/>
     <limit effort="1000" lower="-0.96" upper="0.09" velocity="1000"/>
-    <dynamics damping="100.0"/>
+    <dynamics damping="1000.0"/>
     <mimic joint="arm_right_finger_bottom_joint" multiplier="-1.0" offset="0.0"/>
   </joint>
   <link name="arm_left_finger_dist_link">
@@ -728,14 +721,14 @@
   <gazebo reference="arm_left_finger_dist_link">
     <material>Kortex/Blue</material>
   </gazebo>
-  <joint name="arm_left_finger_tip_joint" type="revolute">
+  <joint name="left_finger_tip_joint" type="fixed">
     <origin rpy="0 0 0" xyz="-0.045636 -0.020423 6.9901E-05"/>
     <parent link="arm_left_finger_prox_link"/>
     <child link="arm_left_finger_dist_link"/>
     <axis xyz="0 0 -1"/>
     <limit effort="1000" lower="-0.50" upper="0.21" velocity="1000"/>
-    <dynamics damping="100.0"/>
     <!--limit lower="-1.03" upper="0.21" effort="1000" velocity="1000" /-->
+    <dynamics damping="10000.0"/>
     <mimic joint="arm_right_finger_bottom_joint" multiplier="-0.676" offset="0.149"/>
   </joint>
   <joint name="arm_mount_joint" type="fixed">

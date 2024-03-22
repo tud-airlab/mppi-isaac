@@ -46,6 +46,7 @@ class MPPIisaacPlanner(object):
             actors=actors,
             init_positions=cfg.initial_actor_positions,
             num_envs=cfg.mppi.num_samples,
+            # viewer= True,
             device=cfg.mppi.device
         )
 

@@ -17,15 +17,16 @@ class Objective(object):
         
         # Tuning of the weights for baseline 2
         self.w_robot_to_block_pos=  8
-        self.w_block_to_goal_pos=   2
+        self.w_block_to_goal_pos=   3
         self.w_ee_align=            1
-        self.w_collision=           0.1
+        self.w_collision=           0.0
         # Task configration for comparison with baselines
         self.ee_index = 25
         self.block_index = 1
-        self.ort_goal_euler = torch.tensor([0, 0, 0], device=cfg.mppi.device)
 
+        self.ort_goal_euler = torch.tensor([0, 0, 0], device=cfg.mppi.device)
         self.block_goal_pose = torch.tensor([-1, -1, 0.6], device=cfg.mppi.device)
+        self.ee_offset = torch.tensor([0, 0, 0.1], device=cfg.mppi.device)
 
         self.obst_number = 2
         self.success = False
@@ -43,7 +44,7 @@ class Objective(object):
         block_pos = sim.root_state[:, self.block_index, :3]
 
         # Distances robot
-        robot_to_block = r_pos - block_pos
+        robot_to_block = r_pos - (block_pos + self.ee_offset)
         robot_euler = pytorch3d.transforms.matrix_to_euler_angles(pytorch3d.transforms.quaternion_to_matrix(r_ort), "ZYX")   
 
         # Distances block

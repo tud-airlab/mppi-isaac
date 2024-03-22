@@ -15,7 +15,7 @@ import zerorpc
 from mppiisaac.utils.config_store import ExampleConfig
 from isaacgym import gymapi
 import time
-from examples.omnipanda_isaacgym_client import Objective
+from examples.dingo_simple_client import Objective
 import sys
 
 import io
@@ -25,7 +25,6 @@ def torch_to_bytes(t: torch.Tensor) -> bytes:
     torch.save(t, buff)
     buff.seek(0)
     return buff.read()
-
 
 def bytes_to_torch(b: bytes) -> torch.Tensor:
     buff = io.BytesIO(b)
@@ -43,11 +42,10 @@ def reset_trial(sim, init_pos, init_vel):
     sim.set_dof_state_tensor(torch.tensor([init_pos[0], init_vel[0], init_pos[1], init_vel[1], init_pos[2], init_vel[2],
                                            init_pos[3], init_vel[3], init_pos[4], init_vel[4], init_pos[5], init_vel[5],
                                            init_pos[6], init_vel[6], init_pos[7], init_vel[7], init_pos[8], init_vel[8],
-                                           init_pos[9], init_vel[9], init_pos[10], init_vel[10], init_pos[11], init_vel[11],
-                                           init_pos[12], init_vel[12]], device=sim.device))
+                                           init_pos[9], init_vel[9], init_pos[10], init_vel[10]], device=sim.device))
         
 @hydra.main(version_base=None, config_path="../conf", config_name="config_dingo")
-def run_omnipanda_robot(cfg: ExampleConfig):
+def run_robot(cfg: ExampleConfig):
     # Note: Workaround to trigger the dataclasses __post_init__ method
     cfg = OmegaConf.to_object(cfg)
 
@@ -69,18 +67,18 @@ def run_omnipanda_robot(cfg: ExampleConfig):
     obj_index = 0
 
                 #  l     w     h    mu     m    x    y
-    obj_set =  [[0.04, 0.04, 0.04, 0.90, 0.05, 0.6, 0.0],    # Cube
+    obj_set =  [[0.04, 0.04, 0.04, 0.90, 0.05, -3.0, 0.0],    # Cube
                 [0.03, 0.03, 0.04, 0.90, 0.2, 0.37, 0.]]    # Other
     
     obj_ = obj_set[obj_index][:]
-    table_dim = [0.7, 0.8, 0.20]
-    table_pos = [0.8, 0.0, table_dim[-1]/2]
-    goal_pos = [-1., -1., 0.6]
+    table_dim = [0.7, 0.8, 0.40]
+    table_pos = [-3, 0.0, table_dim[-1]/2]
+    goal_pos = [-4., 0., 0.6]
 
     additions = [
         {
             "type": "box",
-            "name": "obj_to_push",
+            "name": "obstacle 1",
             "size": [obj_[0], obj_[1], obj_[2]],
             "init_pos": [obj_[5], obj_[6], table_dim[-1] + obj_[2] / 2],
             "mass": obj_[4],
@@ -94,7 +92,7 @@ def run_omnipanda_robot(cfg: ExampleConfig):
         },
         {
             "type": "box",
-            "name": "table",
+            "name": "obstacle 2",
             "size": table_dim,
             "init_pos": table_pos,
             "color": [255 / 255, 120 / 255, 57 / 255],
@@ -134,18 +132,18 @@ def run_omnipanda_robot(cfg: ExampleConfig):
     sim.set_dof_state_tensor(torch.tensor([init_pos[0], init_vel[0], init_pos[1], init_vel[1], init_pos[2], init_vel[2],
                                            init_pos[3], init_vel[3], init_pos[4], init_vel[4], init_pos[5], init_vel[5],
                                            init_pos[6], init_vel[6], init_pos[7], init_vel[7], init_pos[8], init_vel[8],
-                                           init_pos[9], init_vel[9], init_pos[10], init_vel[10], init_pos[11], init_vel[11],
-                                           init_pos[12], init_vel[12],], device=sim.device))
+                                           init_pos[9], init_vel[9], init_pos[10], init_vel[10],], device=sim.device))
 
     # Helpers
     count = 0
     client_helper = Objective(cfg, cfg.mppi.device)
     init_time = time.time()
-    block_index = 1
+    goal_index = 3
+    ee_index = 25
     data_time = []
     data_err = []
     n_trials = 0 
-    timeout = 60
+    timeout = 120
     rt_factor_seq = []
     data_rt = []
 
@@ -175,15 +173,14 @@ def run_omnipanda_robot(cfg: ExampleConfig):
         # Evaluation metrics 
         # ------------------------------------------------------------------------
         if count > 10:
-            block_pos = sim.root_state[:, block_index, :3]
-            Ex, Ey, Ez = client_helper.compute_metrics(block_pos)
-            metric = Ex+Ey
+            ee_pose = sim.rigid_body_state[:, ee_index, :7]
+            Ex, Eq = client_helper.compute_metrics(ee_pose)
+            metric = Ex
             # print("Metric Baxter", metric_1)
             print("Ex", Ex)
-            print("Ey", Ey)
-            print("Angle", Ez)
+            print("Eq", Eq)
           
-            if Ex < 0.02 and Ey < 0.02 and Ez < 0.02: 
+            if Ex < 0.02 and Eq < 0.1: 
                 print("Success")
                 final_time = time.time()
                 time_taken = final_time - init_time
@@ -242,4 +239,4 @@ def run_omnipanda_robot(cfg: ExampleConfig):
 
 
 if __name__ == "__main__":
-    res = run_omnipanda_robot()
+    res = run_robot()
