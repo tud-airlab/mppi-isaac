@@ -27,7 +27,7 @@ def test_body_force() -> None:
         cmd = torch.Tensor([0.2, 0.])
         cmd = cmd.repeat(num_envs, 1)
         assert cmd.size() == torch.Size([num_envs, 2])
-        sim.apply_robot_cmd_velocity(cmd)
+        sim.apply_robot_cmd(cmd)
 
         for i in range(200):
             sim.step()

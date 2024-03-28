@@ -228,7 +228,7 @@ class IsaacGymWrapper:
                     [0] * 2 * self._gym.get_actor_dof_count(self.envs[0], robot.handle)
                 )
         dof_state = (
-            torch.tensor(dof_state, device="cuda:0")
+            torch.tensor(dof_state, device=self.device)
             .type(torch.float32)
             .repeat(self.num_envs, 1)
         )
@@ -238,7 +238,7 @@ class IsaacGymWrapper:
     def reset_to_initial_poses(self):
         for actor in self.env_cfg:
             actor_state = torch.tensor(
-                [*actor.init_pos, *actor.init_ori, *[0] * 6], device="cuda:0"
+                [*actor.init_pos, *actor.init_ori, *[0] * 6], device=self.device
             )
             self._root_state[:, actor.handle] = actor_state
 
@@ -258,7 +258,7 @@ class IsaacGymWrapper:
                     [0] * 2 * self._gym.get_actor_dof_count(self.envs[0], robot.handle)
                 )
         dof_state = (
-            torch.tensor(dof_state, device="cuda:0")
+            torch.tensor(dof_state, device=self.device)
             .type(torch.float32)
             .repeat(self.num_envs, 1)
         )
@@ -290,7 +290,7 @@ class IsaacGymWrapper:
         ]
 
     def _get_actor_index_by_name(self, name: str):
-        return torch.tensor([a.name for a in self.env_cfg].index(name), device="cuda:0")
+        return torch.tensor([a.name for a in self.env_cfg].index(name), device=self.device)
 
     def _get_actor_index_by_robot_index(self, robot_idx: int):
         return self._robot_indices[robot_idx]
@@ -338,7 +338,7 @@ class IsaacGymWrapper:
             self._gym.find_actor_rigid_body_index(
                 self.envs[0], actor_idx, link_name, gymapi.IndexDomain.DOMAIN_ENV
             ),
-            device="cuda:0",
+            device=self.device,
         )
         return self.get_rigid_body_by_rigid_body_index(rigid_body_idx)
 
@@ -348,7 +348,7 @@ class IsaacGymWrapper:
             self._gym.find_actor_rigid_body_index(
                 self.envs[0], actor_idx, link_name, gymapi.IndexDomain.DOMAIN_ENV
             ),
-            device="cuda:0",
+            device=self.device,
         )
         return self._net_contact_force[:, rigid_body_idx]
 
