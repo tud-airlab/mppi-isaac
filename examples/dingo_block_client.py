@@ -26,7 +26,7 @@ class Objective(object):
 
         self.ort_goal_euler = torch.tensor([0, 0, 0], device=cfg.mppi.device)
         self.block_goal_pose = torch.tensor([-1, -1, 0.6], device=cfg.mppi.device)
-        self.ee_offset = torch.tensor([0, 0, 0.1], device=cfg.mppi.device)
+        self.ee_offset = torch.tensor([0, 0, 0.0], device=cfg.mppi.device)
 
         self.obst_number = 2
         self.success = False

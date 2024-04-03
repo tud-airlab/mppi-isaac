@@ -71,7 +71,7 @@ def run_omnipanda_robot(cfg: ExampleConfig):
                 [0.03, 0.03, 0.04, 0.90, 0.2, 0.37, 0.]]    # Other
     
     obj_ = obj_set[obj_index][:]
-    table_dim = [0.7, 0.8, 0.10]
+    table_dim = [0.7, 0.8, 0.40]
     table_pos = [0.8, 0.0, table_dim[-1]/2]
     goal_pos = [-1., -1., 0.6]
 

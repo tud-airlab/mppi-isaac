@@ -584,12 +584,13 @@
         <color rgba="0.803 0.824 0.820 1"/>
       </material>
     </visual>
-    <collision>
+    <!-- This collision mesh is VERY problematic, it is always collising with the arm, creating random forces -->
+    <!-- <collision>
       <origin rpy="0 0 0" xyz="0 0 0"/>
       <geometry>
         <mesh filename="meshes/kinova/gripper_base_link.STL"/>
       </geometry>
-    </collision>
+    </collision> -->
   </link>
   <gazebo reference="arm_gripper_base_link">
     <material>Kortex/Gray</material>
