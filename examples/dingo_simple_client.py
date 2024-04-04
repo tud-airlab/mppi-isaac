@@ -21,7 +21,7 @@ class Objective(object):
         self.w_ee_to_goal_pos=      8.0
         self.w_ee_align=            0.5
         self.w_collision=           1.0
-        self.w_neutral =            1.0
+        self.w_neutral =            100.
         # Task configration for comparison with baselines
         self.ee_index = 25
         self.obstacle_idx = 2
@@ -29,7 +29,7 @@ class Objective(object):
         self.ee_goal_pose = torch.tensor([-4, 0, 0.6], device=cfg.mppi.device)
         self.ort_goal_euler = torch.tensor([3.1415/2, 0, 0], device=cfg.mppi.device)
         self.ort_goal_quat = pytorch3d.transforms.matrix_to_quaternion(pytorch3d.transforms.euler_angles_to_matrix(self.ort_goal_euler, "ZYX"))
-        self.joints_neutral = torch.tensor([0.0, 0.35, 1.67, -1.69, -4.94, -1.37], device=cfg.mppi.device) #same neutral position as controller Jelmer.
+        self.joints_neutral = torch.tensor([1., 0., 0., 0., 0., 0.], device=cfg.mppi.device) #same neutral position as controller Jelmer: [0.0, 0.35, 1.67, -1.69, -4.94, -1.37]
 
         self.obst_number = 2
         self.success = False
@@ -50,7 +50,8 @@ class Objective(object):
     def compute_cost(self, sim):
         r_pos = sim.rigid_body_state[:, self.ee_index, :3]
         r_ort = sim.rigid_body_state[:, self.ee_index, 3:7]
-        joint_angles = sim.dof_state[:, 4:4+6] #number correct?
+        joint_angles = sim.dof_state[:, 3:9] #number correct?
+        print("joint_angles_1:", joint_angles[1, :])
         # block_pos = sim.root_state[:, self.block_index, :3]
         # root_state of shape (num_envs, num_bodies, 7) where the last 13 x y z, quaternion, vx vy vz, wx wy wz
 
@@ -76,7 +77,7 @@ class Objective(object):
         coll = torch.sum(contact_f.reshape([sim.num_envs, int(contact_f.size(dim=0)/sim.num_envs)])[:, (sim.num_bodies - 1 - self.obst_number):sim.num_bodies], 1) # Consider obstacles
 
         total_cost = (
-            self.w_ee_to_goal_pos * robot_to_goal_pos + self.w_ee_align * ee_align + self.w_collision * coll + self.w_neutral * cost_default_joints
+            self.w_neutral * cost_default_joints #self.w_ee_to_goal_pos * robot_to_goal_pos + self.w_ee_align * ee_align + self.w_collision * coll + self.w_neutral * cost_default_joints
         )
         return total_cost
 
