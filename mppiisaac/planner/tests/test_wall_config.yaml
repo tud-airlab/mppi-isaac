@@ -1,0 +1,7 @@
+type: box
+name: wall
+fixed: True
+size: [20., 1., 2.]
+init_pos: [0.0, -2.0, 1.00]
+color: [1, 0.0, 0.2]
+collision: True

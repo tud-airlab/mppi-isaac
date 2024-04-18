@@ -1,0 +1,17 @@
+type: robot
+name: albert
+urdf_file: "albert/albert.urdf"
+visualize_link: "mmrobot_link7"
+gravity: true
+fixed: false
+flip_visual: false
+differential_drive: true
+wheel_radius: 0.08
+wheel_base: 0.494
+wheel_count: 2
+friction: 1.0
+collision: True
+caster_links: ['rotacastor_right_link', 'rotacastor_left_link']
+init_joint_pose: [0.0, 0, -0.94, 0, 0., 0, -2.8, 0, 0., 0, 1.8675, 0, 0., 0, 0.0, 0.0, 0.0, 0.0]
+left_wheel_joints: ['wheel_left_joint']
+right_wheel_joints: ['wheel_right_joint']

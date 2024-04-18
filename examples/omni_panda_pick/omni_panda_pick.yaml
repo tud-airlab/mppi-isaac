@@ -1,0 +1,12 @@
+defaults:
+  - mppi: omnipanda
+  - isaacgym: normal
+
+n_steps: 10000
+actors: ['omnipanda', 'xaxis', 'yaxis', 'block2', 'table2', 'goal']
+initial_actor_positions: [[2.0, 2.0, 0.0]]
+nx: 24
+
+hydra:
+  searchpath:
+    - pkg://conf

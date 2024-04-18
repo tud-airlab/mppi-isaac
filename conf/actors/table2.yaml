@@ -1,0 +1,9 @@
+type: "box"
+name: "table"
+size: [1.00, 0.50, 0.40]
+init_pos: [1.0, 0.0, 0.07]
+fixed: True
+handle: None
+color: [1.0, 1.0, 1.0]
+friction: 0.2
+noise_percentage_friction: 0.3

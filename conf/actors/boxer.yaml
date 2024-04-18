@@ -11,3 +11,6 @@ wheel_count: 2
 friction: 1.0
 collision: True
 caster_links: ['rotacastor_right_link', 'rotacastor_left_link']
+left_wheel_joints: ['wheel_left_joint']
+right_wheel_joints: ['wheel_right_joint']
+visualize_link: "ee_link"
