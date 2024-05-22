@@ -10,7 +10,16 @@ You can extend the repository with your robots and tasks since it is designed to
 ### How to cite this work
 If you found this repository useful, please consider citing the associated paper below:
 
-- *Sampling-based Model Predictive Control Leveraging Parallelizable Physics Simulations*. Corrado Pezzato*, Chadi Salmi*, Max Spahn*, Elia Trevisan*, Javier Alonso Mora, and Carlos Hernandez Corbato. arXiv:2307.09105. Under review at IEEE Robotics and Automation Letters, 2023.
+```bash
+@misc{pezzato2023samplingbased,
+      title={Sampling-based Model Predictive Control Leveraging Parallelizable Physics Simulations}, 
+      author={Corrado Pezzato and Chadi Salmi and Max Spahn and Elia Trevisan and Javier Alonso-Mora and Carlos Hernandez Corbato},
+      year={2023},
+      eprint={2307.09105},
+      archivePrefix={arXiv},
+      primaryClass={cs.RO}
+}
+```
 
 # Installation
 
