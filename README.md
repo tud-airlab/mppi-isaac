@@ -64,20 +64,20 @@ pip install .
 If you have an Nvidia card and after running the simulation you get a black screen, you might need to force the use of the GPU card through ``export VK_ICD_FILENAMES=/usr/share/vulkan/icd.d/nvidia_icd.json``. Run this command from the same folder as the script to be launched for every terminal
 
 # Running the examples
-Access the virtual environment if installed with poetry (with `poetry shell`). You can run two types of examples, either the ones using IsaacGym or the ones using Pybullet. In the `examples` folder, you find all the scripts. The ones related to IsaacGym contain either "server" or "client" in the name. 
+Access the virtual environment if installed with poetry (with `poetry shell`). You can run two types of examples, either the ones using IsaacGym or the ones using Pybullet. In the `examples` folder, you find all the scripts. 
 
 ## IsaacGym examples
-To run the examples with IsaacGym (for example for non-prehensile pushing and whole-body control), you need two terminals because it is required to run a "server" and a "client" script. In the first one run the server:
+To run the examples with IsaacGym (`panda`, `heijn_push`, `boxer_push`, `albert` and more), you need two terminals because it is required to run a "server" and a "client" script. In the first one run the server:
 ```bash 
-python3 heijn_push_server.py
+python3 world.py
 ```
 In the second one the client:
 ```bash 
-python3 heijn_push_client.py
+python3 planner.py
 ```
 
 ## Pybullet examples
-Simply run one of the example scripts which use Pybullet, for instance for the panda robot:
+In some older branches, you can run one of the example scripts which use Pybullet, for instance for the panda robot:
 ```bash
 python3 panda_robot_with_obstacles.py
 ```
