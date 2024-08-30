@@ -10,10 +10,10 @@ class Objective(object):
     def __init__(self, cfg):
         # Tuning of the weights for box
         self.weights = {
-            "robot_to_block": 4.0,
-            "block_to_goal": 1.0,
-            "collision": 2.6,
-            "robot_ori": 0.2,
+            "robot_to_block": 8.0,
+            "block_to_goal": 2.0,
+            "collision": 0.1,
+            "robot_ori": 1.0,
         }
         self.reset()
 

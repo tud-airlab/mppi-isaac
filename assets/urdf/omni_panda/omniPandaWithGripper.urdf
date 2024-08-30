@@ -21,9 +21,9 @@
   </link>
   <link name="base_link">
     <inertial>
-      <mass value="100.0"/>
+      <mass value="20.0"/>
       <origin rpy="0 0 0" xyz="0 0 0"/>
-      <inertia ixx="1.0" ixy="0.0" ixz="0.0" iyy="1.0" iyz="0.0" izz="1.0"/>
+      <inertia ixx="0.2933" ixy="0.0" ixz="0.0" iyy="0.2933" iyz="0.0" izz="0.4"/>
     </inertial>
     <collision>
       <origin rpy="0.0 0 0" xyz="0 0 0"/>

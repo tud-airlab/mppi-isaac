@@ -1,5 +1,5 @@
 defaults:
-  - mppi: omnipanda
+  - mppi: omnipanda_effort
   - isaacgym: normal
 
 n_steps: 10000
