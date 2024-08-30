@@ -11,7 +11,6 @@ import time
 @hydra.main(version_base=None, config_path=".", config_name="omni_panda_pick")
 def run_heijn_robot(cfg: ExampleConfig):
 
-    cfg.isaacgym.dt = 0.1
     sim = IsaacGymWrapper(
         cfg.isaacgym,
         actors=cfg.actors,

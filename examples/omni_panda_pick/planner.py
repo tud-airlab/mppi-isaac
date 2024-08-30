@@ -14,7 +14,12 @@ class Objective(object):
             "block_to_goal": 2.0,
             "collision": 0.1,
             "robot_ori": 1.0,
+            "base_vel": 1.0,
+            "arm_vel": 0.01,
+            "comfy_gripper_state": 200.0,
+            "height_cost": 10000.0,
         }
+        self.comfy_gripper_state = torch.tensor([0.025, 0.025], device=cfg.mppi.device)
         self.reset()
 
     def reset(self):
@@ -26,6 +31,12 @@ class Objective(object):
         block_pos = sim.get_actor_position_by_name("panda_pick_block")
         goal_pos = sim.get_actor_position_by_name("goal")
         table_forces = sim.get_actor_contact_forces_by_name("table", "box")
+        actor_dof = sim.get_dof_state()
+
+        # Extract velocities from actor_dof
+        actor_dof_velocities = actor_dof[:, 1::2]  # Assuming velocities are at odd indices
+        base_vel = actor_dof_velocities[:, 0:3]
+        arm_vel = actor_dof_velocities[:, 3:11]
 
         robot_to_block = r_pos[:, 0:3] - block_pos[:, 0:3]
         block_to_goal = block_pos[:, 0:3] - goal_pos[:, 0:3]
@@ -41,11 +52,28 @@ class Objective(object):
         # Force costs
         forces = torch.sum(torch.abs(table_forces[:, 0:3]), axis=1)
 
+        # Velocity costs
+        base_vel_cost = torch.sum(torch.square(base_vel), dim=1)
+        arm_vel_cost = torch.sum(torch.square(arm_vel), dim=1)
+
+        # Extract Gripper state
+        actor_dof_positions = actor_dof[:, ::2] 
+        gripper_state = actor_dof_positions[:, -2:]
+        # Gripper cost
+        gripper_cost = torch.sum(torch.square(gripper_state - self.comfy_gripper_state), dim=1)
+
+        # Penalty if r_pos[2] is lower than 0.12
+        height_cost = torch.clamp(0.12 - r_pos[:, 2], min=0)
+
         total_cost = (
             self.weights["robot_to_block"] * robot_to_block_dist
             + self.weights["block_to_goal"] * block_to_goal_dist
             + self.weights["collision"] * forces
             + self.weights["robot_ori"] * robot_rpy_dist
+            + self.weights["base_vel"] * base_vel_cost
+            + self.weights["arm_vel"] * arm_vel_cost
+            + self.weights["comfy_gripper_state"] * gripper_cost
+            + self.weights["height_cost"] * height_cost
         )
 
         self.prev_block_to_goal_dist = block_to_goal_dist

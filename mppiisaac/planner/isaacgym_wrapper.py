@@ -351,6 +351,9 @@ class IsaacGymWrapper:
             device=self.device,
         )
         return self._net_contact_force[:, rigid_body_idx]
+    
+    def get_dof_state(self):
+        return self._dof_state
 
     # torch.index_select(self._net_contact_force, 1, rigid_body_idx)
     # self._net_contact_force[:, rigid_body_idx]
