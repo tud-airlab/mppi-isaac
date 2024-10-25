@@ -222,7 +222,7 @@ class IsaacGymWrapper:
             dof_state = []
             if robot.init_joint_pose:
                 dof_state += robot.init_joint_pose
-                print(dof_state)
+                # print(dof_state)
             else:
                 dof_state += (
                     [0] * 2 * self._gym.get_actor_dof_count(self.envs[0], robot.handle)
@@ -252,7 +252,7 @@ class IsaacGymWrapper:
             dof_state = []
             if robot.init_joint_pose:
                 dof_state += robot.init_joint_pose
-                print(dof_state)
+                # print(dof_state)
             else:
                 dof_state += (
                     [0] * 2 * self._gym.get_actor_dof_count(self.envs[0], robot.handle)

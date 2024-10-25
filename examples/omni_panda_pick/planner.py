@@ -11,11 +11,11 @@ class Objective(object):
         # Tuning of the weights for box
         self.weights = {
             "robot_to_block": 8.0,
-            "block_to_goal": 2.0,
+            "block_to_goal": 4.0,
             "collision": 0.1,
             "robot_ori": 1.0,
-            "base_vel": 1.0,
-            "arm_vel": 0.01,
+            "base_vel": 2.0,
+            "arm_vel": 0.1,
             "comfy_gripper_state": 200.0,
             "height_cost": 10000.0,
         }
