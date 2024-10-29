@@ -31,7 +31,7 @@ def run_omnipanda_robot(cfg: ExampleConfig):
         gymapi.Vec3(1.0, 6.5, 4),
         gymapi.Vec3(1.0, 0, 0),  # CAMERA LOCATION, CAMERA POINT OF INTEREST
     )
-    for _ in range(5):
+    for _ in range(10):
         t = time.time()
         for i in range(cfg.n_steps):
             # Compute action
