@@ -2,11 +2,11 @@ type: "box"
 name: "panda_pick_block"
 size: [0.04, 0.04, 0.04]
 init_pos: [1.0, 0.0, 1.0]
-mass: 0.001 
+mass: 0.1 
 fixed: False
 handle: None
 color: [0.2, 0.2, 1.0]
 friction: 1.0
-noise_sigma_size: [0.002, 0.002, 0.0]
+# noise_sigma_size: [0.002, 0.002, 0.0]
 # noise_percentage_friction: 0.3
 # noise_percentage_mass: 0.3

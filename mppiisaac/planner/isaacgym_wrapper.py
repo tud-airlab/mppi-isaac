@@ -222,7 +222,7 @@ class IsaacGymWrapper:
             dof_state = []
             if robot.init_joint_pose:
                 dof_state += robot.init_joint_pose
-                print(dof_state)
+                # print(dof_state)
             else:
                 dof_state += (
                     [0] * 2 * self._gym.get_actor_dof_count(self.envs[0], robot.handle)
@@ -252,7 +252,7 @@ class IsaacGymWrapper:
             dof_state = []
             if robot.init_joint_pose:
                 dof_state += robot.init_joint_pose
-                print(dof_state)
+                # print(dof_state)
             else:
                 dof_state += (
                     [0] * 2 * self._gym.get_actor_dof_count(self.envs[0], robot.handle)
@@ -351,6 +351,9 @@ class IsaacGymWrapper:
             device=self.device,
         )
         return self._net_contact_force[:, rigid_body_idx]
+    
+    def get_dof_state(self):
+        return self._dof_state
 
     # torch.index_select(self._net_contact_force, 1, rigid_body_idx)
     # self._net_contact_force[:, rigid_body_idx]

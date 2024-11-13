@@ -1,10 +1,10 @@
 defaults:
-  - mppi: omnipanda
-  - isaacgym: normal
+  - mppi: omnipanda_effort
+  - isaacgym: pick
 
-n_steps: 10000
-actors: ['omnipanda', 'xaxis', 'yaxis', 'block2', 'table2', 'goal']
-initial_actor_positions: [[2.0, 2.0, 0.0]]
+n_steps: 1500
+actors: ['omnipanda_effort', 'xaxis', 'yaxis', 'block2', 'table2', 'goal']
+initial_actor_positions: [[1.0, 2.0, 0.0]]
 nx: 24
 
 hydra:

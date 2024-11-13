@@ -31,7 +31,8 @@ class MPPIisaacPlanner(object):
             actors=cfg.actors,
             init_positions=cfg.initial_actor_positions,
             num_envs=cfg.mppi.num_samples,
-            device=cfg.mppi.device
+            device=cfg.mppi.device,
+            # viewer=True
         )
 
         if prior:
